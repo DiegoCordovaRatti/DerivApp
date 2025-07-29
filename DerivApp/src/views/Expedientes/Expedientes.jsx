@@ -1,5 +1,5 @@
 import React from 'react';
-import './Expedientes.css';
+import './Expedientes.scss';
 
 const Expedientes = () => {
   return (

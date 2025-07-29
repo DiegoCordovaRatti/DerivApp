@@ -1,5 +1,5 @@
 import React from 'react';
-import './FormularioDerivacion.css';
+import './FormularioDerivacion.scss';
 
 const FormularioDerivacion = () => {
   return (

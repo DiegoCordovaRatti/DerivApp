@@ -1,5 +1,5 @@
 import React from 'react';
-import './Alertas.css';
+import './Alertas.scss';
 
 const Alertas = () => {
   return (
