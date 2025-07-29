@@ -1,10 +1,10 @@
 import React from 'react';
-import './Expedientes.css';
+import './Expedientes.scss';
 
 const Expedientes = () => {
   return (
     <div className="expedientes-container">
-      {}
+      <h1>Expedientes</h1>
     </div>
   );
 };

@@ -1,10 +1,10 @@
 import React from 'react';
-import './Perfil.css';
+import './Perfil.scss';
 
 const Perfil = () => {
   return (
     <div className="perfil-container">
-      {}
+      <h1>Perfil</h1>
     </div>
   );
 };

@@ -1,10 +1,10 @@
 import React from 'react';
-import './Agenda.css';
+import './Agenda.scss';
 
 const Agenda = () => {
   return (
     <div className="agenda-container">
-      {}
+      <h1>Agenda</h1>
     </div>
   );
 };
