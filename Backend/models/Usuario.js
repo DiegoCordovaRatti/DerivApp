@@ -1,17 +1,7 @@
 import db from '../config/fireBaseDB.js';
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
 
-// Estructura del modelo Usuario
-const usuarioSchema = {
-  nombre: String,
-  correo: String,
-  rol: String,
-  activo: Boolean,
-  telefono: String,
-  creadoEn: Date
-};
-
-// Validación básica de datos de usuario
+// Validación de datos de usuario
 const validarUsuario = (usuario) => {
   const errores = [];
   
@@ -19,20 +9,16 @@ const validarUsuario = (usuario) => {
     errores.push("El nombre debe tener al menos 2 caracteres");
   }
   
-  if (!usuario.correo || !usuario.correo.includes('@')) {
-    errores.push("El correo electrónico no es válido");
+  if (!usuario.email || !usuario.email.includes('@')) {
+    errores.push("El email no es válido");
   }
   
-  if (!usuario.rol || !['psicologo', 'administrador', 'profesor', 'estudiante'].includes(usuario.rol)) {
-    errores.push("El rol debe ser: psicologo, administrador, profesor o estudiante");
+  if (!usuario.rol || !['docente', 'trabajador_social', 'jefe_convivencia'].includes(usuario.rol)) {
+    errores.push("El rol debe ser: docente, trabajador_social o jefe_convivencia");
   }
   
-  if (typeof usuario.activo !== 'boolean') {
-    errores.push("El campo activo debe ser true o false");
-  }
-  
-  if (!usuario.telefono || usuario.telefono.length < 8) {
-    errores.push("El teléfono debe tener al menos 8 dígitos");
+  if (!usuario.establecimientoId || usuario.establecimientoId.trim().length === 0) {
+    errores.push("El ID del establecimiento es obligatorio");
   }
   
   return {
@@ -44,17 +30,15 @@ const validarUsuario = (usuario) => {
 // Crear un nuevo usuario
 export const crearUsuario = async (datosUsuario) => {
   try {
-    // Validar datos
     const validacion = validarUsuario(datosUsuario);
     if (!validacion.esValido) {
       throw new Error(`Datos inválidos: ${validacion.errores.join(', ')}`);
     }
     
-    // Preparar datos con timestamp
     const usuarioData = {
       ...datosUsuario,
-      creadoEn: new Date(),
-      actualizadoEn: new Date()
+      fecha_creacion: new Date(),
+      fecha_actualizacion: new Date()
     };
     
     const docRef = await addDoc(collection(db, "usuarios"), usuarioData);
@@ -90,10 +74,10 @@ export const obtenerUsuarioPorId = async (id) => {
   }
 };
 
-// Obtener usuario por correo
-export const obtenerUsuarioPorCorreo = async (correo) => {
+// Obtener usuario por email
+export const obtenerUsuarioPorEmail = async (email) => {
   try {
-    const q = query(collection(db, "usuarios"), where("correo", "==", correo));
+    const q = query(collection(db, "usuarios"), where("email", "==", email));
     const querySnapshot = await getDocs(q);
     
     if (!querySnapshot.empty) {
@@ -103,61 +87,18 @@ export const obtenerUsuarioPorCorreo = async (correo) => {
       return null;
     }
   } catch (error) {
-    throw new Error(`Error al buscar usuario por correo: ${error.message}`);
+    throw new Error(`Error al buscar usuario por email: ${error.message}`);
   }
 };
 
-// Actualizar usuario
-export const actualizarUsuario = async (id, datosActualizados) => {
+// Obtener usuarios por establecimiento
+export const obtenerUsuariosPorEstablecimiento = async (establecimientoId) => {
   try {
-    const docRef = doc(db, "usuarios", id);
-    
-    // Validar datos si se proporcionan
-    if (datosActualizados.nombre || datosActualizados.correo || datosActualizados.rol) {
-      const usuarioActual = await obtenerUsuarioPorId(id);
-      const datosCompletos = { ...usuarioActual, ...datosActualizados };
-      const validacion = validarUsuario(datosCompletos);
-      
-      if (!validacion.esValido) {
-        throw new Error(`Datos inválidos: ${validacion.errores.join(', ')}`);
-      }
-    }
-    
-    // Agregar timestamp de actualización
-    const datosConTimestamp = {
-      ...datosActualizados,
-      actualizadoEn: new Date()
-    };
-    
-    await updateDoc(docRef, datosConTimestamp);
-    return { id, ...datosConTimestamp };
+    const q = query(collection(db, "usuarios"), where("establecimientoId", "==", establecimientoId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
-    throw new Error(`Error al actualizar usuario: ${error.message}`);
-  }
-};
-
-// Eliminar usuario (soft delete - cambiar activo a false)
-export const desactivarUsuario = async (id) => {
-  try {
-    const docRef = doc(db, "usuarios", id);
-    await updateDoc(docRef, {
-      activo: false,
-      actualizadoEn: new Date()
-    });
-    return { message: "Usuario desactivado correctamente" };
-  } catch (error) {
-    throw new Error(`Error al desactivar usuario: ${error.message}`);
-  }
-};
-
-// Eliminar usuario permanentemente
-export const eliminarUsuario = async (id) => {
-  try {
-    const docRef = doc(db, "usuarios", id);
-    await deleteDoc(docRef);
-    return { message: "Usuario eliminado permanentemente" };
-  } catch (error) {
-    throw new Error(`Error al eliminar usuario: ${error.message}`);
+    throw new Error(`Error al obtener usuarios por establecimiento: ${error.message}`);
   }
 };
 
@@ -172,14 +113,42 @@ export const obtenerUsuariosPorRol = async (rol) => {
   }
 };
 
-// Obtener usuarios activos
-export const obtenerUsuariosActivos = async () => {
+// Actualizar usuario
+export const actualizarUsuario = async (id, datosActualizados) => {
   try {
-    const q = query(collection(db, "usuarios"), where("activo", "==", true));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const docRef = doc(db, "usuarios", id);
+    
+    // Validar datos si se proporcionan
+    if (datosActualizados.nombre || datosActualizados.email || datosActualizados.rol) {
+      const usuarioActual = await obtenerUsuarioPorId(id);
+      const datosCompletos = { ...usuarioActual, ...datosActualizados };
+      const validacion = validarUsuario(datosCompletos);
+      
+      if (!validacion.esValido) {
+        throw new Error(`Datos inválidos: ${validacion.errores.join(', ')}`);
+      }
+    }
+    
+    const datosConTimestamp = {
+      ...datosActualizados,
+      fecha_actualizacion: new Date()
+    };
+    
+    await updateDoc(docRef, datosConTimestamp);
+    return { id, ...datosConTimestamp };
   } catch (error) {
-    throw new Error(`Error al obtener usuarios activos: ${error.message}`);
+    throw new Error(`Error al actualizar usuario: ${error.message}`);
+  }
+};
+
+// Eliminar usuario
+export const eliminarUsuario = async (id) => {
+  try {
+    const docRef = doc(db, "usuarios", id);
+    await deleteDoc(docRef);
+    return { message: "Usuario eliminado permanentemente" };
+  } catch (error) {
+    throw new Error(`Error al eliminar usuario: ${error.message}`);
   }
 };
 
@@ -187,11 +156,10 @@ export default {
   crearUsuario,
   obtenerUsuarios,
   obtenerUsuarioPorId,
-  obtenerUsuarioPorCorreo,
-  actualizarUsuario,
-  desactivarUsuario,
-  eliminarUsuario,
+  obtenerUsuarioPorEmail,
+  obtenerUsuariosPorEstablecimiento,
   obtenerUsuariosPorRol,
-  obtenerUsuariosActivos,
+  actualizarUsuario,
+  eliminarUsuario,
   validarUsuario
 };
