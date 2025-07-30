@@ -1,31 +1,55 @@
 import express from 'express';
 import {
+  // Métodos de estudiantes
   crearEstudianteCtrl,
   obtenerEstudiantesCtrl,
   obtenerEstudiantePorIdCtrl,
   obtenerEstudiantePorRutCtrl,
   actualizarEstudianteCtrl,
-  agregarNotaEstudianteCtrl,
   cambiarEstadoEstudianteCtrl,
   obtenerEstudiantesPorEstadoCtrl,
+  obtenerEstudiantesPorEstablecimientoCtrl,
   obtenerEstudiantesActivosCtrl,
   eliminarEstudianteCtrl,
-  buscarEstudiantesCtrl
+  buscarEstudiantesCtrl,
+  // Métodos de derivaciones
+  crearDerivacionCtrl,
+  obtenerDerivacionesEstudianteCtrl,
+  obtenerDerivacionPorIdCtrl,
+  actualizarDerivacionCtrl,
+  cambiarEstadoDerivacionCtrl,
+  obtenerDerivacionesPorEstadoCtrl,
+  obtenerDerivacionesRecientesCtrl
 } from '../controllers/estudianteController.js';
 
 const router = express.Router();
 
-// Rutas de estudiantes
+// ===== RUTAS DE ESTUDIANTES =====
+
+// Rutas básicas de estudiantes
 router.post('/', crearEstudianteCtrl);
 router.get('/', obtenerEstudiantesCtrl);
 router.get('/buscar', buscarEstudiantesCtrl);
 router.get('/activos', obtenerEstudiantesActivosCtrl);
 router.get('/estado/:estado', obtenerEstudiantesPorEstadoCtrl);
+router.get('/establecimiento/:establecimientoId', obtenerEstudiantesPorEstablecimientoCtrl);
 router.get('/rut/:rut', obtenerEstudiantePorRutCtrl);
 router.get('/:id', obtenerEstudiantePorIdCtrl);
 router.put('/:id', actualizarEstudianteCtrl);
-router.post('/:id/notas', agregarNotaEstudianteCtrl);
 router.put('/:id/estado', cambiarEstadoEstudianteCtrl);
 router.delete('/:id', eliminarEstudianteCtrl);
+
+// ===== RUTAS DE DERIVACIONES =====
+
+// Rutas de derivaciones por estudiante
+router.post('/:estudianteId/derivaciones', crearDerivacionCtrl);
+router.get('/:estudianteId/derivaciones', obtenerDerivacionesEstudianteCtrl);
+router.get('/:estudianteId/derivaciones/:derivacionId', obtenerDerivacionPorIdCtrl);
+router.put('/:estudianteId/derivaciones/:derivacionId', actualizarDerivacionCtrl);
+router.put('/:estudianteId/derivaciones/:derivacionId/estado', cambiarEstadoDerivacionCtrl);
+
+// Rutas globales de derivaciones
+router.get('/derivaciones/estado/:estado', obtenerDerivacionesPorEstadoCtrl);
+router.get('/derivaciones/recientes', obtenerDerivacionesRecientesCtrl);
 
 export default router; 

@@ -1,9 +1,10 @@
 import express from 'express';
 import authRoutes from './authRoutes.js';
 import estudianteRoutes from './estudianteRoutes.js';
-import casoRoutes from './casoRoutes.js';
-import informeRoutes from './informeRoutes.js';
-import alertaRoutes from './alertaRoutes.js';
+import establecimientoRoutes from './establecimientoRoutes.js';
+import citacionRoutes from './citacionRoutes.js';
+import formularioRoutes from './formularioRoutes.js';
+import actividadRoutes from './actividadRoutes.js';
 import intervencionRoutes from './intervencionRoutes.js';
 
 const router = express.Router();
@@ -11,23 +12,34 @@ const router = express.Router();
 // Rutas principales
 router.use('/auth', authRoutes);
 router.use('/estudiantes', estudianteRoutes);
-router.use('/casos', casoRoutes);
-router.use('/informes', informeRoutes);
-router.use('/alertas', alertaRoutes);
+router.use('/establecimientos', establecimientoRoutes);
+router.use('/citaciones', citacionRoutes);
+router.use('/formularios', formularioRoutes);
+router.use('/actividades', actividadRoutes);
 router.use('/intervenciones', intervencionRoutes);
 
 // Ruta de prueba
 router.get('/', (req, res) => {
   res.json({
     message: 'API DerivApp funcionando correctamente',
-    version: '1.0.0',
+    version: '2.0.0',
     endpoints: {
       auth: '/api/auth',
       estudiantes: '/api/estudiantes',
-      casos: '/api/casos',
-      informes: '/api/informes',
-      alertas: '/api/alertas',
+      establecimientos: '/api/establecimientos',
+      citaciones: '/api/citaciones',
+      formularios: '/api/formularios',
+      actividades: '/api/actividades',
       intervenciones: '/api/intervenciones'
+    },
+    estructura: {
+      estudiantes: {
+        derivaciones: '/api/estudiantes/:estudianteId/derivaciones',
+        intervenciones: '/api/estudiantes/:estudianteId/derivaciones/:derivacionId/intervenciones'
+      },
+      establecimientos: {
+        equipo: '/api/establecimientos/:id/equipo'
+      }
     }
   });
 });

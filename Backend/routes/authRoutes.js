@@ -5,17 +5,27 @@ import {
   obtenerPerfil,
   actualizarPerfil,
   cambiarPassword,
-  verificarUsuario
+  verificarUsuario,
+  obtenerUsuariosPorEstablecimientoCtrl,
+  obtenerUsuariosPorRolCtrl
 } from '../controllers/authController.js';
 
 const router = express.Router();
 
-// Rutas de autenticación
+// ===== RUTAS DE AUTENTICACIÓN =====
+
+// Rutas básicas de autenticación
 router.post('/registrar', registrarUsuario);
 router.post('/login', loginUsuario);
 router.post('/perfil', obtenerPerfil);
 router.put('/perfil', actualizarPerfil);
 router.put('/cambiar-password', cambiarPassword);
 router.post('/verificar', verificarUsuario);
+
+// ===== RUTAS DE USUARIOS =====
+
+// Rutas de consulta de usuarios
+router.get('/establecimiento/:establecimientoId', obtenerUsuariosPorEstablecimientoCtrl);
+router.get('/rol/:rol', obtenerUsuariosPorRolCtrl);
 
 export default router;
