@@ -1,5 +1,18 @@
 import db from '../config/fireBaseDB.js';
-import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
+import { 
+  collection, 
+  addDoc, 
+  getDocs, 
+  getDoc, 
+  doc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  where,
+  collectionGroup,
+  orderBy,
+  limit
+} from "firebase/firestore";
 
 // Validación de datos de estudiante
 const validarEstudiante = (estudiante) => {
@@ -17,16 +30,12 @@ const validarEstudiante = (estudiante) => {
     errores.push("El curso es obligatorio");
   }
   
-  if (!estudiante.estado || !['activo', 'inactivo', 'egresado'].includes(estudiante.estado)) {
-    errores.push("El estado debe ser: activo, inactivo o egresado");
+  if (!estudiante.establecimientoId || estudiante.establecimientoId.trim().length === 0) {
+    errores.push("El ID del establecimiento es obligatorio");
   }
   
-  if (!estudiante.fechaIngreso) {
-    errores.push("La fecha de ingreso es obligatoria");
-  }
-  
-  if (!estudiante.contactoApoderado || !estudiante.contactoApoderado.nombre) {
-    errores.push("El contacto del apoderado es obligatorio");
+  if (!estudiante.estado || !['activo', 'egresado', 'derivado'].includes(estudiante.estado)) {
+    errores.push("El estado debe ser: activo, egresado o derivado");
   }
   
   return {
@@ -45,11 +54,9 @@ export const crearEstudiante = async (datosEstudiante) => {
     
     const estudianteData = {
       ...datosEstudiante,
-      fechaIngreso: new Date(datosEstudiante.fechaIngreso),
-      fechaEgreso: datosEstudiante.fechaEgreso ? new Date(datosEstudiante.fechaEgreso) : null,
-      notas: datosEstudiante.notas || [],
-      creadoEn: new Date(),
-      actualizadoEn: new Date()
+      estado: datosEstudiante.estado || 'activo',
+      fecha_creacion: new Date(),
+      fecha_actualizacion: new Date()
     };
     
     const docRef = await addDoc(collection(db, "estudiantes"), estudianteData);
@@ -102,6 +109,28 @@ export const obtenerEstudiantePorRut = async (rut) => {
   }
 };
 
+// Obtener estudiantes por establecimiento
+export const obtenerEstudiantesPorEstablecimiento = async (establecimientoId) => {
+  try {
+    const q = query(collection(db, "estudiantes"), where("establecimientoId", "==", establecimientoId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    throw new Error(`Error al obtener estudiantes por establecimiento: ${error.message}`);
+  }
+};
+
+// Obtener estudiantes por estado
+export const obtenerEstudiantesPorEstado = async (estado) => {
+  try {
+    const q = query(collection(db, "estudiantes"), where("estado", "==", estado));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    throw new Error(`Error al obtener estudiantes por estado: ${error.message}`);
+  }
+};
+
 // Actualizar estudiante
 export const actualizarEstudiante = async (id, datosActualizados) => {
   try {
@@ -120,7 +149,7 @@ export const actualizarEstudiante = async (id, datosActualizados) => {
     
     const datosConTimestamp = {
       ...datosActualizados,
-      actualizadoEn: new Date()
+      fecha_actualizacion: new Date()
     };
     
     await updateDoc(docRef, datosConTimestamp);
@@ -130,58 +159,18 @@ export const actualizarEstudiante = async (id, datosActualizados) => {
   }
 };
 
-// Agregar nota a estudiante
-export const agregarNotaEstudiante = async (id, nota) => {
-  try {
-    const docRef = doc(db, "estudiantes", id);
-    const estudiante = await obtenerEstudiantePorId(id);
-    const notasActualizadas = [...estudiante.notas, nota];
-    
-    await updateDoc(docRef, {
-      notas: notasActualizadas,
-      actualizadoEn: new Date()
-    });
-    
-    return { message: "Nota agregada correctamente", notas: notasActualizadas };
-  } catch (error) {
-    throw new Error(`Error al agregar nota: ${error.message}`);
-  }
-};
-
 // Cambiar estado de estudiante
-export const cambiarEstadoEstudiante = async (id, nuevoEstado, fechaEgreso = null) => {
+export const cambiarEstadoEstudiante = async (id, nuevoEstado) => {
   try {
     const docRef = doc(db, "estudiantes", id);
-    const datosActualizados = {
+    await updateDoc(docRef, {
       estado: nuevoEstado,
-      actualizadoEn: new Date()
-    };
-    
-    if (nuevoEstado === 'egresado' && fechaEgreso) {
-      datosActualizados.fechaEgreso = new Date(fechaEgreso);
-    }
-    
-    await updateDoc(docRef, datosActualizados);
+      fecha_actualizacion: new Date()
+    });
     return { message: `Estudiante ${nuevoEstado} correctamente` };
   } catch (error) {
     throw new Error(`Error al cambiar estado: ${error.message}`);
   }
-};
-
-// Obtener estudiantes por estado
-export const obtenerEstudiantesPorEstado = async (estado) => {
-  try {
-    const q = query(collection(db, "estudiantes"), where("estado", "==", estado));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  } catch (error) {
-    throw new Error(`Error al obtener estudiantes por estado: ${error.message}`);
-  }
-};
-
-// Obtener estudiantes activos
-export const obtenerEstudiantesActivos = async () => {
-  return await obtenerEstudiantesPorEstado('activo');
 };
 
 // Eliminar estudiante
@@ -195,16 +184,130 @@ export const eliminarEstudiante = async (id) => {
   }
 };
 
+// ===== MÉTODOS PARA SUBCOLECCIÓN DERIVACIONES =====
+
+// Crear una nueva derivación para un estudiante
+export const crearDerivacion = async (estudianteId, datosDerivacion) => {
+  try {
+    const derivacionData = {
+      ...datosDerivacion,
+      fecha_derivacion: new Date(datosDerivacion.fecha_derivacion || new Date()),
+      estado: datosDerivacion.estado || 'en_proceso',
+      fecha_creacion: new Date(),
+      fecha_actualizacion: new Date()
+    };
+    
+    const derivacionRef = collection(db, "estudiantes", estudianteId, "derivaciones");
+    const docRef = await addDoc(derivacionRef, derivacionData);
+    return { id: docRef.id, ...derivacionData };
+  } catch (error) {
+    throw new Error(`Error al crear derivación: ${error.message}`);
+  }
+};
+
+// Obtener todas las derivaciones de un estudiante
+export const obtenerDerivacionesEstudiante = async (estudianteId) => {
+  try {
+    const derivacionesRef = collection(db, "estudiantes", estudianteId, "derivaciones");
+    const querySnapshot = await getDocs(derivacionesRef);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    throw new Error(`Error al obtener derivaciones del estudiante: ${error.message}`);
+  }
+};
+
+// Obtener una derivación específica
+export const obtenerDerivacionPorId = async (estudianteId, derivacionId) => {
+  try {
+    const derivacionRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId);
+    const docSnap = await getDoc(derivacionRef);
+    
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    } else {
+      throw new Error("Derivación no encontrada");
+    }
+  } catch (error) {
+    throw new Error(`Error al obtener derivación: ${error.message}`);
+  }
+};
+
+// Actualizar derivación
+export const actualizarDerivacion = async (estudianteId, derivacionId, datosActualizados) => {
+  try {
+    const derivacionRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId);
+    
+    const datosConTimestamp = {
+      ...datosActualizados,
+      fecha_actualizacion: new Date()
+    };
+    
+    await updateDoc(derivacionRef, datosConTimestamp);
+    return { id: derivacionId, ...datosConTimestamp };
+  } catch (error) {
+    throw new Error(`Error al actualizar derivación: ${error.message}`);
+  }
+};
+
+// Cambiar estado de derivación
+export const cambiarEstadoDerivacion = async (estudianteId, derivacionId, nuevoEstado) => {
+  try {
+    const derivacionRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId);
+    await updateDoc(derivacionRef, {
+      estado: nuevoEstado,
+      fecha_actualizacion: new Date()
+    });
+    return { message: `Derivación ${nuevoEstado} correctamente` };
+  } catch (error) {
+    throw new Error(`Error al cambiar estado de derivación: ${error.message}`);
+  }
+};
+
+// Obtener derivaciones por estado
+export const obtenerDerivacionesPorEstado = async (estado) => {
+  try {
+    // Usar collectionGroup para buscar en todas las subcolecciones de derivaciones
+    const derivacionesRef = collectionGroup(db, "derivaciones");
+    const q = query(derivacionesRef, where("estado", "==", estado));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    throw new Error(`Error al obtener derivaciones por estado: ${error.message}`);
+  }
+};
+
+// Obtener derivaciones recientes
+export const obtenerDerivacionesRecientes = async (limite = 10) => {
+  try {
+    const derivacionesRef = collectionGroup(db, "derivaciones");
+    const q = query(
+      derivacionesRef, 
+      orderBy("fecha_derivacion", "desc"), 
+      limit(limite)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    throw new Error(`Error al obtener derivaciones recientes: ${error.message}`);
+  }
+};
+
 export default {
   crearEstudiante,
   obtenerEstudiantes,
   obtenerEstudiantePorId,
   obtenerEstudiantePorRut,
-  actualizarEstudiante,
-  agregarNotaEstudiante,
-  cambiarEstadoEstudiante,
+  obtenerEstudiantesPorEstablecimiento,
   obtenerEstudiantesPorEstado,
-  obtenerEstudiantesActivos,
+  actualizarEstudiante,
+  cambiarEstadoEstudiante,
   eliminarEstudiante,
+  crearDerivacion,
+  obtenerDerivacionesEstudiante,
+  obtenerDerivacionPorId,
+  actualizarDerivacion,
+  cambiarEstadoDerivacion,
+  obtenerDerivacionesPorEstado,
+  obtenerDerivacionesRecientes,
   validarEstudiante
 };

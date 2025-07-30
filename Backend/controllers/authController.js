@@ -1,25 +1,32 @@
-import { crearUsuario, obtenerUsuarioPorCorreo, obtenerUsuarioPorId, actualizarUsuario } from '../models/Usuario.js';
+import { 
+  crearUsuario, 
+  obtenerUsuarioPorEmail, 
+  obtenerUsuarioPorId, 
+  actualizarUsuario,
+  obtenerUsuariosPorEstablecimiento,
+  obtenerUsuariosPorRol
+} from '../models/Usuario.js';
 
 // Registro de usuario
 export const registrarUsuario = async (req, res) => {
   try {
-    const { nombre, correo, rol, telefono, password } = req.body;
+    const { nombre, email, rol, telefono, password, establecimientoId } = req.body;
 
     // Verificar si el usuario ya existe
-    const usuarioExistente = await obtenerUsuarioPorCorreo(correo);
+    const usuarioExistente = await obtenerUsuarioPorEmail(email);
     if (usuarioExistente) {
       return res.status(400).json({ 
-        error: 'El correo electrónico ya está registrado' 
+        error: 'El email ya está registrado' 
       });
     }
 
     // Crear usuario
     const nuevoUsuario = await crearUsuario({
       nombre,
-      correo,
+      email,
       rol,
       telefono,
-      activo: true,
+      establecimientoId,
       password: password
     });
 
@@ -43,27 +50,20 @@ export const registrarUsuario = async (req, res) => {
 // Login de usuario
 export const loginUsuario = async (req, res) => {
   try {
-    const { correo, password } = req.body;
+    const { email, password } = req.body;
 
     // Validar campos requeridos
-    if (!correo || !password) {
+    if (!email || !password) {
       return res.status(400).json({ 
-        error: 'Correo y contraseña son requeridos' 
+        error: 'Email y contraseña son requeridos' 
       });
     }
 
-    // Buscar usuario por correo
-    const usuario = await obtenerUsuarioPorCorreo(correo);
+    // Buscar usuario por email
+    const usuario = await obtenerUsuarioPorEmail(email);
     if (!usuario) {
       return res.status(401).json({ 
         error: 'Credenciales inválidas' 
-      });
-    }
-
-    // Verificar si el usuario está activo
-    if (!usuario.activo) {
-      return res.status(401).json({ 
-        error: 'Usuario inactivo' 
       });
     }
 
@@ -129,7 +129,7 @@ export const obtenerPerfil = async (req, res) => {
 // Actualizar perfil del usuario
 export const actualizarPerfil = async (req, res) => {
   try {
-    const { userId, nombre, telefono } = req.body;
+    const { userId, nombre, telefono, email } = req.body;
 
     if (!userId) {
       return res.status(400).json({
@@ -144,11 +144,19 @@ export const actualizarPerfil = async (req, res) => {
       });
     }
 
+    if (email && !email.includes('@')) {
+      return res.status(400).json({ 
+        error: 'El email no es válido' 
+      });
+    }
+
     // Actualizar usuario
-    const usuarioActualizado = await actualizarUsuario(userId, {
-      nombre,
-      telefono
-    });
+    const datosActualizados = { nombre, telefono };
+    if (email) {
+      datosActualizados.email = email;
+    }
+
+    const usuarioActualizado = await actualizarUsuario(userId, datosActualizados);
 
     // Remover password de la respuesta
     const { password: _, ...usuarioSinPassword } = usuarioActualizado;
@@ -260,11 +268,79 @@ export const verificarUsuario = async (req, res) => {
   }
 };
 
+// Obtener usuarios por establecimiento
+export const obtenerUsuariosPorEstablecimientoCtrl = async (req, res) => {
+  try {
+    const { establecimientoId } = req.params;
+    
+    if (!establecimientoId) {
+      return res.status(400).json({
+        error: 'ID del establecimiento es requerido'
+      });
+    }
+    
+    const usuarios = await obtenerUsuariosPorEstablecimiento(establecimientoId);
+    
+    // Remover passwords de la respuesta
+    const usuariosSinPassword = usuarios.map(usuario => {
+      const { password: _, ...usuarioSinPassword } = usuario;
+      return usuarioSinPassword;
+    });
+    
+    res.json({
+      usuarios: usuariosSinPassword,
+      total: usuariosSinPassword.length,
+      establecimientoId
+    });
+  } catch (error) {
+    console.error('Error al obtener usuarios por establecimiento:', error);
+    res.status(500).json({
+      error: 'Error al obtener usuarios',
+      details: error.message
+    });
+  }
+};
+
+// Obtener usuarios por rol
+export const obtenerUsuariosPorRolCtrl = async (req, res) => {
+  try {
+    const { rol } = req.params;
+    
+    if (!['docente', 'trabajador_social', 'jefe_convivencia'].includes(rol)) {
+      return res.status(400).json({
+        error: 'Rol inválido. Debe ser: docente, trabajador_social o jefe_convivencia'
+      });
+    }
+    
+    const usuarios = await obtenerUsuariosPorRol(rol);
+    
+    // Remover passwords de la respuesta
+    const usuariosSinPassword = usuarios.map(usuario => {
+      const { password: _, ...usuarioSinPassword } = usuario;
+      return usuarioSinPassword;
+    });
+    
+    res.json({
+      usuarios: usuariosSinPassword,
+      total: usuariosSinPassword.length,
+      rol
+    });
+  } catch (error) {
+    console.error('Error al obtener usuarios por rol:', error);
+    res.status(500).json({
+      error: 'Error al obtener usuarios',
+      details: error.message
+    });
+  }
+};
+
 export default {
   registrarUsuario,
   loginUsuario,
   obtenerPerfil,
   actualizarPerfil,
   cambiarPassword,
-  verificarUsuario
+  verificarUsuario,
+  obtenerUsuariosPorEstablecimientoCtrl,
+  obtenerUsuariosPorRolCtrl
 };

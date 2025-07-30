@@ -4,12 +4,22 @@ import {
   obtenerEstudiantePorId,
   obtenerEstudiantePorRut,
   actualizarEstudiante,
-  agregarNotaEstudiante,
   cambiarEstadoEstudiante,
   obtenerEstudiantesPorEstado,
   obtenerEstudiantesActivos,
-  eliminarEstudiante
+  obtenerEstudiantesPorEstablecimiento,
+  eliminarEstudiante,
+  // Métodos de derivaciones
+  crearDerivacion,
+  obtenerDerivacionesEstudiante,
+  obtenerDerivacionPorId,
+  actualizarDerivacion,
+  cambiarEstadoDerivacion,
+  obtenerDerivacionesPorEstado,
+  obtenerDerivacionesRecientes
 } from '../models/Estudiante.js';
+
+// ===== CONTROLADORES DE ESTUDIANTES =====
 
 // Crear un nuevo estudiante
 export const crearEstudianteCtrl = async (req, res) => {
@@ -118,51 +128,19 @@ export const actualizarEstudianteCtrl = async (req, res) => {
   }
 };
 
-// Agregar nota a estudiante
-export const agregarNotaEstudianteCtrl = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { nota } = req.body;
-    
-    if (!nota || nota.trim().length === 0) {
-      return res.status(400).json({
-        error: 'La nota es requerida'
-      });
-    }
-    
-    const resultado = await agregarNotaEstudiante(id, nota);
-    
-    res.json({
-      message: resultado.message,
-      notas: resultado.notas
-    });
-  } catch (error) {
-    console.error('Error al agregar nota:', error);
-    if (error.message.includes('no encontrado')) {
-      return res.status(404).json({
-        error: 'Estudiante no encontrado'
-      });
-    }
-    res.status(500).json({
-      error: 'Error al agregar nota',
-      details: error.message
-    });
-  }
-};
-
 // Cambiar estado de estudiante
 export const cambiarEstadoEstudianteCtrl = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nuevoEstado, fechaEgreso } = req.body;
+    const { nuevoEstado } = req.body;
     
-    if (!nuevoEstado || !['activo', 'inactivo', 'egresado'].includes(nuevoEstado)) {
+    if (!nuevoEstado || !['activo', 'egresado', 'derivado'].includes(nuevoEstado)) {
       return res.status(400).json({
-        error: 'Estado inválido. Debe ser: activo, inactivo o egresado'
+        error: 'Estado inválido. Debe ser: activo, egresado o derivado'
       });
     }
     
-    const resultado = await cambiarEstadoEstudiante(id, nuevoEstado, fechaEgreso);
+    const resultado = await cambiarEstadoEstudiante(id, nuevoEstado);
     
     res.json({
       message: resultado.message
@@ -186,9 +164,9 @@ export const obtenerEstudiantesPorEstadoCtrl = async (req, res) => {
   try {
     const { estado } = req.params;
     
-    if (!['activo', 'inactivo', 'egresado'].includes(estado)) {
+    if (!['activo', 'egresado', 'derivado'].includes(estado)) {
       return res.status(400).json({
-        error: 'Estado inválido. Debe ser: activo, inactivo o egresado'
+        error: 'Estado inválido. Debe ser: activo, egresado o derivado'
       });
     }
     
@@ -201,6 +179,33 @@ export const obtenerEstudiantesPorEstadoCtrl = async (req, res) => {
     });
   } catch (error) {
     console.error('Error al obtener estudiantes por estado:', error);
+    res.status(500).json({
+      error: 'Error al obtener estudiantes',
+      details: error.message
+    });
+  }
+};
+
+// Obtener estudiantes por establecimiento
+export const obtenerEstudiantesPorEstablecimientoCtrl = async (req, res) => {
+  try {
+    const { establecimientoId } = req.params;
+    
+    if (!establecimientoId) {
+      return res.status(400).json({
+        error: 'ID del establecimiento es requerido'
+      });
+    }
+    
+    const estudiantes = await obtenerEstudiantesPorEstablecimiento(establecimientoId);
+    
+    res.json({
+      estudiantes,
+      total: estudiantes.length,
+      establecimientoId
+    });
+  } catch (error) {
+    console.error('Error al obtener estudiantes por establecimiento:', error);
     res.status(500).json({
       error: 'Error al obtener estudiantes',
       details: error.message
@@ -283,16 +288,191 @@ export const buscarEstudiantesCtrl = async (req, res) => {
   }
 };
 
+// ===== CONTROLADORES DE DERIVACIONES =====
+
+// Crear una nueva derivación
+export const crearDerivacionCtrl = async (req, res) => {
+  try {
+    const { estudianteId } = req.params;
+    const nuevaDerivacion = await crearDerivacion(estudianteId, req.body);
+    
+    res.status(201).json({
+      message: 'Derivación creada exitosamente',
+      derivacion: nuevaDerivacion
+    });
+  } catch (error) {
+    console.error('Error al crear derivación:', error);
+    res.status(400).json({
+      error: 'Error al crear derivación',
+      details: error.message
+    });
+  }
+};
+
+// Obtener derivaciones de un estudiante
+export const obtenerDerivacionesEstudianteCtrl = async (req, res) => {
+  try {
+    const { estudianteId } = req.params;
+    const derivaciones = await obtenerDerivacionesEstudiante(estudianteId);
+    
+    res.json({
+      derivaciones,
+      total: derivaciones.length,
+      estudianteId
+    });
+  } catch (error) {
+    console.error('Error al obtener derivaciones del estudiante:', error);
+    res.status(500).json({
+      error: 'Error al obtener derivaciones',
+      details: error.message
+    });
+  }
+};
+
+// Obtener derivación por ID
+export const obtenerDerivacionPorIdCtrl = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId } = req.params;
+    const derivacion = await obtenerDerivacionPorId(estudianteId, derivacionId);
+    
+    res.json({
+      derivacion
+    });
+  } catch (error) {
+    console.error('Error al obtener derivación:', error);
+    if (error.message.includes('no encontrada')) {
+      return res.status(404).json({
+        error: 'Derivación no encontrada'
+      });
+    }
+    res.status(500).json({
+      error: 'Error al obtener derivación',
+      details: error.message
+    });
+  }
+};
+
+// Actualizar derivación
+export const actualizarDerivacionCtrl = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId } = req.params;
+    const derivacionActualizada = await actualizarDerivacion(estudianteId, derivacionId, req.body);
+    
+    res.json({
+      message: 'Derivación actualizada exitosamente',
+      derivacion: derivacionActualizada
+    });
+  } catch (error) {
+    console.error('Error al actualizar derivación:', error);
+    if (error.message.includes('no encontrada')) {
+      return res.status(404).json({
+        error: 'Derivación no encontrada'
+      });
+    }
+    res.status(400).json({
+      error: 'Error al actualizar derivación',
+      details: error.message
+    });
+  }
+};
+
+// Cambiar estado de derivación
+export const cambiarEstadoDerivacionCtrl = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId } = req.params;
+    const { nuevoEstado } = req.body;
+    
+    if (!nuevoEstado || !['en_proceso', 'cerrado', 'en_alerta'].includes(nuevoEstado)) {
+      return res.status(400).json({
+        error: 'Estado inválido. Debe ser: en_proceso, cerrado o en_alerta'
+      });
+    }
+    
+    const resultado = await cambiarEstadoDerivacion(estudianteId, derivacionId, nuevoEstado);
+    
+    res.json({
+      message: resultado.message
+    });
+  } catch (error) {
+    console.error('Error al cambiar estado de derivación:', error);
+    if (error.message.includes('no encontrada')) {
+      return res.status(404).json({
+        error: 'Derivación no encontrada'
+      });
+    }
+    res.status(500).json({
+      error: 'Error al cambiar estado',
+      details: error.message
+    });
+  }
+};
+
+// Obtener derivaciones por estado
+export const obtenerDerivacionesPorEstadoCtrl = async (req, res) => {
+  try {
+    const { estado } = req.params;
+    
+    if (!['en_proceso', 'cerrado', 'en_alerta'].includes(estado)) {
+      return res.status(400).json({
+        error: 'Estado inválido. Debe ser: en_proceso, cerrado o en_alerta'
+      });
+    }
+    
+    const derivaciones = await obtenerDerivacionesPorEstado(estado);
+    
+    res.json({
+      derivaciones,
+      total: derivaciones.length,
+      estado
+    });
+  } catch (error) {
+    console.error('Error al obtener derivaciones por estado:', error);
+    res.status(500).json({
+      error: 'Error al obtener derivaciones',
+      details: error.message
+    });
+  }
+};
+
+// Obtener derivaciones recientes
+export const obtenerDerivacionesRecientesCtrl = async (req, res) => {
+  try {
+    const { limite = 10 } = req.query;
+    const derivaciones = await obtenerDerivacionesRecientes(parseInt(limite));
+    
+    res.json({
+      derivaciones,
+      total: derivaciones.length,
+      limite: parseInt(limite)
+    });
+  } catch (error) {
+    console.error('Error al obtener derivaciones recientes:', error);
+    res.status(500).json({
+      error: 'Error al obtener derivaciones recientes',
+      details: error.message
+    });
+  }
+};
+
 export default {
+  // Métodos de estudiantes
   crearEstudianteCtrl,
   obtenerEstudiantesCtrl,
   obtenerEstudiantePorIdCtrl,
   obtenerEstudiantePorRutCtrl,
   actualizarEstudianteCtrl,
-  agregarNotaEstudianteCtrl,
   cambiarEstadoEstudianteCtrl,
   obtenerEstudiantesPorEstadoCtrl,
+  obtenerEstudiantesPorEstablecimientoCtrl,
   obtenerEstudiantesActivosCtrl,
   eliminarEstudianteCtrl,
-  buscarEstudiantesCtrl
+  buscarEstudiantesCtrl,
+  // Métodos de derivaciones
+  crearDerivacionCtrl,
+  obtenerDerivacionesEstudianteCtrl,
+  obtenerDerivacionPorIdCtrl,
+  actualizarDerivacionCtrl,
+  cambiarEstadoDerivacionCtrl,
+  obtenerDerivacionesPorEstadoCtrl,
+  obtenerDerivacionesRecientesCtrl
 };
