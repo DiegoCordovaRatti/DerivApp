@@ -131,6 +131,17 @@ export const obtenerEstudiantesPorEstado = async (estado) => {
   }
 };
 
+// Obtener estudiantes activos
+export const obtenerEstudiantesActivos = async () => {
+  try {
+    const q = query(collection(db, "estudiantes"), where("estado", "==", "activo"));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    throw new Error(`Error al obtener estudiantes activos: ${error.message}`);
+  }
+};
+
 // Actualizar estudiante
 export const actualizarEstudiante = async (id, datosActualizados) => {
   try {
@@ -299,6 +310,7 @@ export default {
   obtenerEstudiantePorRut,
   obtenerEstudiantesPorEstablecimiento,
   obtenerEstudiantesPorEstado,
+  obtenerEstudiantesActivos,
   actualizarEstudiante,
   cambiarEstadoEstudiante,
   eliminarEstudiante,

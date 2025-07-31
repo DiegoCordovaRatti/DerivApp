@@ -4,8 +4,8 @@ import {
   obtenerEstablecimientoPorId,
   actualizarEstablecimiento,
   eliminarEstablecimiento,
-  agregarUsuarioAEquipo,
-  removerUsuarioDeEquipo,
+  agregarMiembroEquipo,
+  removerMiembroEquipo,
   obtenerEstablecimientosPorComuna,
   obtenerEstablecimientosPorRegion
 } from '../models/Establecimiento.js';
@@ -128,7 +128,7 @@ export const agregarUsuarioAEquipoCtrl = async (req, res) => {
       });
     }
     
-    const resultado = await agregarUsuarioAEquipo(id, usuarioId);
+    const resultado = await agregarMiembroEquipo(id, usuarioId);
     
     res.json({
       message: resultado.message,
@@ -165,7 +165,7 @@ export const removerUsuarioDeEquipoCtrl = async (req, res) => {
       });
     }
     
-    const resultado = await removerUsuarioDeEquipo(id, usuarioId);
+    const resultado = await removerMiembroEquipo(id, usuarioId);
     
     res.json({
       message: resultado.message,

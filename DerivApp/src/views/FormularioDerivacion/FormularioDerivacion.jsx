@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Form,
   Input,
@@ -14,6 +14,7 @@ import {
   message,
   AutoComplete,
   Modal,
+  Spin
 } from 'antd';
 import {
   UserOutlined,
@@ -30,6 +31,12 @@ import {
   PlusOutlined,
   UserAddOutlined
 } from '@ant-design/icons';
+import { 
+  obtenerEstudiantes, 
+  crearEstudiante, 
+  buscarEstudiantes,
+  crearDerivacion 
+} from '../../services/estudianteService';
 import './FormularioDerivacion.scss';
 
 const { Title, Text } = Typography;
@@ -40,92 +47,37 @@ const { Panel } = Collapse;
 const FormularioDerivacion = () => {
   const [form] = Form.useForm();
   const [formEstudiante] = Form.useForm();
-  const [activeKeys, setActiveKeys] = useState(['1']); // Datos del estudiante y Motivo expandidos
+  const [activeKeys, setActiveKeys] = useState(['1']); // Datos del estudiante expandidos
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [mockEstudiantes, setMockEstudiantes] = useState([
-    {
-      id: "std_001",
-      nombre: "María Fernanda González Silva",
-      rut: "18.456.789-2",
-      curso: "4°A",
-      establecimientoId: "RBD9493",
-      estado: "activo",
-      fecha_creacion: new Date("2024-01-15"),
-      fecha_actualizacion: new Date("2024-01-15"),
-      // Campos adicionales del formulario
-      telefono_contacto: "+56 9 1234 5678",
-      email_contacto: "maria.gonzalez@email.com",
-      direccion: "Av. Providencia 1234, Providencia, Santiago",
-      apoderado: "Juan Carlos González"
-    },
-    {
-      id: "std_002",
-      nombre: "Carlos Andrés Pérez Rodríguez",
-      rut: "19.234.567-8",
-      curso: "3°B",
-      establecimientoId: "RBD9493",
-      estado: "activo",
-      fecha_creacion: new Date("2024-01-20"),
-      fecha_actualizacion: new Date("2024-02-10"),
-      // Campos adicionales del formulario
-      telefono_contacto: "+56 9 2345 6789",
-      email_contacto: "carlos.perez@email.com",
-      direccion: "Calle Las Condes 567, Las Condes, Santiago",
-      apoderado: "Ana María Pérez"
-    },
-    {
-      id: "std_003",
-      nombre: "Valentina Sofía Herrera Martínez",
-      rut: "20.345.678-9",
-      curso: "5°C",
-      establecimientoId: "RBD9493",
-      estado: "derivado",
-      fecha_creacion: new Date("2024-01-10"),
-      fecha_actualizacion: new Date("2024-03-05"),
-      // Campos adicionales del formulario
-      telefono_contacto: "+56 9 3456 7890",
-      email_contacto: "valentina.herrera@email.com",
-      direccion: "Pasaje Ñuñoa 890, Ñuñoa, Santiago",
-      apoderado: "Roberto Herrera"
-    },
-    {
-      id: "std_004",
-      nombre: "Diego Alejandro Morales Fuentes",
-      rut: "21.456.789-0",
-      curso: "2°A",
-      establecimientoId: "RBD9493",
-      estado: "activo",
-      fecha_creacion: new Date("2024-02-01"),
-      fecha_actualizacion: new Date("2024-02-01"),
-      // Campos adicionales del formulario
-      telefono_contacto: "+56 9 4567 8901",
-      email_contacto: "diego.morales@email.com",
-      direccion: "Av. Vitacura 2345, Vitacura, Santiago",
-      apoderado: "Patricia Fuentes"
-    },
-    {
-      id: "std_005",
-      nombre: "Isabella Camila Rojas Vargas",
-      rut: "22.567.890-1",
-      curso: "6°B",
-      establecimientoId: "RBD9493",
-      estado: "egresado",
-      fecha_creacion: new Date("2023-03-15"),
-      fecha_actualizacion: new Date("2024-01-30"),
-      // Campos adicionales del formulario
-      telefono_contacto: "+56 9 5678 9012",
-      email_contacto: "isabella.rojas@email.com",
-      direccion: "Calle Lo Barnechea 3456, Lo Barnechea, Santiago",
-      apoderado: "Miguel Rojas"
+  const [estudiantes, setEstudiantes] = useState([]);
+  const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
+  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
+
+  // Cargar estudiantes al montar el componente
+  useEffect(() => {
+    cargarEstudiantes();
+  }, []);
+
+  // Función para cargar todos los estudiantes
+  const cargarEstudiantes = async () => {
+    try {
+      setLoadingEstudiantes(true);
+      const response = await obtenerEstudiantes();
+      setEstudiantes(response.estudiantes || []);
+    } catch (error) {
+      console.error('Error al cargar estudiantes:', error);
+      message.error('Error al cargar la lista de estudiantes');
+    } finally {
+      setLoadingEstudiantes(false);
     }
-  ]);
+  };
 
   // Función para filtrar estudiantes por nombre
   const filtrarEstudiantes = (searchText) => {
     if (!searchText) return [];
     
-    return mockEstudiantes
+    return estudiantes
       .filter(estudiante => 
         estudiante.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
         estudiante.rut.includes(searchText) ||
@@ -177,22 +129,23 @@ const FormularioDerivacion = () => {
 
   // Función para autocompletar campos cuando se selecciona un estudiante
   const handleEstudianteSelect = (value, option) => {
-    const estudianteSeleccionado = option.estudiante;
+    const estudiante = option.estudiante;
     
-    if (estudianteSeleccionado) {
+    if (estudiante) {
+      setEstudianteSeleccionado(estudiante);
       form.setFieldsValue({
-        nombre: estudianteSeleccionado.nombre,
-        rut: estudianteSeleccionado.rut,
-        curso: estudianteSeleccionado.curso,
-        establecimientoId: estudianteSeleccionado.establecimientoId,
-        estado: estudianteSeleccionado.estado,
-        telefono_contacto: estudianteSeleccionado.telefono_contacto,
-        email_contacto: estudianteSeleccionado.email_contacto,
-        apoderado: estudianteSeleccionado.apoderado,
-        direccion: estudianteSeleccionado.direccion
+        nombre: estudiante.nombre,
+        rut: estudiante.rut,
+        curso: estudiante.curso,
+        establecimientoId: estudiante.establecimientoId,
+        estado: estudiante.estado,
+        telefono_contacto: estudiante.telefono_contacto || '',
+        email_contacto: estudiante.email_contacto || '',
+        apoderado: estudiante.apoderado || '',
+        direccion: estudiante.direccion || ''
       });
       
-      message.success(`Estudiante seleccionado: ${estudianteSeleccionado.nombre}`);
+      message.success(`Estudiante seleccionado: ${estudiante.nombre}`);
     }
   };
 
@@ -200,6 +153,7 @@ const FormularioDerivacion = () => {
   const handleSearchChange = (value) => {
     if (!value) {
       // Limpiar campos si se borra la búsqueda
+      setEstudianteSeleccionado(null);
       form.setFieldsValue({
         nombre: '',
         rut: '',
@@ -228,42 +182,39 @@ const FormularioDerivacion = () => {
   // Función para crear un nuevo estudiante
   const handleCrearEstudiante = async () => {
     try {
+      setLoading(true);
       const values = await formEstudiante.validateFields();
       
-      // Generar ID único
-      const nuevoId = `std_${String(mockEstudiantes.length + 1).padStart(3, '0')}`;
+      // Crear el estudiante en la base de datos
+      const response = await crearEstudiante(values);
+      const nuevoEstudiante = response.estudiante;
       
-      const nuevoEstudiante = {
-        id: nuevoId,
-        ...values,
-        estado: values.estado || 'activo',
-        fecha_creacion: new Date(),
-        fecha_actualizacion: new Date()
-      };
-      
-      // Agregar el nuevo estudiante al array
-      setMockEstudiantes(prev => [...prev, nuevoEstudiante]);
+      // Agregar el nuevo estudiante a la lista local
+      setEstudiantes(prev => [...prev, nuevoEstudiante]);
       
       message.success(`Estudiante creado exitosamente: ${nuevoEstudiante.nombre}`);
       handleCancel();
       
-      // Opcional: Seleccionar automáticamente el nuevo estudiante
+      // Seleccionar automáticamente el nuevo estudiante
+      setEstudianteSeleccionado(nuevoEstudiante);
       form.setFieldsValue({
-        estudiante_id: nuevoId,
+        estudiante_id: nuevoEstudiante.id,
         nombre: nuevoEstudiante.nombre,
         rut: nuevoEstudiante.rut,
         curso: nuevoEstudiante.curso,
         establecimientoId: nuevoEstudiante.establecimientoId,
         estado: nuevoEstudiante.estado,
-        telefono_contacto: nuevoEstudiante.telefono_contacto,
-        email_contacto: nuevoEstudiante.email_contacto,
-        apoderado: nuevoEstudiante.apoderado,
-        direccion: nuevoEstudiante.direccion
+        telefono_contacto: nuevoEstudiante.telefono_contacto || '',
+        email_contacto: nuevoEstudiante.email_contacto || '',
+        apoderado: nuevoEstudiante.apoderado || '',
+        direccion: nuevoEstudiante.direccion || ''
       });
       
     } catch (error) {
       console.error('Error al crear estudiante:', error);
-      message.error('Error al crear el estudiante');
+      message.error(error.message || 'Error al crear el estudiante');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -289,12 +240,34 @@ const FormularioDerivacion = () => {
     try {
       setLoading(true);
       const values = await form.validateFields();
-      console.log('Datos del formulario (enviar):', values);
+      
+      if (!estudianteSeleccionado) {
+        message.error('Debe seleccionar un estudiante');
+        return;
+      }
+
+      // Preparar datos de la derivación
+      const datosDerivacion = {
+        fecha_derivacion: values.fecha_derivacion?.toISOString() || new Date().toISOString(),
+        estado: values.estado_derivacion,
+        motivo: values.motivo,
+        derivado_por: values.derivado_por,
+        responsable_id: values.responsable_id,
+        prioridad: values.prioridad,
+        tipo_caso: values.tipo_caso,
+        observaciones: values.observaciones
+      };
+
+      // Crear la derivación en la base de datos
+      const response = await crearDerivacion(estudianteSeleccionado.id, datosDerivacion);
+      
       message.success('Derivación enviada correctamente');
       form.resetFields();
+      setEstudianteSeleccionado(null);
+      
     } catch (error) {
       console.error('Error al enviar derivación:', error);
-      message.error('Error al enviar la derivación');
+      message.error(error.message || 'Error al enviar la derivación');
     } finally {
       setLoading(false);
     }
@@ -381,8 +354,8 @@ const FormularioDerivacion = () => {
                     placeholder="Escriba el nombre, RUT o curso del estudiante"
                     size="large"
                     prefix={<SearchOutlined />}
-                    options={mockEstudiantes.map(estudiante => ({
-                      value: estudiante.id,
+                    options={estudiantes.map(estudiante => ({
+                      value: estudiante.nombre,
                       label: (
                         <div style={{ 
                           display: 'flex', 
@@ -416,7 +389,15 @@ const FormularioDerivacion = () => {
                     allowClear
                     style={{ width: '100%' }}
                     onSearchChange={handleSearchChange}
-                    notFoundContent="No se encontraron estudiantes"
+                    notFoundContent={
+                      loadingEstudiantes ? (
+                        <div style={{ textAlign: 'center', padding: '10px' }}>
+                          <Spin size="small" /> Cargando estudiantes...
+                        </div>
+                      ) : (
+                        "No se encontraron estudiantes"
+                      )
+                    }
                     dropdownStyle={{ 
                       maxHeight: '300px',
                       overflow: 'auto'
@@ -808,6 +789,7 @@ const FormularioDerivacion = () => {
             type="primary" 
             onClick={handleCrearEstudiante}
             icon={<PlusOutlined />}
+            loading={loading}
           >
             Crear Estudiante
           </Button>

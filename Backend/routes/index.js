@@ -6,6 +6,7 @@ import citacionRoutes from './citacionRoutes.js';
 import formularioRoutes from './formularioRoutes.js';
 import actividadRoutes from './actividadRoutes.js';
 import intervencionRoutes from './intervencionRoutes.js';
+import derivacionRoutes from './derivacionRoutes.js';
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.use('/citaciones', citacionRoutes);
 router.use('/formularios', formularioRoutes);
 router.use('/actividades', actividadRoutes);
 router.use('/intervenciones', intervencionRoutes);
+router.use('/derivaciones', derivacionRoutes);
 
 // Ruta de prueba
 router.get('/', (req, res) => {
@@ -30,7 +32,8 @@ router.get('/', (req, res) => {
       citaciones: '/api/citaciones',
       formularios: '/api/formularios',
       actividades: '/api/actividades',
-      intervenciones: '/api/intervenciones'
+      intervenciones: '/api/intervenciones',
+      derivaciones: '/api/derivaciones'
     },
     estructura: {
       estudiantes: {
