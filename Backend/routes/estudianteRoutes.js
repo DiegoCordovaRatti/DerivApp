@@ -36,7 +36,7 @@ router.get('/establecimiento/:establecimientoId', obtenerEstudiantesPorEstableci
 router.get('/rut/:rut', obtenerEstudiantePorRutCtrl);
 router.get('/:id', obtenerEstudiantePorIdCtrl);
 router.put('/:id', actualizarEstudianteCtrl);
-router.put('/:id/estado', cambiarEstadoEstudianteCtrl);
+router.patch('/:id/estado', cambiarEstadoEstudianteCtrl);
 router.delete('/:id', eliminarEstudianteCtrl);
 
 // ===== RUTAS DE DERIVACIONES =====
@@ -46,10 +46,6 @@ router.post('/:estudianteId/derivaciones', crearDerivacionCtrl);
 router.get('/:estudianteId/derivaciones', obtenerDerivacionesEstudianteCtrl);
 router.get('/:estudianteId/derivaciones/:derivacionId', obtenerDerivacionPorIdCtrl);
 router.put('/:estudianteId/derivaciones/:derivacionId', actualizarDerivacionCtrl);
-router.put('/:estudianteId/derivaciones/:derivacionId/estado', cambiarEstadoDerivacionCtrl);
-
-// Rutas globales de derivaciones
-router.get('/derivaciones/estado/:estado', obtenerDerivacionesPorEstadoCtrl);
-router.get('/derivaciones/recientes', obtenerDerivacionesRecientesCtrl);
+router.patch('/:estudianteId/derivaciones/:derivacionId/estado', cambiarEstadoDerivacionCtrl);
 
 export default router; 
