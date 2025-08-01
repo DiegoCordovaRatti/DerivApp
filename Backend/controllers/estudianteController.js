@@ -295,7 +295,9 @@ export const buscarEstudiantesCtrl = async (req, res) => {
 export const crearDerivacionCtrl = async (req, res) => {
   try {
     const { estudianteId } = req.params;
+    console.log('Datos recibidos en crearDerivacionCtrl:', { estudianteId, body: req.body });
     const nuevaDerivacion = await crearDerivacion(estudianteId, req.body);
+    console.log('Derivación creada:', nuevaDerivacion);
     
     res.status(201).json({
       message: 'Derivación creada exitosamente',
