@@ -11,14 +11,12 @@ import {
   Avatar,
   Tooltip,
   Pagination,
-  Select,
   ConfigProvider,
   message,
   Form
 } from 'antd';
 import {
   SearchOutlined,
-  FilterOutlined,
   EyeOutlined,
   ExclamationCircleOutlined,
   ClockCircleOutlined,
@@ -29,8 +27,7 @@ import {
   obtenerEstudiantes,
   obtenerDerivacionesEstudiante,
   actualizarDerivacion,
-  buscarEstudiantes,
-  obtenerEstudiantesPorEstado
+  buscarEstudiantes
 } from '../../services/expedienteService';
 import { DetallesEstudianteModal, EditarDerivacionModal } from '../../components/modal';
 
@@ -58,7 +55,6 @@ const Expedientes = () => {
   // Estados para datos del backend
   const [estudiantes, setEstudiantes] = useState([]);
   const [estudiantesFiltrados, setEstudiantesFiltrados] = useState([]);
-  const [filtroEstado, setFiltroEstado] = useState(null);
 
   // Cargar estudiantes al montar el componente
   useEffect(() => {
@@ -152,34 +148,7 @@ const Expedientes = () => {
     }
   };
 
-  // Función para filtrar por estado
-  const handleFiltroEstado = async (estado) => {
-    setFiltroEstado(estado);
-    
-    if (!estado) {
-      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantes);
-      setEstudiantesFiltrados(estudiantesOrdenados);
-      return;
-    }
 
-    try {
-      setLoading(true);
-      const response = await obtenerEstudiantesPorEstado(estado);
-      // El backend puede devolver { estudiantes: [...] } o directamente el array
-      const estudiantesData = response.estudiantes || response;
-      const estudiantesProcesados = procesarEstudiantes(estudiantesData);
-      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantesProcesados);
-      setEstudiantesFiltrados(estudiantesOrdenados);
-    } catch (error) {
-      console.error('Error al filtrar por estado:', error);
-      // Fallback a filtro local
-      const filtrados = estudiantes.filter(estudiante => estudiante.estado === estado);
-      const filtradosOrdenados = ordenarEstudiantesPorPrioridad(filtrados);
-      setEstudiantesFiltrados(filtradosOrdenados);
-    } finally {
-      setLoading(false);
-    }
-  };
 
 
 
@@ -457,11 +426,25 @@ const Expedientes = () => {
     {
       title: 'Estado',
       key: 'estado',
-      render: (_, record) => (
-        <Tag color={getEstadoColor(record.estado)}>
-          {getEstadoText(record.estado)}
-        </Tag>
-      ),
+      render: (_, record) => {
+        // Verificar si tiene derivaciones activas
+        const tieneDerivacionesActivas = record.derivaciones && 
+          record.derivaciones.some(derivacion => derivacion.estado !== 'cerrado');
+        
+        if (tieneDerivacionesActivas) {
+          return (
+            <Tag color="blue">
+              Derivado
+            </Tag>
+          );
+        } else {
+          return (
+            <Tag color="default">
+              Sin derivaciones
+            </Tag>
+          );
+        }
+      },
       width: 120
     },
     {
@@ -489,7 +472,7 @@ const Expedientes = () => {
         return (
           <Tooltip title={tooltipText}>
             {getPrioridadIcon(prioridadMasAlta)}
-          </Tooltip>
+        </Tooltip>
         );
       },
       width: 80
@@ -519,7 +502,7 @@ const Expedientes = () => {
     estudiante.curso.toLowerCase().includes(searchText.toLowerCase())
   );
 
-    // Calcular datos de paginación
+  // Calcular datos de paginación
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedEstudiantes = filteredEstudiantes.slice(startIndex, endIndex);
@@ -543,7 +526,7 @@ const Expedientes = () => {
       {/* Filtros y búsqueda */}
       <Card style={{ marginBottom: '24px' }}>
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={12}>
+          <Col xs={24} md={16}>
             <Input
               placeholder="Buscar por nombre o RUT (ej: 12.345.678-9)"
               prefix={<SearchOutlined />}
@@ -553,22 +536,7 @@ const Expedientes = () => {
               size="large"
             />
           </Col>
-          <Col xs={24} md={4}>
-            <Select
-              placeholder="Filtrar por estado"
-              size="large"
-              style={{ width: '100%' }}
-              allowClear
-              value={filtroEstado}
-              onChange={handleFiltroEstado}
-            >
-              <Option value="activo">Activo</Option>
-              <Option value="pendiente">Pendiente</Option>
-              <Option value="seguimiento">Seguimiento</Option>
-              <Option value="cerrado">Cerrado</Option>
-            </Select>
-          </Col>
-          <Col xs={24} md={4}>
+          <Col xs={24} md={8}>
             <Button 
               type="primary" 
               icon={<SearchOutlined />} 
@@ -577,20 +545,6 @@ const Expedientes = () => {
               onClick={handleBuscar}
             >
               Buscar
-            </Button>
-          </Col>
-          <Col xs={24} md={4}>
-            <Button 
-              icon={<FilterOutlined />} 
-              size="large"
-              style={{ width: '100%' }}
-              onClick={() => {
-                setSearchText('');
-                setFiltroEstado(null);
-                setEstudiantesFiltrados(estudiantes);
-              }}
-            >
-              Limpiar
             </Button>
           </Col>
         </Row>
