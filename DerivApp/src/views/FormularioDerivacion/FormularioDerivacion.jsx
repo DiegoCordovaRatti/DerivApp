@@ -246,6 +246,14 @@ const FormularioDerivacion = () => {
         return;
       }
 
+      // Mapeo de responsables
+      const mapeoResponsables = {
+        'psicologo1': 'Psicólogo María González',
+        'psicologo2': 'Psicólogo Juan Pérez',
+        'psicologo3': 'Psicóloga Ana Rodríguez',
+        'psicologo4': 'Psicólogo Carlos Silva'
+      };
+
       // Preparar datos de la derivación
       const datosDerivacion = {
         fecha_derivacion: values.fecha_derivacion?.toISOString() || new Date().toISOString(),
@@ -253,12 +261,19 @@ const FormularioDerivacion = () => {
         motivo: values.motivo,
         derivado_por: values.derivado_por,
         responsable_id: values.responsable_id,
+        responsable: mapeoResponsables[values.responsable_id] || values.responsable_id, // Convertir ID a nombre
         prioridad: values.prioridad,
         tipo_caso: values.tipo_caso,
-        observaciones: values.observaciones
+        observaciones: values.observaciones,
+        // Campos adicionales que pueden estar en el formulario
+        descripcion: values.descripcion || values.motivo, // Usar descripción específica o motivo como fallback
+        fecha_evaluacion: null, // Campo para evaluación futura
+        resultado: null, // Campo para resultado futuro
+        seguimientos: [] // Array vacío para seguimientos futuros
       };
 
       // Crear la derivación en la base de datos
+      console.log('Datos de derivación a enviar:', datosDerivacion);
       const response = await crearDerivacion(estudianteSeleccionado.id, datosDerivacion);
       
       message.success('Derivación enviada correctamente');
@@ -551,7 +566,21 @@ const FormularioDerivacion = () => {
                 >
                   <TextArea
                     placeholder="Describa detalladamente el motivo de la derivación"
-                    rows={6}
+                    rows={4}
+                    showCount
+                    maxLength={500}
+                    style={{ resize: 'vertical' }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24}>
+                <Form.Item
+                  label="Descripción Detallada"
+                  name="descripcion"
+                >
+                  <TextArea
+                    placeholder="Describa con más detalle la situación del estudiante"
+                    rows={4}
                     showCount
                     maxLength={1000}
                     style={{ resize: 'vertical' }}

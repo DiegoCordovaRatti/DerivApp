@@ -102,10 +102,13 @@ export const buscarEstudiantes = async (termino) => {
 
 // Crear una nueva derivación
 export const crearDerivacion = async (estudianteId, datosDerivacion) => {
-  return await apiRequest(`/estudiantes/${estudianteId}/derivaciones`, {
+  console.log('Enviando derivación:', { estudianteId, datosDerivacion });
+  const response = await apiRequest(`/estudiantes/${estudianteId}/derivaciones`, {
     method: 'POST',
     body: JSON.stringify(datosDerivacion),
   });
+  console.log('Respuesta del servidor:', response);
+  return response;
 };
 
 // Obtener derivaciones de un estudiante
