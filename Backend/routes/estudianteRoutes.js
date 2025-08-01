@@ -17,6 +17,7 @@ import {
   obtenerDerivacionesEstudianteCtrl,
   obtenerDerivacionPorIdCtrl,
   actualizarDerivacionCtrl,
+  eliminarDerivacionCtrl,
   cambiarEstadoDerivacionCtrl,
   obtenerDerivacionesPorEstadoCtrl,
   obtenerDerivacionesRecientesCtrl
@@ -47,5 +48,6 @@ router.get('/:estudianteId/derivaciones', obtenerDerivacionesEstudianteCtrl);
 router.get('/:estudianteId/derivaciones/:derivacionId', obtenerDerivacionPorIdCtrl);
 router.put('/:estudianteId/derivaciones/:derivacionId', actualizarDerivacionCtrl);
 router.patch('/:estudianteId/derivaciones/:derivacionId/estado', cambiarEstadoDerivacionCtrl);
+router.delete('/:estudianteId/derivaciones/:derivacionId', eliminarDerivacionCtrl);
 
 export default router; 

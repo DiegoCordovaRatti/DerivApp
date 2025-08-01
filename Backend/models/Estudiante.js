@@ -303,6 +303,24 @@ export const obtenerDerivacionesRecientes = async (limite = 10) => {
   }
 };
 
+// Eliminar derivación
+export const eliminarDerivacion = async (estudianteId, derivacionId) => {
+  try {
+    const derivacionRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId);
+    
+    // Verificar que la derivación existe
+    const docSnap = await getDoc(derivacionRef);
+    if (!docSnap.exists()) {
+      throw new Error("Derivación no encontrada");
+    }
+    
+    await deleteDoc(derivacionRef);
+    return { message: "Derivación eliminada correctamente" };
+  } catch (error) {
+    throw new Error(`Error al eliminar derivación: ${error.message}`);
+  }
+};
+
 export default {
   crearEstudiante,
   obtenerEstudiantes,
@@ -318,6 +336,7 @@ export default {
   obtenerDerivacionesEstudiante,
   obtenerDerivacionPorId,
   actualizarDerivacion,
+  eliminarDerivacion,
   cambiarEstadoDerivacion,
   obtenerDerivacionesPorEstado,
   obtenerDerivacionesRecientes,

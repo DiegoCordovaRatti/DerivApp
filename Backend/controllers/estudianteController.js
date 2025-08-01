@@ -14,6 +14,7 @@ import {
   obtenerDerivacionesEstudiante,
   obtenerDerivacionPorId,
   actualizarDerivacion,
+  eliminarDerivacion,
   cambiarEstadoDerivacion,
   obtenerDerivacionesPorEstado,
   obtenerDerivacionesRecientes
@@ -454,6 +455,30 @@ export const obtenerDerivacionesRecientesCtrl = async (req, res) => {
   }
 };
 
+// Eliminar derivación
+export const eliminarDerivacionCtrl = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId } = req.params;
+    
+    const resultado = await eliminarDerivacion(estudianteId, derivacionId);
+    
+    res.json({
+      message: resultado.message
+    });
+  } catch (error) {
+    console.error('Error al eliminar derivación:', error);
+    if (error.message.includes('no encontrada')) {
+      return res.status(404).json({
+        error: 'Derivación no encontrada'
+      });
+    }
+    res.status(500).json({
+      error: 'Error al eliminar derivación',
+      details: error.message
+    });
+  }
+};
+
 export default {
   // Métodos de estudiantes
   crearEstudianteCtrl,
@@ -472,6 +497,7 @@ export default {
   obtenerDerivacionesEstudianteCtrl,
   obtenerDerivacionPorIdCtrl,
   actualizarDerivacionCtrl,
+  eliminarDerivacionCtrl,
   cambiarEstadoDerivacionCtrl,
   obtenerDerivacionesPorEstadoCtrl,
   obtenerDerivacionesRecientesCtrl

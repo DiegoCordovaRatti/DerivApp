@@ -22,32 +22,35 @@ import {
   Divider,
   Descriptions,
   Timeline,
-  ConfigProvider
+  ConfigProvider,
+  message
 } from 'antd';
 import {
   SearchOutlined,
   FilterOutlined,
-  PlusOutlined,
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
-  BellOutlined,
   UserOutlined,
   ExclamationCircleOutlined,
   ClockCircleOutlined,
-  CalendarOutlined,
   PhoneOutlined,
   MailOutlined,
   EnvironmentOutlined,
-  UserAddOutlined,
   FileTextOutlined,
   HistoryOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined,
-  ExclamationCircleFilled
 } from '@ant-design/icons';
 import './Expedientes.scss';
 import dayjs from '../../utils/dayjs';
+import {
+  obtenerEstudiantes,
+  obtenerDerivacionesEstudiante,
+  actualizarDerivacion,
+  eliminarDerivacion,
+  buscarEstudiantes,
+  obtenerEstudiantesPorEstado
+} from '../../services/expedienteService';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -66,142 +69,119 @@ const Expedientes = () => {
   const [activeTab, setActiveTab] = useState('1');
   const [editMode, setEditMode] = useState(false);
   const [form] = Form.useForm();
+  
+  // Estados para datos del backend
+  const [estudiantes, setEstudiantes] = useState([]);
+  const [estudiantesFiltrados, setEstudiantesFiltrados] = useState([]);
+  const [filtroEstado, setFiltroEstado] = useState(null);
+  const [selectedDerivacion, setSelectedDerivacion] = useState(null);
 
-  // Datos mock de derivaciones
-  const mockDerivaciones = [
-    {
-      id: '1',
-      estudianteId: '1',
-      fecha_derivacion: '2024-01-15',
-      motivo: 'Problemas de comportamiento en clase',
-      descripcion: 'El estudiante presenta conductas disruptivas durante las clases de matemáticas y ciencias.',
-      derivado_por: 'Prof. Ana Silva',
-      responsable: 'Psic. María González',
-      estado: 'activo',
-      prioridad: 'alta',
-      observaciones: 'Requiere evaluación psicológica urgente',
-      fecha_evaluacion: '2024-01-20',
-      resultado: 'Pendiente',
-      seguimientos: [
-        {
-          id: '1',
-          fecha: '2024-01-18',
-          tipo: 'Entrevista con apoderado',
-          descripcion: 'Se realizó entrevista con la madre del estudiante para coordinar apoyo.',
-          responsable: 'Psic. María González'
-        },
-        {
-          id: '2',
-          fecha: '2024-01-25',
-          tipo: 'Evaluación psicológica',
-          descripcion: 'Se aplicaron pruebas de evaluación conductual.',
-          responsable: 'Psic. María González'
-        }
-      ]
-    },
-    {
-      id: '2',
-      estudianteId: '1',
-      fecha_derivacion: '2023-11-10',
-      motivo: 'Bajo rendimiento académico',
-      descripcion: 'Dificultades significativas en matemáticas y lenguaje.',
-      derivado_por: 'Prof. Juan Pérez',
-      responsable: 'Psic. Carlos Rodríguez',
-      estado: 'cerrado',
-      prioridad: 'media',
-      observaciones: 'Caso resuelto con mejoras significativas',
-      fecha_evaluacion: '2023-11-15',
-      resultado: 'Mejorado',
-      seguimientos: [
-        {
-          id: '3',
-          fecha: '2023-11-12',
-          tipo: 'Evaluación académica',
-          descripcion: 'Se identificaron las áreas de dificultad específicas.',
-          responsable: 'Psic. Carlos Rodríguez'
-        }
-      ]
-    }
-  ];
+  // Cargar estudiantes al montar el componente
+  useEffect(() => {
+    cargarEstudiantes();
+  }, []);
 
-  // Datos mock de estudiantes
-  const mockEstudiantes = [
-    {
-      id: '1',
-      nombre: 'Carlos Méndez Soto',
-      rut: '19.345.678-9',
-      curso: '8° Básico A',
-      estado: 'activo',
-      prioridad: 'alta',
-      ultimaActualizacion: '2024-01-29',
-      establecimiento: 'Liceo San José',
-      derivadoPor: 'Prof. Ana Silva',
-      responsable: 'Psic. María González',
-      telefono: '+56 9 1234 5678',
-      email: 'carlos.mendez@email.com',
-      direccion: 'Av. Providencia 1234, Santiago'
-    },
-    {
-      id: '2',
-      nombre: 'Ana Gómez Pérez',
-      rut: '20.123.456-7',
-      curso: '5° Básico B',
-      estado: 'pendiente',
-      prioridad: 'media',
-      ultimaActualizacion: '2024-01-22',
-      establecimiento: 'Liceo San José',
-      derivadoPor: 'Prof. Juan Pérez',
-      responsable: 'Psic. Carlos Rodríguez',
-      telefono: '+56 9 2345 6789',
-      email: 'ana.gomez@email.com',
-      direccion: 'Calle Las Condes 567, Santiago'
-    },
-    {
-      id: '3',
-      nombre: 'Joaquín Martínez Rojas',
-      rut: '19.876.543-2',
-      curso: '3° Medio A',
-      estado: 'seguimiento',
-      prioridad: 'baja',
-      ultimaActualizacion: '2024-01-28',
-      establecimiento: 'Liceo San José',
-      derivadoPor: 'Prof. María López',
-      responsable: 'Psic. Ana Fernández',
-      telefono: '+56 9 3456 7890',
-      email: 'joaquin.martinez@email.com',
-      direccion: 'Pasaje Ñuñoa 890, Santiago'
-    },
-    {
-      id: '4',
-      nombre: 'Valentina Soto Díaz',
-      rut: '20.987.654-3',
-      curso: '1° Medio B',
-      estado: 'cerrado',
-      prioridad: 'baja',
-      ultimaActualizacion: '2024-01-15',
-      establecimiento: 'Liceo San José',
-      derivadoPor: 'Prof. Roberto Herrera',
-      responsable: 'Psic. Patricia Fuentes',
-      telefono: '+56 9 4567 8901',
-      email: 'valentina.soto@email.com',
-      direccion: 'Av. Vitacura 2345, Santiago'
-    },
-    {
-      id: '5',
-      nombre: 'Matías Fernández Silva',
-      rut: '19.456.789-0',
-      curso: '6° Básico A',
-      estado: 'activo',
-      prioridad: 'media',
-      ultimaActualizacion: '2024-01-30',
-      establecimiento: 'Liceo San José',
-      derivadoPor: 'Prof. Carmen Ruiz',
-      responsable: 'Psic. Miguel Rojas',
-      telefono: '+56 9 5678 9012',
-      email: 'matias.fernandez@email.com',
-      direccion: 'Calle Lo Barnechea 3456, Santiago'
+  // Función para cargar estudiantes desde el backend
+  // Función para procesar datos de estudiantes (convertir fechas de Firestore)
+  const procesarEstudiantes = (estudiantes) => {
+    return estudiantes.map(estudiante => ({
+      ...estudiante,
+      fecha_creacion: convertirFechaFirestore(estudiante.fecha_creacion),
+      fecha_actualizacion: convertirFechaFirestore(estudiante.fecha_actualizacion),
+      ultimaActualizacion: estudiante.fecha_actualizacion || estudiante.fecha_creacion
+    }));
+  };
+
+  const cargarEstudiantes = async () => {
+    try {
+      setLoading(true);
+      const response = await obtenerEstudiantes();
+      // El backend devuelve { estudiantes: [...], total: number }
+      const estudiantesData = response.estudiantes || response;
+      const estudiantesProcesados = procesarEstudiantes(estudiantesData);
+      setEstudiantes(estudiantesProcesados);
+      setEstudiantesFiltrados(estudiantesProcesados);
+    } catch (error) {
+      console.error('Error al cargar estudiantes:', error);
+      // En caso de error, mostrar array vacío
+      setEstudiantes([]);
+      setEstudiantesFiltrados([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  // Función para buscar estudiantes
+  const handleBuscar = async () => {
+    if (!searchText.trim()) {
+      setEstudiantesFiltrados(estudiantes);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await buscarEstudiantes(searchText);
+      // El backend puede devolver { estudiantes: [...] } o directamente el array
+      const estudiantesData = response.estudiantes || response;
+      const estudiantesProcesados = procesarEstudiantes(estudiantesData);
+      setEstudiantesFiltrados(estudiantesProcesados);
+    } catch (error) {
+      console.error('Error al buscar estudiantes:', error);
+      // Fallback a búsqueda local
+      const filtrados = estudiantes.filter(estudiante =>
+        estudiante.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
+        estudiante.rut.includes(searchText) ||
+        estudiante.curso.toLowerCase().includes(searchText.toLowerCase())
+      );
+      setEstudiantesFiltrados(filtrados);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para filtrar por estado
+  const handleFiltroEstado = async (estado) => {
+    setFiltroEstado(estado);
+    
+    if (!estado) {
+      setEstudiantesFiltrados(estudiantes);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await obtenerEstudiantesPorEstado(estado);
+      // El backend puede devolver { estudiantes: [...] } o directamente el array
+      const estudiantesData = response.estudiantes || response;
+      const estudiantesProcesados = procesarEstudiantes(estudiantesData);
+      setEstudiantesFiltrados(estudiantesProcesados);
+    } catch (error) {
+      console.error('Error al filtrar por estado:', error);
+      // Fallback a filtro local
+      const filtrados = estudiantes.filter(estudiante => estudiante.estado === estado);
+      setEstudiantesFiltrados(filtrados);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+
+  // Función para procesar datos de derivaciones (convertir fechas de Firestore)
+  const procesarDerivaciones = (derivaciones) => {
+    return derivaciones.map(derivacion => ({
+      ...derivacion,
+      fecha_derivacion: convertirFechaFirestore(derivacion.fecha_derivacion),
+      fecha_evaluacion: convertirFechaFirestore(derivacion.fecha_evaluacion),
+      fecha_creacion: convertirFechaFirestore(derivacion.fecha_creacion),
+      fecha_actualizacion: convertirFechaFirestore(derivacion.fecha_actualizacion),
+      seguimientos: derivacion.seguimientos?.map(seguimiento => ({
+        ...seguimiento,
+        fecha: convertirFechaFirestore(seguimiento.fecha)
+      })) || []
+    }));
+  };
 
   // Funciones para manejar el modal
   const handleVerDetalles = async (estudiante) => {
@@ -209,15 +189,20 @@ const Expedientes = () => {
     setModalVisible(true);
     setModalLoading(true);
     
-    // Simular carga de 3 segundos
-    setTimeout(() => {
-      // Filtrar derivaciones del estudiante
-      const derivacionesEstudiante = mockDerivaciones.filter(
-        derivacion => derivacion.estudianteId === estudiante.id
-      );
-      setDerivaciones(derivacionesEstudiante);
+    try {
+      // Cargar derivaciones del estudiante desde el backend
+      const response = await obtenerDerivacionesEstudiante(estudiante.id);
+      // El backend puede devolver { derivaciones: [...] } o directamente el array
+      const derivacionesData = response.derivaciones || response;
+      const derivacionesProcesadas = procesarDerivaciones(derivacionesData);
+      setDerivaciones(derivacionesProcesadas);
+    } catch (error) {
+      console.error('Error al cargar derivaciones:', error);
+      // Fallback a array vacío
+      setDerivaciones([]);
+    } finally {
       setModalLoading(false);
-    }, 3000);
+    }
   };
 
   const handleCerrarModal = () => {
@@ -230,6 +215,7 @@ const Expedientes = () => {
   };
 
   const handleEditarDerivacion = (derivacion) => {
+    setSelectedDerivacion(derivacion);
     setEditMode(true);
     form.setFieldsValue({
       motivo: derivacion.motivo,
@@ -243,13 +229,58 @@ const Expedientes = () => {
   };
 
   const handleGuardarCambios = async (values) => {
+    if (!selectedDerivacion) return;
+    
     setModalLoading(true);
-    // Simular guardado
-    setTimeout(() => {
+    try {
+      // Preparar datos para el backend
+      const datosActualizados = {
+        ...values,
+        fecha_evaluacion: values.fecha_evaluacion ? values.fecha_evaluacion.format('YYYY-MM-DD') : null
+      };
+
+      // Actualizar derivación en el backend
+      await actualizarDerivacion(selectedEstudiante.id, selectedDerivacion.id, datosActualizados);
+      
+      // Recargar derivaciones
+      const response = await obtenerDerivacionesEstudiante(selectedEstudiante.id);
+      const derivacionesData = response.derivaciones || response;
+      const derivacionesProcesadas = procesarDerivaciones(derivacionesData);
+      setDerivaciones(derivacionesProcesadas);
+      
       setEditMode(false);
+      setSelectedDerivacion(null);
+      form.resetFields();
+      message.success('Derivación actualizada correctamente');
+    } catch (error) {
+      console.error('Error al guardar cambios:', error);
+      message.error('Error al actualizar la derivación');
+    } finally {
       setModalLoading(false);
-      // Aquí se actualizarían los datos en el backend
-    }, 1000);
+    }
+  };
+
+  const handleEliminarDerivacion = async (derivacion) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar esta derivación?')) {
+      return;
+    }
+
+    setModalLoading(true);
+    try {
+      await eliminarDerivacion(selectedEstudiante.id, derivacion.id);
+      
+      // Recargar derivaciones
+      const response = await obtenerDerivacionesEstudiante(selectedEstudiante.id);
+      const derivacionesData = response.derivaciones || response;
+      const derivacionesProcesadas = procesarDerivaciones(derivacionesData);
+      setDerivaciones(derivacionesProcesadas);
+      message.success('Derivación eliminada correctamente');
+    } catch (error) {
+      console.error('Error al eliminar derivación:', error);
+      message.error('Error al eliminar la derivación');
+    } finally {
+      setModalLoading(false);
+    }
   };
 
   // Función para obtener el color del estado
@@ -284,8 +315,37 @@ const Expedientes = () => {
     return iconos[prioridad] || null;
   };
 
+  // Función para convertir fechas de Firestore
+  const convertirFechaFirestore = (fecha) => {
+    if (!fecha) return '';
+    
+    // Si es un objeto Timestamp de Firestore
+    if (fecha && typeof fecha === 'object' && fecha.seconds) {
+      return new Date(fecha.seconds * 1000).toLocaleDateString('es-CL');
+    }
+    
+    // Si es una fecha normal
+    if (fecha instanceof Date) {
+      return fecha.toLocaleDateString('es-CL');
+    }
+    
+    // Si es un string
+    if (typeof fecha === 'string') {
+      return new Date(fecha).toLocaleDateString('es-CL');
+    }
+    
+    return '';
+  };
+
   // Función para calcular el tiempo transcurrido usando Day.js
   const getTiempoTranscurrido = (fecha) => {
+    if (!fecha) return '';
+    
+    // Si es un objeto Timestamp de Firestore
+    if (fecha && typeof fecha === 'object' && fecha.seconds) {
+      return dayjs(fecha.seconds * 1000).fromNow();
+    }
+    
     return dayjs(fecha).fromNow();
   };
 
@@ -393,8 +453,8 @@ const Expedientes = () => {
     }
   ];
 
-  // Función para filtrar estudiantes
-  const filteredEstudiantes = mockEstudiantes.filter(estudiante =>
+  // Función para filtrar estudiantes (fallback local)
+  const filteredEstudiantes = (estudiantesFiltrados || []).filter(estudiante =>
     estudiante.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
     estudiante.rut.includes(searchText) ||
     estudiante.curso.toLowerCase().includes(searchText.toLowerCase())
@@ -495,7 +555,7 @@ const Expedientes = () => {
                     style={{ marginBottom: '16px' }}
                     title={
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>Derivación #{index + 1} - {derivacion.fecha_derivacion}</span>
+                        <span>Derivación #{index + 1} - {convertirFechaFirestore(derivacion.fecha_derivacion)}</span>
                         <Space>
                           <Tag color={getEstadoColor(derivacion.estado)}>
                             {getEstadoText(derivacion.estado)}
@@ -508,6 +568,13 @@ const Expedientes = () => {
                             icon={<EditOutlined />} 
                             size="small"
                             onClick={() => handleEditarDerivacion(derivacion)}
+                          />
+                          <Button 
+                            type="text" 
+                            icon={<DeleteOutlined />} 
+                            size="small"
+                            danger
+                            onClick={() => handleEliminarDerivacion(derivacion)}
                           />
                         </Space>
                       </div>
@@ -536,7 +603,7 @@ const Expedientes = () => {
                             {derivacion.observaciones}
                           </Descriptions.Item>
                           <Descriptions.Item label="Fecha evaluación">
-                            {derivacion.fecha_evaluacion}
+                            {convertirFechaFirestore(derivacion.fecha_evaluacion)}
                           </Descriptions.Item>
                           <Descriptions.Item label="Resultado">
                             {derivacion.resultado}
@@ -556,7 +623,7 @@ const Expedientes = () => {
                             >
                               <div>
                                 <div style={{ fontWeight: '500' }}>
-                                  {seguimiento.tipo} - {seguimiento.fecha}
+                                  {seguimiento.tipo} - {convertirFechaFirestore(seguimiento.fecha)}
                                 </div>
                                 <div style={{ color: '#666', marginTop: '4px' }}>
                                   {seguimiento.descripcion}
@@ -721,23 +788,54 @@ const Expedientes = () => {
       {/* Filtros y búsqueda */}
       <Card style={{ marginBottom: '24px' }}>
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={18}>
+          <Col xs={24} md={12}>
             <Input
               placeholder="Buscar por nombre o RUT (ej: 12.345.678-9)"
               prefix={<SearchOutlined />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
+              onPressEnter={handleBuscar}
               size="large"
             />
           </Col>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={4}>
+            <Select
+              placeholder="Filtrar por estado"
+              size="large"
+              style={{ width: '100%' }}
+              allowClear
+              value={filtroEstado}
+              onChange={handleFiltroEstado}
+            >
+              <Option value="activo">Activo</Option>
+              <Option value="pendiente">Pendiente</Option>
+              <Option value="seguimiento">Seguimiento</Option>
+              <Option value="cerrado">Cerrado</Option>
+            </Select>
+          </Col>
+          <Col xs={24} md={4}>
             <Button 
               type="primary" 
               icon={<SearchOutlined />} 
               size="large"
               style={{ width: '100%' }}
+              onClick={handleBuscar}
             >
               Buscar
+            </Button>
+          </Col>
+          <Col xs={24} md={4}>
+            <Button 
+              icon={<FilterOutlined />} 
+              size="large"
+              style={{ width: '100%' }}
+              onClick={() => {
+                setSearchText('');
+                setFiltroEstado(null);
+                setEstudiantesFiltrados(estudiantes);
+              }}
+            >
+              Limpiar
             </Button>
           </Col>
         </Row>
