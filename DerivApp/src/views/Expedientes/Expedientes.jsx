@@ -3,7 +3,6 @@ import {
   Table,
   Input,
   Button,
-  Space,
   Tag,
   Typography,
   Card,
@@ -13,33 +12,16 @@ import {
   Tooltip,
   Pagination,
   Select,
-  DatePicker,
-  Dropdown,
-  Modal,
-  Spin,
-  Tabs,
-  Form,
-  Divider,
-  Descriptions,
-  Timeline,
   ConfigProvider,
-  message
+  message,
+  Form
 } from 'antd';
 import {
   SearchOutlined,
   FilterOutlined,
   EyeOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  UserOutlined,
   ExclamationCircleOutlined,
   ClockCircleOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  EnvironmentOutlined,
-  FileTextOutlined,
-  HistoryOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 import './Expedientes.scss';
 import dayjs from '../../utils/dayjs';
@@ -47,34 +29,36 @@ import {
   obtenerEstudiantes,
   obtenerDerivacionesEstudiante,
   actualizarDerivacion,
-  eliminarDerivacion,
   buscarEstudiantes,
   obtenerEstudiantesPorEstado
 } from '../../services/expedienteService';
+import { DetallesEstudianteModal, EditarDerivacionModal } from '../../components/modal';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 const Expedientes = () => {
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  
+
   // Estados para el modal de detalles
   const [modalVisible, setModalVisible] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [selectedEstudiante, setSelectedEstudiante] = useState(null);
   const [derivaciones, setDerivaciones] = useState([]);
   const [activeTab, setActiveTab] = useState('1');
-  const [editMode, setEditMode] = useState(false);
+  
+  // Estados para el modal de editar derivación
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editModalLoading, setEditModalLoading] = useState(false);
+  const [selectedDerivacion, setSelectedDerivacion] = useState(null);
   const [form] = Form.useForm();
   
   // Estados para datos del backend
   const [estudiantes, setEstudiantes] = useState([]);
   const [estudiantesFiltrados, setEstudiantesFiltrados] = useState([]);
   const [filtroEstado, setFiltroEstado] = useState(null);
-  const [selectedDerivacion, setSelectedDerivacion] = useState(null);
 
   // Cargar estudiantes al montar el componente
   useEffect(() => {
@@ -99,8 +83,34 @@ const Expedientes = () => {
       // El backend devuelve { estudiantes: [...], total: number }
       const estudiantesData = response.estudiantes || response;
       const estudiantesProcesados = procesarEstudiantes(estudiantesData);
-      setEstudiantes(estudiantesProcesados);
-      setEstudiantesFiltrados(estudiantesProcesados);
+      
+      // Cargar derivaciones para cada estudiante y calcular prioridad más alta
+      const estudiantesConDerivaciones = await Promise.all(
+        estudiantesProcesados.map(async (estudiante) => {
+          try {
+            const derivacionesResponse = await obtenerDerivacionesEstudiante(estudiante.id);
+            const derivacionesData = derivacionesResponse.derivaciones || derivacionesResponse;
+            const derivacionesProcesadas = procesarDerivaciones(derivacionesData);
+            
+            return {
+              ...estudiante,
+              derivaciones: derivacionesProcesadas
+            };
+          } catch (error) {
+            console.error(`Error al cargar derivaciones para estudiante ${estudiante.id}:`, error);
+            return {
+              ...estudiante,
+              derivaciones: []
+            };
+          }
+        })
+      );
+      
+      // Ordenar estudiantes por prioridad (más alta a más baja)
+      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantesConDerivaciones);
+      
+      setEstudiantes(estudiantesOrdenados);
+      setEstudiantesFiltrados(estudiantesOrdenados);
     } catch (error) {
       console.error('Error al cargar estudiantes:', error);
       // En caso de error, mostrar array vacío
@@ -114,7 +124,8 @@ const Expedientes = () => {
   // Función para buscar estudiantes
   const handleBuscar = async () => {
     if (!searchText.trim()) {
-      setEstudiantesFiltrados(estudiantes);
+      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantes);
+      setEstudiantesFiltrados(estudiantesOrdenados);
       return;
     }
 
@@ -124,7 +135,8 @@ const Expedientes = () => {
       // El backend puede devolver { estudiantes: [...] } o directamente el array
       const estudiantesData = response.estudiantes || response;
       const estudiantesProcesados = procesarEstudiantes(estudiantesData);
-      setEstudiantesFiltrados(estudiantesProcesados);
+      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantesProcesados);
+      setEstudiantesFiltrados(estudiantesOrdenados);
     } catch (error) {
       console.error('Error al buscar estudiantes:', error);
       // Fallback a búsqueda local
@@ -133,7 +145,8 @@ const Expedientes = () => {
         estudiante.rut.includes(searchText) ||
         estudiante.curso.toLowerCase().includes(searchText.toLowerCase())
       );
-      setEstudiantesFiltrados(filtrados);
+      const filtradosOrdenados = ordenarEstudiantesPorPrioridad(filtrados);
+      setEstudiantesFiltrados(filtradosOrdenados);
     } finally {
       setLoading(false);
     }
@@ -144,7 +157,8 @@ const Expedientes = () => {
     setFiltroEstado(estado);
     
     if (!estado) {
-      setEstudiantesFiltrados(estudiantes);
+      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantes);
+      setEstudiantesFiltrados(estudiantesOrdenados);
       return;
     }
 
@@ -154,12 +168,14 @@ const Expedientes = () => {
       // El backend puede devolver { estudiantes: [...] } o directamente el array
       const estudiantesData = response.estudiantes || response;
       const estudiantesProcesados = procesarEstudiantes(estudiantesData);
-      setEstudiantesFiltrados(estudiantesProcesados);
+      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantesProcesados);
+      setEstudiantesFiltrados(estudiantesOrdenados);
     } catch (error) {
       console.error('Error al filtrar por estado:', error);
       // Fallback a filtro local
       const filtrados = estudiantes.filter(estudiante => estudiante.estado === estado);
-      setEstudiantesFiltrados(filtrados);
+      const filtradosOrdenados = ordenarEstudiantesPorPrioridad(filtrados);
+      setEstudiantesFiltrados(filtradosOrdenados);
     } finally {
       setLoading(false);
     }
@@ -196,6 +212,13 @@ const Expedientes = () => {
       const derivacionesData = response.derivaciones || response;
       const derivacionesProcesadas = procesarDerivaciones(derivacionesData);
       setDerivaciones(derivacionesProcesadas);
+      
+      // Actualizar la prioridad del estudiante basada en las derivaciones
+      const estudianteConDerivaciones = {
+        ...estudiante,
+        derivaciones: derivacionesProcesadas
+      };
+      setSelectedEstudiante(estudianteConDerivaciones);
     } catch (error) {
       console.error('Error al cargar derivaciones:', error);
       // Fallback a array vacío
@@ -210,28 +233,32 @@ const Expedientes = () => {
     setSelectedEstudiante(null);
     setDerivaciones([]);
     setActiveTab('1');
-    setEditMode(false);
+  };
+
+  const handleCerrarEditModal = () => {
+    setEditModalVisible(false);
+    setSelectedDerivacion(null);
     form.resetFields();
   };
 
   const handleEditarDerivacion = (derivacion) => {
     setSelectedDerivacion(derivacion);
-    setEditMode(true);
+    setEditModalVisible(true);
     form.setFieldsValue({
-      motivo: derivacion.motivo,
-      descripcion: derivacion.descripcion,
-      observaciones: derivacion.observaciones,
-      prioridad: derivacion.prioridad,
-      estado: derivacion.estado,
+      motivo: derivacion.motivo || '',
+      descripcion: derivacion.descripcion || '',
+      observaciones: derivacion.observaciones || '',
+      prioridad: derivacion.prioridad || 'baja',
+      estado: derivacion.estado || 'pendiente',
       fecha_evaluacion: derivacion.fecha_evaluacion ? dayjs(derivacion.fecha_evaluacion) : null,
-      resultado: derivacion.resultado
+      resultado: derivacion.resultado || ''
     });
   };
 
   const handleGuardarCambios = async (values) => {
     if (!selectedDerivacion) return;
     
-    setModalLoading(true);
+    setEditModalLoading(true);
     try {
       // Preparar datos para el backend
       const datosActualizados = {
@@ -248,7 +275,7 @@ const Expedientes = () => {
       const derivacionesProcesadas = procesarDerivaciones(derivacionesData);
       setDerivaciones(derivacionesProcesadas);
       
-      setEditMode(false);
+      setEditModalVisible(false);
       setSelectedDerivacion(null);
       form.resetFields();
       message.success('Derivación actualizada correctamente');
@@ -256,32 +283,11 @@ const Expedientes = () => {
       console.error('Error al guardar cambios:', error);
       message.error('Error al actualizar la derivación');
     } finally {
-      setModalLoading(false);
+      setEditModalLoading(false);
     }
   };
 
-  const handleEliminarDerivacion = async (derivacion) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar esta derivación?')) {
-      return;
-    }
 
-    setModalLoading(true);
-    try {
-      await eliminarDerivacion(selectedEstudiante.id, derivacion.id);
-      
-      // Recargar derivaciones
-      const response = await obtenerDerivacionesEstudiante(selectedEstudiante.id);
-      const derivacionesData = response.derivaciones || response;
-      const derivacionesProcesadas = procesarDerivaciones(derivacionesData);
-      setDerivaciones(derivacionesProcesadas);
-      message.success('Derivación eliminada correctamente');
-    } catch (error) {
-      console.error('Error al eliminar derivación:', error);
-      message.error('Error al eliminar la derivación');
-    } finally {
-      setModalLoading(false);
-    }
-  };
 
   // Función para obtener el color del estado
   const getEstadoColor = (estado) => {
@@ -310,9 +316,77 @@ const Expedientes = () => {
     const iconos = {
       alta: <ExclamationCircleOutlined style={{ color: '#ff4d4f', fontSize: '16px' }} />,
       media: <ExclamationCircleOutlined style={{ color: '#faad14', fontSize: '16px' }} />,
-      baja: <ExclamationCircleOutlined style={{ color: '#52c41a', fontSize: '16px' }} />
+      baja: <ExclamationCircleOutlined style={{ color: '#52c41a', fontSize: '16px' }} />,
+      sin_prioridad: <ExclamationCircleOutlined style={{ color: '#d9d9d9', fontSize: '16px' }} />
     };
-    return iconos[prioridad] || null;
+    return iconos[prioridad] || iconos['sin_prioridad']; // Fallback a sin_prioridad si no hay prioridad
+  };
+
+  // Función para obtener el texto de prioridad
+  const getPrioridadText = (prioridad) => {
+    const textos = {
+      alta: 'ALTA',
+      media: 'MEDIA',
+      baja: 'BAJA',
+      sin_prioridad: 'SIN PRIORIDAD'
+    };
+    return textos[prioridad] || 'SIN PRIORIDAD';
+  };
+
+  // Función para obtener el valor numérico de prioridad
+  const getPrioridadValue = (prioridad) => {
+    const valores = {
+      alta: 3,
+      media: 2,
+      baja: 1,
+      sin_prioridad: 0
+    };
+    return valores[prioridad] || 0;
+  };
+
+  // Función para ordenar estudiantes por prioridad (más alta a más baja)
+  const ordenarEstudiantesPorPrioridad = (estudiantes) => {
+    return [...estudiantes].sort((a, b) => {
+      const prioridadA = getPrioridadMasAlta(a);
+      const prioridadB = getPrioridadMasAlta(b);
+      const valorA = getPrioridadValue(prioridadA);
+      const valorB = getPrioridadValue(prioridadB);
+      
+      // Ordenar de mayor a menor (prioridad alta primero)
+      return valorB - valorA;
+    });
+  };
+
+  // Función para obtener la prioridad más alta de las derivaciones activas
+  const getPrioridadMasAlta = (estudiante) => {
+    // Si el estudiante tiene derivaciones cargadas, calcular la prioridad más alta
+    if (estudiante.derivaciones && estudiante.derivaciones.length > 0) {
+      // Filtrar derivaciones que no estén cerradas
+      const derivacionesActivas = estudiante.derivaciones.filter(
+        derivacion => derivacion.estado !== 'cerrado'
+      );
+      
+      if (derivacionesActivas.length > 0) {
+        // Mapear prioridades a valores numéricos para comparación
+        const prioridadValues = {
+          'alta': 3,
+          'media': 2,
+          'baja': 1
+        };
+        
+        // Encontrar la derivación con prioridad más alta
+        const derivacionMasAlta = derivacionesActivas.reduce((prev, current) => {
+          const prevValue = prioridadValues[prev.prioridad] || 0;
+          const currentValue = prioridadValues[current.prioridad] || 0;
+          return currentValue > prevValue ? current : prev;
+        });
+        
+        return derivacionMasAlta.prioridad || 'baja';
+      }
+    }
+    
+    // Si no hay derivaciones activas, retornar 'sin_prioridad' para mostrar icono gris
+    return 'sin_prioridad';
   };
 
   // Función para convertir fechas de Firestore
@@ -406,50 +480,35 @@ const Expedientes = () => {
     {
       title: 'Prioridad',
       key: 'prioridad',
-      render: (_, record) => (
-        <Tooltip title={`Prioridad ${record.prioridad}`}>
-          {getPrioridadIcon(record.prioridad)}
-        </Tooltip>
-      ),
+      render: (_, record) => {
+        const prioridadMasAlta = getPrioridadMasAlta(record);
+        const tooltipText = prioridadMasAlta === 'sin_prioridad' 
+          ? 'Sin derivaciones activas' 
+          : `Prioridad más alta: ${prioridadMasAlta}`;
+        
+        return (
+          <Tooltip title={tooltipText}>
+            {getPrioridadIcon(prioridadMasAlta)}
+          </Tooltip>
+        );
+      },
       width: 80
     },
     {
       title: 'Acciones',
       key: 'acciones',
       render: (_, record) => (
-        <Space>
           <Tooltip title="Ver detalles">
             <Button 
               type="text" 
               icon={<EyeOutlined />} 
               size="small"
               style={{ color: '#1890ff' }}
-              onClick={() => handleVerDetalles(record)}
+            onClick={() => handleVerDetalles(record)}
             />
           </Tooltip>
-                     <Dropdown
-             menu={{
-               items: [
-                 {
-                   key: 'edit',
-                   icon: <EditOutlined />,
-                   label: 'Editar expediente'
-                 },
-                 {
-                   key: 'delete',
-                   icon: <DeleteOutlined />,
-                   label: 'Eliminar expediente',
-                   danger: true
-                 }
-               ]
-             }}
-             trigger={['click']}
-           >
-            <Button type="text" size="small">•••</Button>
-          </Dropdown>
-        </Space>
       ),
-      width: 100
+      width: 80
     }
   ];
 
@@ -460,318 +519,14 @@ const Expedientes = () => {
     estudiante.curso.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  // Calcular datos de paginación
+    // Calcular datos de paginación
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedEstudiantes = filteredEstudiantes.slice(startIndex, endIndex);
 
-  // Componente para el contenido del modal
-  const ModalContent = () => {
-    if (modalLoading) {
-      return (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <Spin size="large" />
-          <div style={{ marginTop: '16px', fontSize: '16px', color: '#666' }}>
-            Cargando expediente del estudiante...
-          </div>
-        </div>
-      );
-    }
-
-    if (!selectedEstudiante) return null;
-
-    const items = [
-      {
-        key: '1',
-        label: (
-          <span>
-            <FileTextOutlined />
-            Información General
-          </span>
-        ),
-        children: (
-          <div style={{ padding: '16px 0' }}>
-            <Row gutter={[24, 16]}>
-              <Col span={12}>
-                <Card size="small" title="Datos del Estudiante">
-                  <Descriptions column={1} size="small">
-                    <Descriptions.Item label="Nombre">
-                      {selectedEstudiante.nombre}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="RUT">
-                      {selectedEstudiante.rut}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Curso">
-                      {selectedEstudiante.curso}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Establecimiento">
-                      {selectedEstudiante.establecimiento}
-                    </Descriptions.Item>
-                  </Descriptions>
-                </Card>
-              </Col>
-              <Col span={12}>
-                <Card size="small" title="Información de Contacto">
-                  <Descriptions column={1} size="small">
-                    <Descriptions.Item label="Teléfono">
-                      <PhoneOutlined /> {selectedEstudiante.telefono}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Email">
-                      <MailOutlined /> {selectedEstudiante.email}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Dirección">
-                      <EnvironmentOutlined /> {selectedEstudiante.direccion}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Apoderado">
-                      <UserOutlined /> {selectedEstudiante.apoderado || 'No especificado'}
-                    </Descriptions.Item>
-                  </Descriptions>
-                </Card>
-              </Col>
-            </Row>
-          </div>
-        )
-      },
-      {
-        key: '2',
-        label: (
-          <span>
-            <HistoryOutlined />
-            Derivaciones ({derivaciones.length})
-          </span>
-        ),
-        children: (
-          <div style={{ padding: '16px 0' }}>
-            {derivaciones.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                <FileTextOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
-                <div>No hay derivaciones registradas</div>
-              </div>
-            ) : (
-              <div>
-                {derivaciones.map((derivacion, index) => (
-                  <Card 
-                    key={derivacion.id} 
-                    style={{ marginBottom: '16px' }}
-                    title={
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>Derivación #{index + 1} - {convertirFechaFirestore(derivacion.fecha_derivacion)}</span>
-                        <Space>
-                          <Tag color={getEstadoColor(derivacion.estado)}>
-                            {getEstadoText(derivacion.estado)}
-                          </Tag>
-                          <Tag color={derivacion.prioridad === 'alta' ? 'red' : derivacion.prioridad === 'media' ? 'orange' : 'green'}>
-                            {derivacion.prioridad.toUpperCase()}
-                          </Tag>
-                          <Button 
-                            type="text" 
-                            icon={<EditOutlined />} 
-                            size="small"
-                            onClick={() => handleEditarDerivacion(derivacion)}
-                          />
-                          <Button 
-                            type="text" 
-                            icon={<DeleteOutlined />} 
-                            size="small"
-                            danger
-                            onClick={() => handleEliminarDerivacion(derivacion)}
-                          />
-                        </Space>
-                      </div>
-                    }
-                  >
-                    <Row gutter={[16, 16]}>
-                      <Col span={12}>
-                        <Descriptions column={1} size="small">
-                          <Descriptions.Item label="Motivo">
-                            {derivacion.motivo}
-                          </Descriptions.Item>
-                          <Descriptions.Item label="Descripción">
-                            {derivacion.descripcion}
-                          </Descriptions.Item>
-                          <Descriptions.Item label="Derivado por">
-                            {derivacion.derivado_por}
-                          </Descriptions.Item>
-                          <Descriptions.Item label="Responsable">
-                            {derivacion.responsable}
-                          </Descriptions.Item>
-                        </Descriptions>
-                      </Col>
-                      <Col span={12}>
-                        <Descriptions column={1} size="small">
-                          <Descriptions.Item label="Observaciones">
-                            {derivacion.observaciones}
-                          </Descriptions.Item>
-                          <Descriptions.Item label="Fecha evaluación">
-                            {convertirFechaFirestore(derivacion.fecha_evaluacion)}
-                          </Descriptions.Item>
-                          <Descriptions.Item label="Resultado">
-                            {derivacion.resultado}
-                          </Descriptions.Item>
-                        </Descriptions>
-                      </Col>
-                    </Row>
-                    
-                    {derivacion.seguimientos && derivacion.seguimientos.length > 0 && (
-                      <div style={{ marginTop: '16px' }}>
-                        <Divider orientation="left">Seguimientos</Divider>
-                        <Timeline>
-                          {derivacion.seguimientos.map((seguimiento) => (
-                            <Timeline.Item 
-                              key={seguimiento.id}
-                              dot={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-                            >
-                              <div>
-                                <div style={{ fontWeight: '500' }}>
-                                  {seguimiento.tipo} - {convertirFechaFirestore(seguimiento.fecha)}
-                                </div>
-                                <div style={{ color: '#666', marginTop: '4px' }}>
-                                  {seguimiento.descripcion}
-                                </div>
-                                <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                                  Responsable: {seguimiento.responsable}
-                                </div>
-                              </div>
-                            </Timeline.Item>
-                          ))}
-                        </Timeline>
-                      </div>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        )
-      },
-      {
-        key: '3',
-        label: (
-          <span>
-            <EditOutlined />
-            Editar Derivación
-          </span>
-        ),
-        children: (
-          <div style={{ padding: '16px 0' }}>
-            {editMode ? (
-              <Form
-                form={form}
-                layout="vertical"
-                onFinish={handleGuardarCambios}
-              >
-                <Row gutter={[16, 16]}>
-                  <Col span={12}>
-                    <Form.Item
-                      name="motivo"
-                      label="Motivo de derivación"
-                      rules={[{ required: true, message: 'Por favor ingrese el motivo' }]}
-                    >
-                      <Input placeholder="Motivo de la derivación" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item
-                      name="prioridad"
-                      label="Prioridad"
-                      rules={[{ required: true, message: 'Por favor seleccione la prioridad' }]}
-                    >
-                      <Select placeholder="Seleccionar prioridad">
-                        <Option value="baja">Baja</Option>
-                        <Option value="media">Media</Option>
-                        <Option value="alta">Alta</Option>
-                      </Select>
-                    </Form.Item>
-                  </Col>
-                </Row>
-                
-                <Form.Item
-                  name="descripcion"
-                  label="Descripción"
-                  rules={[{ required: true, message: 'Por favor ingrese la descripción' }]}
-                >
-                  <Input.TextArea rows={4} placeholder="Descripción detallada del caso" />
-                </Form.Item>
-                
-                <Row gutter={[16, 16]}>
-                  <Col span={12}>
-                    <Form.Item
-                      name="estado"
-                      label="Estado"
-                      rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
-                    >
-                      <Select placeholder="Seleccionar estado">
-                        <Option value="activo">Activo</Option>
-                        <Option value="pendiente">Pendiente</Option>
-                        <Option value="seguimiento">Seguimiento</Option>
-                        <Option value="cerrado">Cerrado</Option>
-                      </Select>
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item
-                      name="fecha_evaluacion"
-                      label="Fecha de evaluación"
-                    >
-                      <DatePicker style={{ width: '100%' }} />
-                    </Form.Item>
-                  </Col>
-                </Row>
-                
-                <Form.Item
-                  name="observaciones"
-                  label="Observaciones"
-                >
-                  <Input.TextArea rows={3} placeholder="Observaciones adicionales" />
-                </Form.Item>
-                
-                <Form.Item
-                  name="resultado"
-                  label="Resultado"
-                >
-                  <Select placeholder="Seleccionar resultado">
-                    <Option value="Pendiente">Pendiente</Option>
-                    <Option value="Mejorado">Mejorado</Option>
-                    <Option value="Sin cambios">Sin cambios</Option>
-                    <Option value="Empeorado">Empeorado</Option>
-                  </Select>
-                </Form.Item>
-                
-                <Form.Item>
-                  <Space>
-                    <Button type="primary" htmlType="submit" loading={modalLoading}>
-                      Guardar cambios
-                    </Button>
-                    <Button onClick={() => setEditMode(false)}>
-                      Cancelar
-                    </Button>
-                  </Space>
-                </Form.Item>
-              </Form>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                <EditOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
-                <div>Selecciona una derivación para editar</div>
-              </div>
-            )}
-          </div>
-        )
-      }
-    ];
-
-    return (
-      <Tabs 
-        activeKey={activeTab} 
-        onChange={setActiveTab}
-        items={items}
-        style={{ marginTop: '16px' }}
-      />
-    );
-  };
-
   return (
     <ConfigProvider>
-      <div className="expedientes-container">
+    <div className="expedientes-container">
       {/* Header */}
       <div className="expedientes-header">
         <div>
@@ -878,33 +633,33 @@ const Expedientes = () => {
         </div>
       </Card>
 
-      {/* Modal de detalles del estudiante */}
-      <Modal
-        title={
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar 
-              size={32} 
-              style={{ backgroundColor: '#1890ff', marginRight: '12px' }}
-            >
-              {selectedEstudiante?.nombre?.charAt(0)}
-            </Avatar>
-            <span>
-              Expediente de {selectedEstudiante?.nombre}
-            </span>
-          </div>
-        }
-                 open={modalVisible}
-         onCancel={handleCerrarModal}
-         footer={null}
-         width={1000}
-         destroyOnHidden
-         centered
-      >
-                 <ModalContent />
-       </Modal>
-       </div>
-     </ConfigProvider>
-   );
- };
+             {/* Modal de detalles del estudiante */}
+               <DetallesEstudianteModal
+          visible={modalVisible}
+          onCancel={handleCerrarModal}
+          loading={modalLoading}
+          selectedEstudiante={selectedEstudiante}
+          derivaciones={derivaciones}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onEditarDerivacion={handleEditarDerivacion}
+          convertirFechaFirestore={convertirFechaFirestore}
+          getEstadoColor={getEstadoColor}
+          getEstadoText={getEstadoText}
+          getPrioridadText={getPrioridadText}
+        />
+
+       {/* Modal de editar derivación */}
+       <EditarDerivacionModal
+         visible={editModalVisible}
+         onCancel={handleCerrarEditModal}
+         loading={editModalLoading}
+         form={form}
+         onFinish={handleGuardarCambios}
+       />
+    </div>
+      </ConfigProvider>
+  );
+};
 
 export default Expedientes; 
