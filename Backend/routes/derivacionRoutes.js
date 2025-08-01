@@ -6,12 +6,8 @@ import {
 
 const router = express.Router();
 
-// ===== RUTAS GLOBALES DE DERIVACIONES =====
-
-// Obtener derivaciones por estado
-router.get('/estado/:estado', obtenerDerivacionesPorEstadoCtrl);
-
-// Obtener derivaciones recientes
+// Rutas para derivaciones globales
 router.get('/recientes', obtenerDerivacionesRecientesCtrl);
+router.get('/estado/:estado', obtenerDerivacionesPorEstadoCtrl);
 
 export default router; 

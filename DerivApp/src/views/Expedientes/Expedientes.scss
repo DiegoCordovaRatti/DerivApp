@@ -1,0 +1,226 @@
+.expedientes-container {
+  padding: 24px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+
+  .expedientes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding: 24px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 16px;
+    }
+  }
+
+  .ant-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: none;
+  }
+
+  .ant-table {
+    .ant-table-thead > tr > th {
+      background-color: #fafafa;
+      border-bottom: 1px solid #f0f0f0;
+      font-weight: 600;
+      color: #262626;
+    }
+
+    .ant-table-tbody > tr > td {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 12px;
+    }
+
+    .ant-table-tbody > tr:hover > td {
+      background-color: #f6ffed;
+    }
+  }
+
+  .ant-avatar {
+    border: 2px solid #e6f7ff;
+  }
+
+  .ant-tag {
+    border-radius: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+  }
+
+  .ant-btn-text {
+    &:hover {
+      background-color: #f0f0f0;
+      border-radius: 4px;
+    }
+  }
+
+  .ant-dropdown-menu {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .ant-pagination {
+    .ant-pagination-item {
+      border-radius: 6px;
+      
+      &.ant-pagination-item-active {
+        background-color: #1890ff;
+        border-color: #1890ff;
+      }
+    }
+
+    .ant-pagination-prev,
+    .ant-pagination-next {
+      border-radius: 6px;
+    }
+  }
+
+  .ant-input-affix-wrapper {
+    border-radius: 6px;
+    
+    &:hover,
+    &:focus {
+      border-color: #1890ff;
+    }
+  }
+
+  .ant-select {
+    .ant-select-selector {
+      border-radius: 6px;
+    }
+  }
+
+  .ant-btn {
+    border-radius: 6px;
+    font-weight: 500;
+    
+    &.ant-btn-primary {
+      background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+      border: none;
+      box-shadow: 0 2px 4px rgba(24, 144, 255, 0.3);
+      
+      &:hover {
+        background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(24, 144, 255, 0.4);
+      }
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .expedientes-header {
+      padding: 16px;
+    }
+
+    .ant-table {
+      .ant-table-thead > tr > th,
+      .ant-table-tbody > tr > td {
+        padding: 12px 8px;
+      }
+    }
+
+    .ant-table-cell {
+      font-size: 12px;
+    }
+  }
+
+  // Animaciones
+  .ant-card {
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  // Estados de prioridad
+  .prioridad-alta {
+    color: #ff4d4f;
+  }
+
+  .prioridad-media {
+    color: #faad14;
+  }
+
+  .prioridad-baja {
+    color: #52c41a;
+  }
+
+  // Estados de estudiantes
+  .estado-activo {
+    background-color: #f6ffed;
+    border-color: #b7eb8f;
+    color: #52c41a;
+  }
+
+  .estado-pendiente {
+    background-color: #fff7e6;
+    border-color: #ffd591;
+    color: #fa8c16;
+  }
+
+  .estado-seguimiento {
+    background-color: #e6f7ff;
+    border-color: #91d5ff;
+    color: #1890ff;
+  }
+
+  .estado-cerrado {
+    background-color: #f5f5f5;
+    border-color: #d9d9d9;
+    color: #8c8c8c;
+  }
+
+  // Estilos para el modal
+  .ant-modal {
+    .ant-modal-header {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 24px;
+    }
+
+    .ant-modal-body {
+      padding: 24px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .ant-tabs-tab {
+      font-weight: 500;
+      
+      &.ant-tabs-tab-active {
+        color: #1890ff;
+      }
+    }
+
+    .ant-descriptions-item-label {
+      font-weight: 500;
+      color: #262626;
+    }
+
+    .ant-timeline-item {
+      .ant-timeline-item-content {
+        margin-left: 16px;
+      }
+    }
+
+    .ant-card {
+      border: 1px solid #f0f0f0;
+      box-shadow: none;
+      
+      &:hover {
+        transform: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+}
