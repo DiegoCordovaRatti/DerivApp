@@ -17,7 +17,13 @@ import {
   eliminarDerivacion,
   cambiarEstadoDerivacion,
   obtenerDerivacionesPorEstado,
-  obtenerDerivacionesRecientes
+  obtenerDerivacionesRecientes,
+  // Métodos de seguimientos
+  crearSeguimiento,
+  obtenerSeguimientosDerivacion,
+  obtenerSeguimientoPorId,
+  actualizarSeguimiento,
+  eliminarSeguimiento
 } from '../models/Estudiante.js';
 
 // ===== CONTROLADORES DE ESTUDIANTES =====
@@ -481,6 +487,122 @@ export const eliminarDerivacionCtrl = async (req, res) => {
   }
 };
 
+// ===== CONTROLADORES DE SEGUIMIENTOS =====
+
+// Crear un nuevo seguimiento
+export const crearSeguimientoCtrl = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId } = req.params;
+    const datosSeguimiento = req.body;
+    
+    const nuevoSeguimiento = await crearSeguimiento(estudianteId, derivacionId, datosSeguimiento);
+    
+    res.status(201).json({
+      message: 'Seguimiento creado exitosamente',
+      seguimiento: nuevoSeguimiento
+    });
+  } catch (error) {
+    console.error('Error al crear seguimiento:', error);
+    res.status(400).json({
+      error: 'Error al crear seguimiento',
+      details: error.message
+    });
+  }
+};
+
+// Obtener todos los seguimientos de una derivación
+export const obtenerSeguimientosDerivacionCtrl = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId } = req.params;
+    
+    const seguimientos = await obtenerSeguimientosDerivacion(estudianteId, derivacionId);
+    
+    res.json({
+      seguimientos,
+      total: seguimientos.length
+    });
+  } catch (error) {
+    console.error('Error al obtener seguimientos:', error);
+    res.status(500).json({
+      error: 'Error al obtener seguimientos',
+      details: error.message
+    });
+  }
+};
+
+// Obtener un seguimiento específico
+export const obtenerSeguimientoPorIdCtrl = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId, seguimientoId } = req.params;
+    
+    const seguimiento = await obtenerSeguimientoPorId(estudianteId, derivacionId, seguimientoId);
+    
+    res.json({
+      seguimiento
+    });
+  } catch (error) {
+    console.error('Error al obtener seguimiento:', error);
+    if (error.message.includes('no encontrado')) {
+      return res.status(404).json({
+        error: 'Seguimiento no encontrado'
+      });
+    }
+    res.status(500).json({
+      error: 'Error al obtener seguimiento',
+      details: error.message
+    });
+  }
+};
+
+// Actualizar un seguimiento
+export const actualizarSeguimientoCtrl = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId, seguimientoId } = req.params;
+    const datosActualizados = req.body;
+    
+    const resultado = await actualizarSeguimiento(estudianteId, derivacionId, seguimientoId, datosActualizados);
+    
+    res.json({
+      message: resultado.message
+    });
+  } catch (error) {
+    console.error('Error al actualizar seguimiento:', error);
+    if (error.message.includes('no encontrado')) {
+      return res.status(404).json({
+        error: 'Seguimiento no encontrado'
+      });
+    }
+    res.status(500).json({
+      error: 'Error al actualizar seguimiento',
+      details: error.message
+    });
+  }
+};
+
+// Eliminar un seguimiento
+export const eliminarSeguimientoCtrl = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId, seguimientoId } = req.params;
+    
+    const resultado = await eliminarSeguimiento(estudianteId, derivacionId, seguimientoId);
+    
+    res.json({
+      message: resultado.message
+    });
+  } catch (error) {
+    console.error('Error al eliminar seguimiento:', error);
+    if (error.message.includes('no encontrado')) {
+      return res.status(404).json({
+        error: 'Seguimiento no encontrado'
+      });
+    }
+    res.status(500).json({
+      error: 'Error al eliminar seguimiento',
+      details: error.message
+    });
+  }
+};
+
 export default {
   // Métodos de estudiantes
   crearEstudianteCtrl,
@@ -502,5 +624,11 @@ export default {
   eliminarDerivacionCtrl,
   cambiarEstadoDerivacionCtrl,
   obtenerDerivacionesPorEstadoCtrl,
-  obtenerDerivacionesRecientesCtrl
+  obtenerDerivacionesRecientesCtrl,
+  // Métodos de seguimientos
+  crearSeguimientoCtrl,
+  obtenerSeguimientosDerivacionCtrl,
+  obtenerSeguimientoPorIdCtrl,
+  actualizarSeguimientoCtrl,
+  eliminarSeguimientoCtrl
 };
