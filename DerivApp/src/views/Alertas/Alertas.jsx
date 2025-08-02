@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Typography,
   Input,
@@ -11,7 +11,9 @@ import {
   Avatar,
   Collapse,
   Badge,
-  Divider
+  Divider,
+  Spin,
+  message
 } from 'antd';
 import {
   SearchOutlined,
@@ -25,6 +27,7 @@ import {
   UserOutlined,
   DownOutlined
 } from '@ant-design/icons';
+import { obtenerAlertas, buscarAlertas } from '../../services/alertaService';
 import './Alertas.scss';
 
 const { Title, Text } = Typography;
@@ -33,8 +36,49 @@ const { Panel } = Collapse;
 const Alertas = () => {
   const [searchText, setSearchText] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [alertas, setAlertas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [alertasFiltradas, setAlertasFiltradas] = useState([]);
 
-  // Mock data de alertas
+  // Cargar alertas desde el backend
+  const cargarAlertas = async () => {
+    try {
+      setLoading(true);
+      const alertasData = await obtenerAlertas();
+      setAlertas(alertasData);
+      setAlertasFiltradas(alertasData);
+    } catch (error) {
+      console.error('Error al cargar alertas:', error);
+      message.error('Error al cargar las alertas');
+      // Fallback a datos mock si hay error
+      setAlertas([]);
+      setAlertasFiltradas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cargar alertas al montar el componente
+  useEffect(() => {
+    cargarAlertas();
+  }, []);
+
+  // Filtrar alertas cuando cambia el texto de búsqueda
+  useEffect(() => {
+    if (searchText.trim() === '') {
+      setAlertasFiltradas(alertas);
+    } else {
+      const filtradas = alertas.filter(alerta =>
+        alerta.estudiante.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
+        alerta.estudiante.curso.toLowerCase().includes(searchText.toLowerCase()) ||
+        alerta.motivo.toLowerCase().includes(searchText.toLowerCase()) ||
+        alerta.descripcion.toLowerCase().includes(searchText.toLowerCase())
+      );
+      setAlertasFiltradas(filtradas);
+    }
+  }, [searchText, alertas]);
+
+  // Mock data de alertas (fallback)
   const mockAlertas = [
     {
       id: 1,
@@ -124,18 +168,11 @@ const Alertas = () => {
 
   // Contar alertas por prioridad
   const contarAlertasPorPrioridad = () => {
-    const alta = mockAlertas.filter(alerta => alerta.prioridad === 'alta').length;
-    const media = mockAlertas.filter(alerta => alerta.prioridad === 'media').length;
-    const baja = mockAlertas.filter(alerta => alerta.prioridad === 'baja').length;
+    const alta = alertas.filter(alerta => alerta.prioridad === 'alta').length;
+    const media = alertas.filter(alerta => alerta.prioridad === 'media').length;
+    const baja = alertas.filter(alerta => alerta.prioridad === 'baja').length;
     return { alta, media, baja };
   };
-
-  // Filtrar alertas por búsqueda
-  const alertasFiltradas = mockAlertas.filter(alerta =>
-    alerta.estudiante.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
-    alerta.estudiante.curso.toLowerCase().includes(searchText.toLowerCase()) ||
-    alerta.motivo.toLowerCase().includes(searchText.toLowerCase())
-  );
 
   const { alta, media, baja } = contarAlertasPorPrioridad();
 
@@ -164,6 +201,34 @@ const Alertas = () => {
         {configPrioridad.text}
       </Tag>
     );
+  };
+
+  // Función para obtener el icono según el tipo de motivo
+  const getMotivoIcon = (motivo) => {
+    const motivoLower = motivo.toLowerCase();
+    if (motivoLower.includes('inasistencia') || motivoLower.includes('ausencia')) {
+      return <CalendarOutlined />;
+    } else if (motivoLower.includes('académico') || motivoLower.includes('evaluación')) {
+      return <BookOutlined />;
+    } else if (motivoLower.includes('reunión') || motivoLower.includes('entrevista')) {
+      return <UserOutlined />;
+    } else {
+      return <ExclamationCircleOutlined />;
+    }
+  };
+
+  // Función para obtener el color según el tipo de motivo
+  const getMotivoColor = (motivo) => {
+    const motivoLower = motivo.toLowerCase();
+    if (motivoLower.includes('inasistencia') || motivoLower.includes('ausencia')) {
+      return '#ff4d4f';
+    } else if (motivoLower.includes('académico') || motivoLower.includes('evaluación')) {
+      return '#faad14';
+    } else if (motivoLower.includes('reunión') || motivoLower.includes('entrevista')) {
+      return '#1890ff';
+    } else {
+      return '#52c41a';
+    }
   };
 
   return (
@@ -227,7 +292,10 @@ const Alertas = () => {
               </Button>
               <Button 
                 icon={<ReloadOutlined />} 
-                onClick={() => setSearchText('')}
+                onClick={() => {
+                  setSearchText('');
+                  cargarAlertas();
+                }}
               >
                 Reiniciar
               </Button>
@@ -236,61 +304,76 @@ const Alertas = () => {
         </Row>
       </div>
 
+      {/* Loading state */}
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <Spin size="large" />
+          <div style={{ marginTop: '16px', fontSize: '16px', color: '#666' }}>
+            Cargando alertas...
+          </div>
+        </div>
+      )}
+
       {/* Lista de alertas */}
-      <div className="alertas-list">
-        <Row gutter={[16, 16]}>
-          {alertasFiltradas.map((alerta) => (
-            <Col xs={24} md={12} lg={8} key={alerta.id}>
-              <Card
-                className={`alerta-card alerta-${alerta.prioridad}`}
-                style={{ 
-                  borderLeft: `4px solid ${alerta.color}`,
-                  marginBottom: '16px'
-                }}
-                bodyStyle={{ padding: '16px' }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {getPrioridadIcon(alerta.prioridad)}
-                    <div>
-                      <Text strong style={{ fontSize: '16px', display: 'block' }}>
-                        {alerta.estudiante.nombre}
-                      </Text>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        {alerta.estudiante.curso} • {alerta.fecha}
-                      </Text>
+      {!loading && (
+        <div className="alertas-list">
+          <Row gutter={[16, 16]}>
+            {alertasFiltradas.map((alerta) => (
+              <Col xs={24} md={12} lg={8} key={alerta.id}>
+                <Card
+                  className={`alerta-card alerta-${alerta.prioridad}`}
+                  style={{ 
+                    borderLeft: `4px solid ${getMotivoColor(alerta.motivo)}`,
+                    marginBottom: '16px'
+                  }}
+                  bodyStyle={{ padding: '16px' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {getPrioridadIcon(alerta.prioridad)}
+                      <div>
+                        <Text strong style={{ fontSize: '16px', display: 'block' }}>
+                          {alerta.estudiante.nombre}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {alerta.estudiante.curso} • {alerta.fecha}
+                        </Text>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {getPrioridadTag(alerta.prioridad)}
+                      <DownOutlined style={{ color: '#999', cursor: 'pointer' }} />
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {getPrioridadTag(alerta.prioridad)}
-                    <DownOutlined style={{ color: '#999', cursor: 'pointer' }} />
+                  
+                  <Divider style={{ margin: '12px 0' }} />
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    {getMotivoIcon(alerta.motivo)}
+                    <Text strong style={{ color: getMotivoColor(alerta.motivo) }}>
+                      {alerta.motivo}
+                    </Text>
                   </div>
-                </div>
-                
-                <Divider style={{ margin: '12px 0' }} />
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  {alerta.icon}
-                  <Text strong style={{ color: alerta.color }}>
-                    {alerta.motivo}
+                  
+                  <Text type="secondary" style={{ fontSize: '14px' }}>
+                    {alerta.descripcion}
                   </Text>
-                </div>
-                
-                <Text type="secondary" style={{ fontSize: '14px' }}>
-                  {alerta.descripcion}
-                </Text>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </div>
+      )}
 
       {/* Mensaje cuando no hay resultados */}
-      {alertasFiltradas.length === 0 && (
+      {!loading && alertasFiltradas.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px' }}>
           <InfoCircleOutlined style={{ fontSize: '48px', color: '#999', marginBottom: '16px' }} />
           <Text type="secondary" style={{ fontSize: '16px' }}>
-            No se encontraron alertas que coincidan con la búsqueda
+            {alertas.length === 0 
+              ? 'No hay alertas disponibles en este momento'
+              : 'No se encontraron alertas que coincidan con la búsqueda'
+            }
           </Text>
         </div>
       )}
