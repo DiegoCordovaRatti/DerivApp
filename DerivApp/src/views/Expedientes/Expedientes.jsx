@@ -27,9 +27,10 @@ import {
   obtenerEstudiantes,
   obtenerDerivacionesEstudiante,
   actualizarDerivacion,
+  crearSeguimiento,
   buscarEstudiantes
 } from '../../services/expedienteService';
-import { DetallesEstudianteModal, EditarDerivacionModal } from '../../components/modal';
+import { DetallesEstudianteModal, EditarDerivacionModal, AgregarSeguimientoModal } from '../../components/modal';
 
 const { Title, Text } = Typography;
 
@@ -51,6 +52,12 @@ const Expedientes = () => {
   const [editModalLoading, setEditModalLoading] = useState(false);
   const [selectedDerivacion, setSelectedDerivacion] = useState(null);
   const [form] = Form.useForm();
+  
+  // Estados para el modal de agregar seguimiento
+  const [seguimientoModalVisible, setSeguimientoModalVisible] = useState(false);
+  const [seguimientoModalLoading, setSeguimientoModalLoading] = useState(false);
+  const [selectedDerivacionSeguimiento, setSelectedDerivacionSeguimiento] = useState(null);
+  const [seguimientoForm] = Form.useForm();
   
   // Estados para datos del backend
   const [estudiantes, setEstudiantes] = useState([]);
@@ -210,6 +217,43 @@ const Expedientes = () => {
     form.resetFields();
   };
 
+  const handleCerrarSeguimientoModal = () => {
+    setSeguimientoModalVisible(false);
+    setSelectedDerivacionSeguimiento(null);
+    seguimientoForm.resetFields();
+  };
+
+  const handleAgregarSeguimiento = (derivacion) => {
+    setSelectedDerivacionSeguimiento(derivacion);
+    setSeguimientoModalVisible(true);
+  };
+
+  const handleGuardarSeguimiento = async (values) => {
+    if (!selectedDerivacionSeguimiento) return;
+    
+    setSeguimientoModalLoading(true);
+    try {
+      // Agregar seguimiento al backend
+      await crearSeguimiento(selectedEstudiante.id, selectedDerivacionSeguimiento.id, values);
+      
+      // Recargar derivaciones para mostrar el nuevo seguimiento
+      const response = await obtenerDerivacionesEstudiante(selectedEstudiante.id);
+      const derivacionesData = response.derivaciones || response;
+      const derivacionesProcesadas = procesarDerivaciones(derivacionesData);
+      setDerivaciones(derivacionesProcesadas);
+      
+      setSeguimientoModalVisible(false);
+      setSelectedDerivacionSeguimiento(null);
+      seguimientoForm.resetFields();
+      message.success('Seguimiento agregado correctamente');
+    } catch (error) {
+      console.error('Error al agregar seguimiento:', error);
+      message.error('Error al agregar el seguimiento');
+    } finally {
+      setSeguimientoModalLoading(false);
+    }
+  };
+
   const handleEditarDerivacion = (derivacion) => {
     setSelectedDerivacion(derivacion);
     setEditModalVisible(true);
@@ -362,34 +406,100 @@ const Expedientes = () => {
   const convertirFechaFirestore = (fecha) => {
     if (!fecha) return '';
     
-    // Si es un objeto Timestamp de Firestore
-    if (fecha && typeof fecha === 'object' && fecha.seconds) {
-      return new Date(fecha.seconds * 1000).toLocaleDateString('es-CL');
+    try {
+      // Si es un objeto Timestamp de Firestore
+      if (fecha && typeof fecha === 'object' && fecha.seconds) {
+        const date = new Date(fecha.seconds * 1000);
+        return date.toLocaleDateString('es-CL', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+      }
+      
+      // Si es un objeto Timestamp de Firestore con nanoseconds
+      if (fecha && typeof fecha === 'object' && fecha.toDate) {
+        const date = fecha.toDate();
+        return date.toLocaleDateString('es-CL', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+      }
+      
+      // Si es una fecha normal
+      if (fecha instanceof Date) {
+        return fecha.toLocaleDateString('es-CL', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+      }
+      
+      // Si es un string
+      if (typeof fecha === 'string') {
+        const date = new Date(fecha);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString('es-CL', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          });
+        }
+      }
+      
+      // Si es un número (timestamp)
+      if (typeof fecha === 'number') {
+        const date = new Date(fecha);
+        return date.toLocaleDateString('es-CL', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+      }
+      
+      return '';
+    } catch (error) {
+      console.error('Error al convertir fecha:', fecha, error);
+      return '';
     }
-    
-    // Si es una fecha normal
-    if (fecha instanceof Date) {
-      return fecha.toLocaleDateString('es-CL');
-    }
-    
-    // Si es un string
-    if (typeof fecha === 'string') {
-      return new Date(fecha).toLocaleDateString('es-CL');
-    }
-    
-    return '';
   };
 
   // Función para calcular el tiempo transcurrido usando Day.js
   const getTiempoTranscurrido = (fecha) => {
     if (!fecha) return '';
     
-    // Si es un objeto Timestamp de Firestore
-    if (fecha && typeof fecha === 'object' && fecha.seconds) {
-      return dayjs(fecha.seconds * 1000).fromNow();
+    try {
+      // Si es un objeto Timestamp de Firestore
+      if (fecha && typeof fecha === 'object' && fecha.seconds) {
+        return dayjs(fecha.seconds * 1000).fromNow();
+      }
+      
+      // Si es un objeto Timestamp de Firestore con toDate
+      if (fecha && typeof fecha === 'object' && fecha.toDate) {
+        return dayjs(fecha.toDate()).fromNow();
+      }
+      
+      // Si es una fecha normal
+      if (fecha instanceof Date) {
+        return dayjs(fecha).fromNow();
+      }
+      
+      // Si es un string
+      if (typeof fecha === 'string') {
+        return dayjs(fecha).fromNow();
+      }
+      
+      // Si es un número (timestamp)
+      if (typeof fecha === 'number') {
+        return dayjs(fecha).fromNow();
+      }
+      
+      return '';
+    } catch (error) {
+      console.error('Error al calcular tiempo transcurrido:', fecha, error);
+      return '';
     }
-    
-    return dayjs(fecha).fromNow();
   };
 
   // Configuración de columnas de la tabla
@@ -441,7 +551,7 @@ const Expedientes = () => {
           return (
             <Tag color="default">
               Sin derivaciones
-            </Tag>
+        </Tag>
           );
         }
       },
@@ -597,6 +707,7 @@ const Expedientes = () => {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           onEditarDerivacion={handleEditarDerivacion}
+          onAgregarSeguimiento={handleAgregarSeguimiento}
           convertirFechaFirestore={convertirFechaFirestore}
           getEstadoColor={getEstadoColor}
           getEstadoText={getEstadoText}
@@ -610,6 +721,16 @@ const Expedientes = () => {
          loading={editModalLoading}
          form={form}
          onFinish={handleGuardarCambios}
+       />
+
+       {/* Modal de agregar seguimiento */}
+       <AgregarSeguimientoModal
+         visible={seguimientoModalVisible}
+         onCancel={handleCerrarSeguimientoModal}
+         loading={seguimientoModalLoading}
+         form={seguimientoForm}
+         onFinish={handleGuardarSeguimiento}
+         derivacion={selectedDerivacionSeguimiento}
        />
     </div>
       </ConfigProvider>

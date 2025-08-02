@@ -12,8 +12,12 @@ import {
   Tag,
   Button,
   Timeline,
-  Divider
+  Divider,
+  Form,
+  Tooltip,
+  Collapse
 } from 'antd';
+import dayjs from '../../utils/dayjs';
 import {
   FileTextOutlined,
   HistoryOutlined,
@@ -22,7 +26,8 @@ import {
   EnvironmentOutlined,
   UserOutlined,
   EditOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
 
 const DetallesEstudianteModal = ({
@@ -34,11 +39,96 @@ const DetallesEstudianteModal = ({
   activeTab,
   onTabChange,
   onEditarDerivacion,
+  onAgregarSeguimiento,
   convertirFechaFirestore,
   getEstadoColor,
   getEstadoText,
   getPrioridadText
 }) => {
+  // Función local para convertir fechas de Firestore usando dayjs
+  const convertirFecha = (fecha) => {
+    console.log('Convirtiendo fecha:', fecha, 'tipo:', typeof fecha);
+    
+    if (!fecha) {
+      console.log('Fecha es null o undefined');
+      return '';
+    }
+    
+    try {
+      let date;
+      
+      // Si es un objeto Timestamp de Firestore
+      if (fecha && typeof fecha === 'object' && fecha.seconds) {
+        console.log('Es Timestamp con seconds:', fecha.seconds);
+        date = dayjs(fecha.seconds * 1000);
+      }
+      // Si es un objeto Timestamp de Firestore con toDate
+      else if (fecha && typeof fecha === 'object' && fecha.toDate) {
+        console.log('Es Timestamp con toDate');
+        date = dayjs(fecha.toDate());
+      }
+      // Si es una fecha normal
+      else if (fecha instanceof Date) {
+        console.log('Es Date object');
+        date = dayjs(fecha);
+      }
+      // Si es un string
+      else if (typeof fecha === 'string') {
+        console.log('Es string:', fecha);
+        // Intentar diferentes formatos de fecha
+        if (fecha.includes('T')) {
+          // Formato ISO
+          date = dayjs(fecha);
+        } else if (fecha.includes('-')) {
+          // Verificar si es DD-MM-YYYY o YYYY-MM-DD
+          const parts = fecha.split('-');
+          if (parts.length === 3) {
+            if (parts[0].length === 4) {
+              // Formato YYYY-MM-DD
+              date = dayjs(fecha, 'YYYY-MM-DD');
+            } else {
+              // Formato DD-MM-YYYY
+              date = dayjs(fecha, 'DD-MM-YYYY');
+            }
+          } else {
+            // Intentar parsear como fecha normal
+            date = dayjs(fecha);
+          }
+        } else if (fecha.includes('/')) {
+          // Formato DD/MM/YYYY
+          date = dayjs(fecha, 'DD/MM/YYYY');
+        } else {
+          // Intentar parsear como fecha normal
+          date = dayjs(fecha);
+        }
+      }
+      // Si es un número (timestamp)
+      else if (typeof fecha === 'number') {
+        console.log('Es número:', fecha);
+        date = dayjs(fecha);
+      }
+      // Si es un objeto dayjs
+      else if (fecha && fecha.$d) {
+        console.log('Es objeto dayjs');
+        date = fecha;
+      }
+      else {
+        console.log('No se pudo convertir la fecha:', fecha);
+        return '';
+      }
+      
+      // Verificar si la fecha es válida
+      if (date && date.isValid()) {
+        return date.format('DD/MM/YYYY');
+      } else {
+        console.log('Fecha inválida después de conversión');
+        return '';
+      }
+    } catch (error) {
+      console.error('Error al convertir fecha:', fecha, error);
+      return '';
+    }
+  };
   // Componente para el contenido del modal
   const ModalContent = () => {
     if (loading) {
@@ -129,7 +219,7 @@ const DetallesEstudianteModal = ({
                     style={{ marginBottom: '16px' }}
                     title={
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>Derivación #{index + 1} - {convertirFechaFirestore(derivacion.fecha_derivacion)}</span>
+                                                 <span>Derivación #{index + 1} - {convertirFecha(derivacion.fecha_derivacion)}</span>
                         <Space>
                           <Tag color={getEstadoColor(derivacion.estado)}>
                             {getEstadoText(derivacion.estado)}
@@ -142,12 +232,23 @@ const DetallesEstudianteModal = ({
                           }>
                             {getPrioridadText(derivacion.prioridad)}
                           </Tag>
-                          <Button 
-                            type="text" 
-                            icon={<EditOutlined />} 
-                            size="small"
-                            onClick={() => onEditarDerivacion(derivacion)}
-                          />
+                          <Tooltip title="Editar derivación">
+                            <Button 
+                              type="text" 
+                              icon={<EditOutlined />} 
+                              size="small"
+                              onClick={() => onEditarDerivacion(derivacion)}
+                            />
+                          </Tooltip>
+                          <Tooltip title="Agregar seguimiento">
+                            <Button 
+                              type="text" 
+                              icon={<PlusOutlined />} 
+                              size="small"
+                              style={{ color: '#52c41a' }}
+                              onClick={() => onAgregarSeguimiento(derivacion)}
+                            />
+                          </Tooltip>
                         </Space>
                       </div>
                     }
@@ -174,9 +275,9 @@ const DetallesEstudianteModal = ({
                           <Descriptions.Item label="Observaciones">
                             {derivacion.observaciones}
                           </Descriptions.Item>
-                          <Descriptions.Item label="Fecha evaluación">
-                            {convertirFechaFirestore(derivacion.fecha_evaluacion)}
-                          </Descriptions.Item>
+                                                     <Descriptions.Item label="Fecha evaluación">
+                             {convertirFecha(derivacion.fecha_evaluacion)}
+                           </Descriptions.Item>
                           <Descriptions.Item label="Resultado">
                             {derivacion.resultado}
                           </Descriptions.Item>
@@ -184,31 +285,69 @@ const DetallesEstudianteModal = ({
                       </Col>
                     </Row>
                     
-                    {derivacion.seguimientos && derivacion.seguimientos.length > 0 && (
-                      <div style={{ marginTop: '16px' }}>
-                        <Divider orientation="left">Seguimientos</Divider>
-                        <Timeline>
-                          {derivacion.seguimientos.map((seguimiento) => (
-                            <Timeline.Item 
-                              key={seguimiento.id}
-                              dot={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-                            >
-                              <div>
-                                <div style={{ fontWeight: '500' }}>
-                                  {seguimiento.tipo} - {convertirFechaFirestore(seguimiento.fecha)}
-                                </div>
-                                <div style={{ color: '#666', marginTop: '4px' }}>
-                                  {seguimiento.descripcion}
-                                </div>
-                                <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                                  Responsable: {seguimiento.responsable}
-                                </div>
-                              </div>
-                            </Timeline.Item>
-                          ))}
-                        </Timeline>
-                      </div>
-                    )}
+                                         {derivacion.seguimientos && derivacion.seguimientos.length > 0 && (
+                       <div style={{ marginTop: '16px' }}>
+                         <Divider orientation="left">Seguimientos</Divider>
+                         {console.log('Seguimientos de la derivación:', derivacion.seguimientos)}
+                         <Collapse 
+                           ghost 
+                           defaultActiveKey={[]}
+                           style={{ marginTop: '8px' }}
+                         >
+                           {derivacion.seguimientos.map((seguimiento, seguimientoIndex) => {
+                             console.log('Seguimiento individual:', seguimiento);
+                             return (
+                               <Collapse.Panel
+                               key={seguimiento.id}
+                               header={
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                   <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                                   <span style={{ fontWeight: '500' }}>
+                                     {seguimiento.tipo} - {convertirFecha(seguimiento.fecha)}
+                                   </span>
+                                   <Tag size="small" color="blue">
+                                     {seguimiento.responsable}
+                                   </Tag>
+                                 </div>
+                               }
+                             >
+                               <Row gutter={[16, 16]}>
+                                 <Col span={12}>
+                                   <Descriptions column={1} size="small">
+                                     <Descriptions.Item label="Tipo">
+                                       {seguimiento.tipo}
+                                     </Descriptions.Item>
+                                     <Descriptions.Item label="Fecha">
+                                       {convertirFecha(seguimiento.fecha)}
+                                     </Descriptions.Item>
+                                     <Descriptions.Item label="Responsable">
+                                       {seguimiento.responsable}
+                                     </Descriptions.Item>
+                                     <Descriptions.Item label="Duración">
+                                       {seguimiento.duracion || 'No especificada'}
+                                     </Descriptions.Item>
+                                   </Descriptions>
+                                 </Col>
+                                 <Col span={12}>
+                                   <Descriptions column={1} size="small">
+                                     <Descriptions.Item label="Descripción">
+                                       {seguimiento.descripcion || 'Sin descripción'}
+                                     </Descriptions.Item>
+                                     <Descriptions.Item label="Observaciones">
+                                       {seguimiento.observaciones || 'Sin observaciones'}
+                                     </Descriptions.Item>
+                                     <Descriptions.Item label="Resultado">
+                                       {seguimiento.resultado || 'Sin resultado'}
+                                     </Descriptions.Item>
+                                   </Descriptions>
+                                 </Col>
+                               </Row>
+                             </Collapse.Panel>
+                           );
+                         })}
+                         </Collapse>
+                       </div>
+                     )}
                   </Card>
                 ))}
               </div>

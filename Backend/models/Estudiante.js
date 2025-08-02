@@ -221,7 +221,36 @@ export const obtenerDerivacionesEstudiante = async (estudianteId) => {
   try {
     const derivacionesRef = collection(db, "estudiantes", estudianteId, "derivaciones");
     const querySnapshot = await getDocs(derivacionesRef);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Obtener derivaciones y sus seguimientos
+    const derivacionesConSeguimientos = await Promise.all(
+      querySnapshot.docs.map(async (doc) => {
+        const derivacion = { id: doc.id, ...doc.data() };
+        
+        try {
+          // Obtener seguimientos de esta derivación
+          const seguimientosRef = collection(db, "estudiantes", estudianteId, "derivaciones", doc.id, "seguimientos");
+          const seguimientosSnapshot = await getDocs(seguimientosRef);
+          const seguimientos = seguimientosSnapshot.docs.map(seguimientoDoc => ({
+            id: seguimientoDoc.id,
+            ...seguimientoDoc.data()
+          }));
+          
+          return {
+            ...derivacion,
+            seguimientos: seguimientos
+          };
+        } catch (error) {
+          console.error(`Error al cargar seguimientos para derivación ${doc.id}:`, error);
+          return {
+            ...derivacion,
+            seguimientos: []
+          };
+        }
+      })
+    );
+    
+    return derivacionesConSeguimientos;
   } catch (error) {
     throw new Error(`Error al obtener derivaciones del estudiante: ${error.message}`);
   }
@@ -321,6 +350,93 @@ export const eliminarDerivacion = async (estudianteId, derivacionId) => {
   }
 };
 
+// Crear un nuevo seguimiento para una derivación
+export const crearSeguimiento = async (estudianteId, derivacionId, datosSeguimiento) => {
+  try {
+    const seguimientoData = {
+      ...datosSeguimiento,
+      fecha_creacion: new Date(),
+      fecha_actualizacion: new Date()
+    };
+    
+    const seguimientoRef = await addDoc(
+      collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "seguimientos"), 
+      seguimientoData
+    );
+    
+    return { id: seguimientoRef.id, ...seguimientoData };
+  } catch (error) {
+    throw new Error(`Error al crear seguimiento: ${error.message}`);
+  }
+};
+
+// Obtener todos los seguimientos de una derivación
+export const obtenerSeguimientosDerivacion = async (estudianteId, derivacionId) => {
+  try {
+    const querySnapshot = await getDocs(
+      collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "seguimientos")
+    );
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    throw new Error(`Error al obtener seguimientos: ${error.message}`);
+  }
+};
+
+// Obtener un seguimiento específico
+export const obtenerSeguimientoPorId = async (estudianteId, derivacionId, seguimientoId) => {
+  try {
+    const seguimientoRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "seguimientos", seguimientoId);
+    const docSnap = await getDoc(seguimientoRef);
+    
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    } else {
+      throw new Error("Seguimiento no encontrado");
+    }
+  } catch (error) {
+    throw new Error(`Error al obtener seguimiento: ${error.message}`);
+  }
+};
+
+// Actualizar un seguimiento
+export const actualizarSeguimiento = async (estudianteId, derivacionId, seguimientoId, datosActualizados) => {
+  try {
+    const seguimientoRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "seguimientos", seguimientoId);
+    const docSnap = await getDoc(seguimientoRef);
+    
+    if (!docSnap.exists()) {
+      throw new Error("Seguimiento no encontrado");
+    }
+    
+    const datosActualizadosConFecha = {
+      ...datosActualizados,
+      fecha_actualizacion: new Date()
+    };
+    
+    await updateDoc(seguimientoRef, datosActualizadosConFecha);
+    return { message: "Seguimiento actualizado correctamente" };
+  } catch (error) {
+    throw new Error(`Error al actualizar seguimiento: ${error.message}`);
+  }
+};
+
+// Eliminar un seguimiento
+export const eliminarSeguimiento = async (estudianteId, derivacionId, seguimientoId) => {
+  try {
+    const seguimientoRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "seguimientos", seguimientoId);
+    const docSnap = await getDoc(seguimientoRef);
+    
+    if (!docSnap.exists()) {
+      throw new Error("Seguimiento no encontrado");
+    }
+    
+    await deleteDoc(seguimientoRef);
+    return { message: "Seguimiento eliminado correctamente" };
+  } catch (error) {
+    throw new Error(`Error al eliminar seguimiento: ${error.message}`);
+  }
+};
+
 export default {
   crearEstudiante,
   obtenerEstudiantes,
@@ -340,5 +456,10 @@ export default {
   cambiarEstadoDerivacion,
   obtenerDerivacionesPorEstado,
   obtenerDerivacionesRecientes,
+  crearSeguimiento,
+  obtenerSeguimientosDerivacion,
+  obtenerSeguimientoPorId,
+  actualizarSeguimiento,
+  eliminarSeguimiento,
   validarEstudiante
 };

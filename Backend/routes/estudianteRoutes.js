@@ -20,7 +20,13 @@ import {
   eliminarDerivacionCtrl,
   cambiarEstadoDerivacionCtrl,
   obtenerDerivacionesPorEstadoCtrl,
-  obtenerDerivacionesRecientesCtrl
+  obtenerDerivacionesRecientesCtrl,
+  // Métodos de seguimientos
+  crearSeguimientoCtrl,
+  obtenerSeguimientosDerivacionCtrl,
+  obtenerSeguimientoPorIdCtrl,
+  actualizarSeguimientoCtrl,
+  eliminarSeguimientoCtrl
 } from '../controllers/estudianteController.js';
 
 const router = express.Router();
@@ -49,5 +55,14 @@ router.get('/:estudianteId/derivaciones/:derivacionId', obtenerDerivacionPorIdCt
 router.put('/:estudianteId/derivaciones/:derivacionId', actualizarDerivacionCtrl);
 router.patch('/:estudianteId/derivaciones/:derivacionId/estado', cambiarEstadoDerivacionCtrl);
 router.delete('/:estudianteId/derivaciones/:derivacionId', eliminarDerivacionCtrl);
+
+// ===== RUTAS DE SEGUIMIENTOS =====
+
+// Rutas de seguimientos por derivación
+router.post('/:estudianteId/derivaciones/:derivacionId/seguimientos', crearSeguimientoCtrl);
+router.get('/:estudianteId/derivaciones/:derivacionId/seguimientos', obtenerSeguimientosDerivacionCtrl);
+router.get('/:estudianteId/derivaciones/:derivacionId/seguimientos/:seguimientoId', obtenerSeguimientoPorIdCtrl);
+router.put('/:estudianteId/derivaciones/:derivacionId/seguimientos/:seguimientoId', actualizarSeguimientoCtrl);
+router.delete('/:estudianteId/derivaciones/:derivacionId/seguimientos/:seguimientoId', eliminarSeguimientoCtrl);
 
 export default router; 
