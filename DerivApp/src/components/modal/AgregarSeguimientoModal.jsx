@@ -168,6 +168,7 @@ const AgregarSeguimientoModal = ({
         <Form.Item
           name="resultado"
           label="Resultado del Seguimiento"
+          rules={[{ required: true, message: 'Selecciona el resultado' }]}
         >
           <Select placeholder="Selecciona el resultado">
             <Option value="positivo">Positivo</Option>
