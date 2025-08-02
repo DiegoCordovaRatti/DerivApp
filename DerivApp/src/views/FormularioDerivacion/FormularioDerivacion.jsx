@@ -512,189 +512,15 @@ const FormularioDerivacion = () => {
             </Row>
           </Panel>
 
-          {/* Sección 2: Datos de la Derivación */}
-          <Panel
-            header={
-              <Space>
-                <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
-                <Text strong>Datos de la Derivación</Text>
-              </Space>
-            }
-            key="2"
-            className="form-panel"
-          >
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Fecha de Derivación *"
-                  name="fecha_derivacion"
-                  rules={[{ required: true, message: 'Por favor seleccione la fecha de derivación' }]}
-                >
-                  <DatePicker
-                    placeholder="Seleccionar fecha"
-                    size="large"
-                    style={{ width: '100%' }}
-                    format="DD/MM/YYYY"
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Estado de la Derivación *"
-                  name="estado_derivacion"
-                  rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
-                >
-                  <Select
-                    placeholder="Seleccionar estado"
-                    size="large"
-                  >
-                    <Option value="en_proceso">En Proceso</Option>
-                    <Option value="en_seguimiento">En Seguimiento</Option>
-                    <Option value="cerrado">Cerrado</Option>
-                    <Option value="archivado">Archivado</Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={24}>
-                <Form.Item
-                  label="Motivo de la Derivación *"
-                  name="motivo"
-                  rules={[
-                    { required: true, message: 'Por favor describa el motivo de la derivación' },
-                    { min: 10, message: 'El motivo debe tener al menos 10 caracteres' }
-                  ]}
-                >
-                  <TextArea
-                    placeholder="Describa detalladamente el motivo de la derivación"
-                    rows={4}
-                    showCount
-                    maxLength={500}
-                    style={{ resize: 'vertical' }}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24}>
-                <Form.Item
-                  label="Descripción Detallada"
-                  name="descripcion"
-                >
-                  <TextArea
-                    placeholder="Describa con más detalle la situación del estudiante"
-                    rows={4}
-                    showCount
-                    maxLength={1000}
-                    style={{ resize: 'vertical' }}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Derivado Por *"
-                  name="derivado_por"
-                  rules={[{ required: true, message: 'Por favor ingrese quién deriva el caso' }]}
-                >
-                  <Input
-                    placeholder="Nombre de quien deriva el caso"
-                    size="large"
-                    prefix={<UserOutlined />}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Responsable Asignado *"
-                  name="responsable_id"
-                  rules={[{ required: true, message: 'Por favor seleccione el responsable' }]}
-                >
-                  <Select
-                    placeholder="Seleccionar responsable"
-                    size="large"
-                    showSearch
-                    optionFilterProp="children"
-                  >
-                    <Option value="psicologo1">Psicólogo María González</Option>
-                    <Option value="psicologo2">Psicólogo Juan Pérez</Option>
-                    <Option value="psicologo3">Psicóloga Ana Rodríguez</Option>
-                    <Option value="psicologo4">Psicólogo Carlos Silva</Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-            </Row>
-          </Panel>
-
-          {/* Sección 3: Información Adicional */}
-          <Panel
-            header={
-              <Space>
-                <FileTextOutlined style={{ color: '#52c41a' }} />
-                <Text strong>Información Adicional</Text>
-              </Space>
-            }
-            key="3"
-            className="form-panel"
-          >
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Prioridad"
-                  name="prioridad"
-                >
-                  <Select
-                    placeholder="Seleccionar prioridad"
-                    size="large"
-                  >
-                    <Option value="baja">Baja</Option>
-                    <Option value="media">Media</Option>
-                    <Option value="alta">Alta</Option>
-                    <Option value="urgente">Urgente</Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Tipo de Caso"
-                  name="tipo_caso"
-                >
-                  <Select
-                    placeholder="Seleccionar tipo"
-                    size="large"
-                  >
-                    <Option value="conductual">Conductual</Option>
-                    <Option value="emocional">Emocional</Option>
-                    <Option value="academico">Académico</Option>
-                    <Option value="familiar">Familiar</Option>
-                    <Option value="social">Social</Option>
-                    <Option value="higiene">Higiene</Option>
-                    <Option value="asistencia">Asistencia</Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={24}>
-                <Form.Item
-                  label="Observaciones"
-                  name="observaciones"
-                >
-                  <TextArea
-                    placeholder="Agregue observaciones adicionales si es necesario"
-                    rows={3}
-                    showCount
-                    maxLength={500}
-                    style={{ resize: 'vertical' }}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-          </Panel>
-
-          {/* Sección 4: Datos de Contacto */}
-          <Panel
+        {/* Sección 2: Datos de Contacto */}
+        <Panel
             header={
               <Space>
                 <TeamOutlined style={{ color: '#722ed1' }} />
                 <Text strong>Datos de Contacto</Text>
               </Space>
             }
-            key="4"
+            key="2"
             className="form-panel"
           >
             <Row gutter={[16, 16]}>
@@ -753,6 +579,151 @@ const FormularioDerivacion = () => {
                     readOnly
                     style={{ backgroundColor: '#f5f5f5' }}
                   />
+                </Form.Item>
+              </Col>
+            </Row>
+          </Panel>
+
+          {/* Sección 3: Datos de la Derivación */}
+          <Panel
+            header={
+              <Space>
+                <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
+                <Text strong>Datos de la Derivación</Text>
+              </Space>
+            }
+            key="3"
+            className="form-panel"
+          >
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="Fecha de Derivación *"
+                  name="fecha_derivacion"
+                  rules={[{ required: true, message: 'Por favor seleccione la fecha de derivación' }]}
+                >
+                  <DatePicker
+                    placeholder="Seleccionar fecha"
+                    size="large"
+                    style={{ width: '100%' }}
+                    format="DD/MM/YYYY"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="Estado de la Derivación *"
+                  name="estado_derivacion"
+                  rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
+                >
+                  <Select
+                    placeholder="Seleccionar estado"
+                    size="large"
+                  >
+                    <Option value="activo">Activo</Option>
+                    <Option value="pendiente">Pendiente</Option>
+                    <Option value="seguimiento">Seguimiento</Option>
+                    <Option value="cerrado">Cerrado</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="Prioridad"
+                  name="prioridad"
+                  rules={[{ required: true, message: 'Por favor seleccione la prioridad' }]}
+                >
+                  <Select
+                    placeholder="Seleccionar prioridad"
+                    size="large"
+                  >
+                    <Option value="baja">Baja</Option>
+                    <Option value="media">Media</Option>
+                    <Option value="alta">Alta</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="Tipo de Caso"
+                  name="tipo_caso"
+                  rules={[{ required: true, message: 'Por favor seleccione el tipo de caso' }]}
+                >
+                  <Select
+                    placeholder="Seleccionar tipo"
+                    size="large"
+                  >
+                    <Option value="conductual">Conductual</Option>
+                    <Option value="emocional">Emocional</Option>
+                    <Option value="academico">Académico</Option>
+                    <Option value="familiar">Familiar</Option>
+                    <Option value="social">Social</Option>
+                    <Option value="higiene">Higiene</Option>
+                    <Option value="asistencia">Asistencia</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24}>
+                <Form.Item
+                  label="Motivo de la Derivación *"
+                  name="motivo"
+                  rules={[
+                    { required: true, message: 'Por favor describa el motivo de la derivación' },
+                    { min: 10, message: 'El motivo debe tener al menos 10 caracteres' }
+                  ]}
+                >
+                  <Input
+                    placeholder="Describa el motivo de la derivación"
+                    rows={4}
+                    showCount
+                    maxLength={150}
+                    style={{ resize: 'vertical' }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24}>
+                <Form.Item
+                  label="Descripción Detallada"
+                  name="descripcion"
+                  rules={[{ required: true, message: 'Por favor describa el motivo de la derivación' }]}
+                >
+                  <TextArea
+                    placeholder="Describa con más detalle la situación del estudiante"
+                    rows={4}
+                    showCount
+                    maxLength={1000}
+                    style={{ resize: 'vertical' }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="Derivado Por *"
+                  name="derivado_por"
+                  rules={[{ required: true, message: 'Por favor ingrese quién deriva el caso' }]}
+                >
+                  <Input
+                    placeholder="Nombre de quien deriva el caso"
+                    size="large"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="Responsable Asignado *"
+                  name="responsable_id"
+                  rules={[{ required: true, message: 'Por favor seleccione el responsable' }]}
+                >
+                  <Select
+                    placeholder="Seleccionar responsable"
+                    size="large"
+                    showSearch
+                    optionFilterProp="children"
+                  >
+                    <Option value="psicologo">Psicólogía</Option>
+                    <Option value="trabajo_social">Trabajo Social</Option>
+                    <Option value="jefe_convivencia">Jefe de Convivencia</Option>
+                  </Select>
                 </Form.Item>
               </Col>
             </Row>

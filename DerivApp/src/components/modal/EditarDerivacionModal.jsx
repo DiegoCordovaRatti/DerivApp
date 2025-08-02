@@ -13,6 +13,7 @@ import {
 import { EditOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
+const { TextArea } = Input;
 
 const EditarDerivacionModal = ({
   visible,
@@ -44,13 +45,34 @@ const EditarDerivacionModal = ({
         <Row gutter={[16, 16]}>
           <Col span={12}>
             <Form.Item
-              name="motivo"
-              label="Motivo de derivación"
-              rules={[{ required: true, message: 'Por favor ingrese el motivo' }]}
+              name="fecha_derivacion"
+              label="Fecha de Derivación"
+              rules={[{ required: true, message: 'Por favor seleccione la fecha de derivación' }]}
             >
-              <Input placeholder="Motivo de la derivación" />
+              <DatePicker 
+                style={{ width: '100%' }} 
+                format="DD/MM/YYYY"
+                placeholder="Seleccionar fecha"
+              />
             </Form.Item>
           </Col>
+          <Col span={12}>
+            <Form.Item
+              name="estado_derivacion"
+              label="Estado de la Derivación"
+              rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
+            >
+              <Select placeholder="Seleccionar estado">
+                <Option value="activo">Activo</Option>
+                <Option value="pendiente">Pendiente</Option>
+                <Option value="seguimiento">Seguimiento</Option>
+                <Option value="cerrado">Cerrado</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]}>
           <Col span={12}>
             <Form.Item
               name="prioridad"
@@ -64,58 +86,118 @@ const EditarDerivacionModal = ({
               </Select>
             </Form.Item>
           </Col>
-        </Row>
-        
-        <Form.Item
-          name="descripcion"
-          label="Descripción"
-          rules={[{ required: true, message: 'Por favor ingrese la descripción' }]}
-        >
-          <Input.TextArea rows={4} placeholder="Descripción detallada del caso" />
-        </Form.Item>
-        
-        <Row gutter={[16, 16]}>
           <Col span={12}>
             <Form.Item
-              name="estado"
-              label="Estado"
-              rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
+              name="tipo_caso"
+              label="Tipo de Caso"
+              rules={[{ required: true, message: 'Por favor seleccione el tipo de caso' }]}
             >
-              <Select placeholder="Seleccionar estado">
-                <Option value="activo">Activo</Option>
-                <Option value="pendiente">Pendiente</Option>
-                <Option value="seguimiento">Seguimiento</Option>
-                <Option value="cerrado">Cerrado</Option>
+              <Select placeholder="Seleccionar tipo">
+                <Option value="conductual">Conductual</Option>
+                <Option value="emocional">Emocional</Option>
+                <Option value="academico">Académico</Option>
+                <Option value="familiar">Familiar</Option>
+                <Option value="social">Social</Option>
+                <Option value="higiene">Higiene</Option>
+                <Option value="asistencia">Asistencia</Option>
               </Select>
             </Form.Item>
           </Col>
+        </Row>
+
+        <Form.Item
+          name="motivo"
+          label="Motivo de la Derivación"
+          rules={[
+            { required: true, message: 'Por favor describa el motivo de la derivación' },
+            { min: 10, message: 'El motivo debe tener al menos 10 caracteres' }
+          ]}
+        >
+          <Input
+            placeholder="Describa el motivo de la derivación"
+            showCount
+            maxLength={150}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="descripcion"
+          label="Descripción Detallada"
+          rules={[{ required: true, message: 'Por favor describa el motivo de la derivación' }]}
+        >
+          <TextArea
+            placeholder="Describa con más detalle la situación del estudiante"
+            rows={4}
+            showCount
+            maxLength={1000}
+            style={{ resize: 'vertical' }}
+          />
+        </Form.Item>
+
+        <Row gutter={[16, 16]}>
+          <Col span={12}>
+            <Form.Item
+              name="derivado_por"
+              label="Derivado Por"
+              rules={[{ required: true, message: 'Por favor ingrese quién deriva el caso' }]}
+            >
+              <Input
+                placeholder="Nombre de quien deriva el caso"
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="responsable_id"
+              label="Responsable Asignado"
+              rules={[{ required: true, message: 'Por favor seleccione el responsable' }]}
+            >
+              <Select
+                placeholder="Seleccionar responsable"
+                showSearch
+                optionFilterProp="children"
+              >
+                <Option value="psicologo">Psicólogía</Option>
+                <Option value="trabajo_social">Trabajo Social</Option>
+                <Option value="jefe_convivencia">Jefe de Convivencia</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]}>
           <Col span={12}>
             <Form.Item
               name="fecha_evaluacion"
               label="Fecha de evaluación"
             >
-              <DatePicker style={{ width: '100%' }} />
+              <DatePicker 
+                style={{ width: '100%' }} 
+                format="DD/MM/YYYY"
+                placeholder="Seleccionar fecha"
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="resultado"
+              label="Resultado"
+            >
+              <Input placeholder="Resultado de la evaluación" />
             </Form.Item>
           </Col>
         </Row>
-        
+
         <Form.Item
           name="observaciones"
           label="Observaciones"
         >
-          <Input.TextArea rows={3} placeholder="Observaciones adicionales" />
-        </Form.Item>
-        
-        <Form.Item
-          name="resultado"
-          label="Resultado"
-        >
-          <Select placeholder="Seleccionar resultado">
-            <Option value="Pendiente">Pendiente</Option>
-            <Option value="Mejorado">Mejorado</Option>
-            <Option value="Sin cambios">Sin cambios</Option>
-            <Option value="Empeorado">Empeorado</Option>
-          </Select>
+          <TextArea
+            placeholder="Observaciones adicionales"
+            rows={3}
+            showCount
+            maxLength={500}
+          />
         </Form.Item>
         
         <Form.Item>
