@@ -7,6 +7,7 @@ import formularioRoutes from './formularioRoutes.js';
 import actividadRoutes from './actividadRoutes.js';
 import intervencionRoutes from './intervencionRoutes.js';
 import derivacionRoutes from './derivacionRoutes.js';
+import alertaRoutes from './alertaRoutes.js';
 
 const router = express.Router();
 
@@ -19,6 +20,7 @@ router.use('/formularios', formularioRoutes);
 router.use('/actividades', actividadRoutes);
 router.use('/intervenciones', intervencionRoutes);
 router.use('/derivaciones', derivacionRoutes);
+router.use('/', alertaRoutes);
 
 // Ruta de prueba
 router.get('/', (req, res) => {

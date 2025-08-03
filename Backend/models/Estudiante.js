@@ -437,6 +437,103 @@ export const eliminarSeguimiento = async (estudianteId, derivacionId, seguimient
   }
 };
 
+// ===== FUNCIONES PARA ALERTAS =====
+
+// Crear una nueva alerta para una derivación
+export const crearAlerta = async (estudianteId, derivacionId, datosAlerta) => {
+  try {
+    const alertaData = {
+      ...datosAlerta,
+      fecha_creacion: new Date(),
+      fecha_actualizacion: new Date()
+    };
+    
+    const docRef = await addDoc(
+      collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas"), 
+      alertaData
+    );
+    return { id: docRef.id, ...alertaData };
+  } catch (error) {
+    throw new Error(`Error al crear alerta: ${error.message}`);
+  }
+};
+
+// Obtener todas las alertas de una derivación
+export const obtenerAlertasDerivacion = async (estudianteId, derivacionId) => {
+  try {
+    const querySnapshot = await getDocs(
+      collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas")
+    );
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    throw new Error(`Error al obtener alertas: ${error.message}`);
+  }
+};
+
+// Obtener alerta por ID
+export const obtenerAlertaPorId = async (estudianteId, derivacionId, alertaId) => {
+  try {
+    const alertaRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas", alertaId);
+    const alertaSnap = await getDoc(alertaRef);
+    
+    if (alertaSnap.exists()) {
+      return { id: alertaSnap.id, ...alertaSnap.data() };
+    } else {
+      throw new Error("Alerta no encontrada");
+    }
+  } catch (error) {
+    throw new Error(`Error al obtener alerta: ${error.message}`);
+  }
+};
+
+// Actualizar una alerta
+export const actualizarAlerta = async (estudianteId, derivacionId, alertaId, datosActualizados) => {
+  try {
+    const alertaRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas", alertaId);
+    const datosActualizadosConFecha = {
+      ...datosActualizados,
+      fecha_actualizacion: new Date()
+    };
+    
+    await updateDoc(alertaRef, datosActualizadosConFecha);
+    return { mensaje: "Alerta actualizada exitosamente" };
+  } catch (error) {
+    throw new Error(`Error al actualizar alerta: ${error.message}`);
+  }
+};
+
+// Eliminar una alerta
+export const eliminarAlerta = async (estudianteId, derivacionId, alertaId) => {
+  try {
+    const alertaRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas", alertaId);
+    await deleteDoc(alertaRef);
+    return { mensaje: "Alerta eliminada exitosamente" };
+  } catch (error) {
+    throw new Error(`Error al eliminar alerta: ${error.message}`);
+  }
+};
+
+// Obtener la alerta más reciente de una derivación
+export const obtenerAlertaReciente = async (estudianteId, derivacionId) => {
+  try {
+    const q = query(
+      collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas"),
+      orderBy("fecha_creacion", "desc"),
+      limit(1)
+    );
+    const querySnapshot = await getDocs(q);
+    
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    } else {
+      return null;
+    }
+  } catch (error) {
+    throw new Error(`Error al obtener alerta reciente: ${error.message}`);
+  }
+};
+
 export default {
   crearEstudiante,
   obtenerEstudiantes,
@@ -461,5 +558,11 @@ export default {
   obtenerSeguimientoPorId,
   actualizarSeguimiento,
   eliminarSeguimiento,
+  crearAlerta,
+  obtenerAlertasDerivacion,
+  obtenerAlertaPorId,
+  actualizarAlerta,
+  eliminarAlerta,
+  obtenerAlertaReciente,
   validarEstudiante
 };

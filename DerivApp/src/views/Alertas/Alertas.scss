@@ -1,0 +1,316 @@
+.alertas-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: calc(100vh - 64px);
+
+  .alertas-header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f0f0f0;
+
+    h2 {
+      margin-bottom: 8px;
+      color: #1890ff;
+    }
+  }
+
+  .alertas-filters {
+    background: #fafafa;
+    padding: 24px;
+    border-radius: 8px;
+    margin-bottom: 32px;
+    border: 1px solid #f0f0f0;
+
+    .ant-input-affix-wrapper {
+      border-radius: 6px;
+    }
+
+    .ant-tag {
+      border-radius: 4px;
+      font-weight: 500;
+      padding: 4px 12px;
+    }
+
+    .ant-badge {
+      .ant-badge-count {
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .alertas-list {
+    .alerta-card {
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid #f0f0f0;
+      cursor: pointer;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      &.alerta-alta {
+        border-left-color: #ff4d4f;
+        
+        .ant-card-body {
+          border-left: 4px solid #ff4d4f;
+        }
+      }
+
+      &.alerta-media {
+        border-left-color: #faad14;
+        
+        .ant-card-body {
+          border-left: 4px solid #faad14;
+        }
+      }
+
+      &.alerta-baja {
+        border-left-color: #52c41a;
+        
+        .ant-card-body {
+          border-left: 4px solid #52c41a;
+        }
+      }
+
+      .ant-card-body {
+        padding: 16px;
+      }
+
+      .estudiante-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+
+        .estudiante-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          color: white;
+          background: #1890ff;
+        }
+
+        .estudiante-details {
+          flex: 1;
+
+          .estudiante-nombre {
+            font-weight: 600;
+            font-size: 16px;
+            color: #262626;
+            margin-bottom: 4px;
+          }
+
+          .estudiante-curso {
+            font-size: 12px;
+            color: #8c8c8c;
+          }
+        }
+      }
+
+      .alerta-prioridad {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+
+        .prioridad-icon {
+          font-size: 16px;
+        }
+
+        .prioridad-tag {
+          font-weight: 500;
+          border-radius: 4px;
+        }
+      }
+
+      .alerta-motivo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+
+        .motivo-icon {
+          font-size: 14px;
+        }
+
+        .motivo-texto {
+          font-weight: 600;
+          font-size: 14px;
+        }
+      }
+
+      .alerta-descripcion {
+        color: #8c8c8c;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .alerta-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #f0f0f0;
+
+        .expand-icon {
+          color: #8c8c8c;
+          cursor: pointer;
+          transition: transform 0.3s ease;
+
+          &:hover {
+            color: #1890ff;
+            transform: rotate(180deg);
+          }
+        }
+      }
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .alertas-filters {
+      padding: 16px;
+
+      .ant-row {
+        margin-bottom: 16px;
+      }
+
+      .ant-space {
+        flex-wrap: wrap;
+      }
+    }
+
+    .alertas-list {
+      .alerta-card {
+        margin-bottom: 16px;
+
+        .estudiante-info {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+
+          .estudiante-avatar {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+          }
+        }
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .alertas-header {
+      margin-bottom: 24px;
+
+      h2 {
+        font-size: 20px;
+      }
+    }
+
+    .alertas-filters {
+      .ant-col {
+        margin-bottom: 12px;
+      }
+    }
+
+    .alertas-list {
+      .alerta-card {
+        .ant-card-body {
+          padding: 12px;
+        }
+      }
+    }
+  }
+
+  // Animaciones
+  .alerta-card {
+    animation: fadeInUp 0.5s ease-out;
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+
+  // Estados de hover mejorados
+  .alerta-card:hover {
+    .alerta-actions .expand-icon {
+      transform: translateY(-2px);
+    }
+  }
+
+  // Estilos para el estado vacío
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #8c8c8c;
+
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      color: #d9d9d9;
+    }
+
+    .empty-text {
+      font-size: 16px;
+      color: #8c8c8c;
+    }
+  }
+
+  // Mejoras en los filtros
+  .filter-section {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    .filter-title {
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #262626;
+    }
+
+    .filter-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      .ant-tag {
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: scale(1.05);
+        }
+
+        &.active {
+          background: #1890ff;
+          color: white;
+          border-color: #1890ff;
+        }
+      }
+    }
+  }
+}
