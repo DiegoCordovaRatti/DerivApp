@@ -63,10 +63,8 @@ const EditarDerivacionModal = ({
               rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
             >
               <Select placeholder="Seleccionar estado">
-                <Option value="activo">Activo</Option>
-                <Option value="pendiente">Pendiente</Option>
-                <Option value="seguimiento">Seguimiento</Option>
-                <Option value="cerrado">Cerrado</Option>
+                <Option value="abierta">Abierta</Option>
+                <Option value="cerrada">Cerrada</Option>
               </Select>
             </Form.Item>
           </Col>
@@ -182,8 +180,14 @@ const EditarDerivacionModal = ({
             <Form.Item
               name="resultado"
               label="Resultado"
+              rules={[{ required: true, message: 'Por favor seleccione el resultado' }]}
             >
-              <Input placeholder="Resultado de la evaluación" />
+              <Select placeholder="Seleccionar resultado">
+                <Option value="positivo">Positivo</Option>
+                <Option value="negativo">Negativo</Option>
+                <Option value="neutro">Neutro</Option>
+                <Option value="pendiente">Pendiente</Option>
+              </Select>
             </Form.Item>
           </Col>
         </Row>

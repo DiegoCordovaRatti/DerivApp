@@ -27,7 +27,10 @@ import {
   UserOutlined,
   EditOutlined,
   CheckCircleOutlined,
-  PlusOutlined
+  PlusOutlined,
+  ExclamationCircleOutlined,
+  WarningOutlined,
+  StopOutlined
 } from '@ant-design/icons';
 
 const DetallesEstudianteModal = ({
@@ -221,8 +224,14 @@ const DetallesEstudianteModal = ({
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                  <span>Derivación #{index + 1} - {convertirFecha(derivacion.fecha_derivacion)}</span>
                         <Space>
-                          <Tag color={getEstadoColor(derivacion.estado)}>
-                            {getEstadoText(derivacion.estado)}
+                          <Tag color={
+                            derivacion.estado_derivacion === 'abierta' ? 'green' :
+                            derivacion.estado_derivacion === 'cerrada' ? 'red' :
+                            getEstadoColor(derivacion.estado)
+                          }>
+                            {derivacion.estado_derivacion === 'abierta' ? 'ABIERTA' :
+                             derivacion.estado_derivacion === 'cerrada' ? 'CERRADA' :
+                             getEstadoText(derivacion.estado)}
                           </Tag>
                           <Tag color={
                             derivacion.prioridad === 'alta' ? 'red' : 
@@ -232,6 +241,17 @@ const DetallesEstudianteModal = ({
                           }>
                             {getPrioridadText(derivacion.prioridad)}
                           </Tag>
+                          {/* Mostrar nivel de alerta calculado */}
+                          {derivacion.seguimientos && derivacion.seguimientos.length > 0 && (
+                            <Tag color={
+                              derivacion.nivelAlerta === 'Alerta crítica' ? '#cf1322' :
+                              derivacion.nivelAlerta === 'Alerta alta' ? '#ff4d4f' :
+                              derivacion.nivelAlerta === 'Alerta moderada' ? '#faad14' :
+                              '#52c41a'
+                            }>
+                              {derivacion.nivelAlerta || 'Sin alerta'}
+                            </Tag>
+                          )}
                           <Tooltip title="Editar derivación">
                             <Button 
                               type="text" 
@@ -336,9 +356,17 @@ const DetallesEstudianteModal = ({
                                      <Descriptions.Item label="Observaciones">
                                        {seguimiento.observaciones || 'Sin observaciones'}
                                      </Descriptions.Item>
-                                     <Descriptions.Item label="Resultado">
-                                       {seguimiento.resultado || 'Sin resultado'}
-                                     </Descriptions.Item>
+                                                               <Descriptions.Item label="Resultado">
+                            <Tag color={
+                              seguimiento.resultado === 'positivo' ? 'green' :
+                              seguimiento.resultado === 'negativo' ? 'red' :
+                              seguimiento.resultado === 'neutro' ? 'blue' :
+                              seguimiento.resultado === 'pendiente' ? 'orange' :
+                              'default'
+                            }>
+                              {seguimiento.resultado ? seguimiento.resultado.toUpperCase() : 'Sin resultado'}
+                            </Tag>
+                          </Descriptions.Item>
                                    </Descriptions>
                                  </Col>
                                </Row>
