@@ -257,7 +257,7 @@ const FormularioDerivacion = () => {
       // Preparar datos de la derivación
       const datosDerivacion = {
         fecha_derivacion: values.fecha_derivacion?.toISOString() || new Date().toISOString(),
-        estado: values.estado_derivacion,
+        estado_derivacion: values.estado_derivacion,
         motivo: values.motivo,
         derivado_por: values.derivado_por,
         responsable_id: values.responsable_id,
@@ -338,7 +338,7 @@ const FormularioDerivacion = () => {
         style={{ marginTop: '24px' }}
         initialValues={{
           estado: 'activo',
-          estado_derivacion: 'en_proceso'
+          estado_derivacion: 'abierta'
         }}
       >
         <Collapse
@@ -620,10 +620,8 @@ const FormularioDerivacion = () => {
                     placeholder="Seleccionar estado"
                     size="large"
                   >
-                    <Option value="activo">Activo</Option>
-                    <Option value="pendiente">Pendiente</Option>
-                    <Option value="seguimiento">Seguimiento</Option>
-                    <Option value="cerrado">Cerrado</Option>
+                    <Option value="abierta">Abierta</Option>
+                    <Option value="cerrada">Cerrada</Option>
                   </Select>
                 </Form.Item>
               </Col>
