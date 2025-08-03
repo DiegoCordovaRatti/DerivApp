@@ -8,8 +8,6 @@ import {
   Col,
   Tag,
   Space,
-  Avatar,
-  Collapse,
   Badge,
   Divider,
   Spin,
@@ -25,17 +23,18 @@ import {
   CalendarOutlined,
   BookOutlined,
   UserOutlined,
-  DownOutlined
+  DownOutlined,
+  CheckCircleOutlined,
+  StopOutlined
 } from '@ant-design/icons';
-import { obtenerAlertas, buscarAlertas } from '../../services/alertaService';
+import { obtenerAlertas } from '../../services/alertaService';
 import './Alertas.scss';
 
+
 const { Title, Text } = Typography;
-const { Panel } = Collapse;
 
 const Alertas = () => {
   const [searchText, setSearchText] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alertasFiltradas, setAlertasFiltradas] = useState([]);
@@ -78,130 +77,18 @@ const Alertas = () => {
     }
   }, [searchText, alertas]);
 
-  // Mock data de alertas (fallback)
-  const mockAlertas = [
-    {
-      id: 1,
-      estudiante: {
-        nombre: 'María González Pérez',
-        curso: '8° Básico B',
-        avatar: 'MG'
-      },
-      prioridad: 'alta',
-      fecha: '14 de mayo de 2023',
-      motivo: 'Inasistencia',
-      descripcion: '15 días de ausencia en el último mes',
-      icon: <CalendarOutlined />,
-      color: '#ff4d4f'
-    },
-    {
-      id: 2,
-      estudiante: {
-        nombre: 'Juan Carlos Martínez',
-        curso: '2º Medio A',
-        avatar: 'JM'
-      },
-      prioridad: 'alta',
-      fecha: '13 de mayo de 2023',
-      motivo: 'Incumplimiento académico',
-      descripcion: 'No ha entregado ninguna evaluación en el último trimestre',
-      icon: <BookOutlined />,
-      color: '#ff4d4f'
-    },
-    {
-      id: 3,
-      estudiante: {
-        nombre: 'Alejandra Silva Rojas',
-        curso: '4° Medio B',
-        avatar: 'AS'
-      },
-      prioridad: 'media',
-      fecha: '11 de mayo de 2023',
-      motivo: 'No asistencia a reunión',
-      descripcion: 'No asistió a dos reuniones consecutivas con orientador',
-      icon: <CalendarOutlined />,
-      color: '#faad14'
-    },
-    {
-      id: 4,
-      estudiante: {
-        nombre: 'Pedro Navarro Díaz',
-        curso: '1° Medio B',
-        avatar: 'PN'
-      },
-      prioridad: 'media',
-      fecha: '9 de mayo de 2023',
-      motivo: 'Inasistencia',
-      descripcion: '8 días de ausencia en el último mes',
-      icon: <CalendarOutlined />,
-      color: '#faad14'
-    },
-    {
-      id: 5,
-      estudiante: {
-        nombre: 'Camila Rodríguez Vega',
-        curso: '5° Básico A',
-        avatar: 'CR'
-      },
-      prioridad: 'baja',
-      fecha: '7 de mayo de 2023',
-      motivo: 'Incumplimiento académico',
-      descripcion: 'Bajo rendimiento reciente en asignaturas principales',
-      icon: <BookOutlined />,
-      color: '#52c41a'
-    },
-    {
-      id: 6,
-      estudiante: {
-        nombre: 'Diego Fernández Castro',
-        curso: '3º Básico B',
-        avatar: 'DF'
-      },
-      prioridad: 'baja',
-      fecha: '4 de mayo de 2023',
-      motivo: 'Inasistencia',
-      descripcion: '5 días de ausencia en el último mes',
-      icon: <CalendarOutlined />,
-      color: '#52c41a'
-    }
-  ];
-
-  // Contar alertas por prioridad
-  const contarAlertasPorPrioridad = () => {
-    const alta = alertas.filter(alerta => alerta.prioridad === 'alta').length;
-    const media = alertas.filter(alerta => alerta.prioridad === 'media').length;
-    const baja = alertas.filter(alerta => alerta.prioridad === 'baja').length;
-    return { alta, media, baja };
+  // Contar alertas por nivel de alerta calculado
+  const contarAlertasPorNivel = () => {
+    const sinRiesgo = alertas.filter(alerta => alerta.nivelAlerta === 'Sin riesgo / Bajo').length;
+    const moderada = alertas.filter(alerta => alerta.nivelAlerta === 'Alerta moderada').length;
+    const alta = alertas.filter(alerta => alerta.nivelAlerta === 'Alerta alta').length;
+    const critica = alertas.filter(alerta => alerta.nivelAlerta === 'Alerta crítica').length;
+    return { sinRiesgo, moderada, alta, critica };
   };
 
-  const { alta, media, baja } = contarAlertasPorPrioridad();
+  const { sinRiesgo, moderada, alta, critica } = contarAlertasPorNivel();
 
-  const getPrioridadIcon = (prioridad) => {
-    switch (prioridad) {
-      case 'alta':
-        return <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />;
-      case 'media':
-        return <WarningOutlined style={{ color: '#faad14' }} />;
-      case 'baja':
-        return <InfoCircleOutlined style={{ color: '#52c41a' }} />;
-      default:
-        return <InfoCircleOutlined />;
-    }
-  };
 
-  const getPrioridadTag = (prioridad) => {
-    const config = {
-      alta: { color: '#ff4d4f', text: 'Prioridad Alta' },
-      media: { color: '#faad14', text: 'Prioridad Media' },
-      baja: { color: '#52c41a', text: 'Prioridad Baja' }
-    };
-    const configPrioridad = config[prioridad];
-    return (
-      <Tag color={configPrioridad.color} style={{ fontWeight: '500' }}>
-        {configPrioridad.text}
-      </Tag>
-    );
-  };
 
   // Función para obtener el icono según el tipo de motivo
   const getMotivoIcon = (motivo) => {
@@ -228,6 +115,38 @@ const Alertas = () => {
       return '#1890ff';
     } else {
       return '#52c41a';
+    }
+  };
+
+  // Función para obtener el icono del nivel de alerta
+  const getNivelAlertaIcon = (nivelAlerta) => {
+    switch (nivelAlerta) {
+      case 'Sin riesgo / Bajo':
+        return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+      case 'Alerta moderada':
+        return <WarningOutlined style={{ color: '#faad14' }} />;
+      case 'Alerta alta':
+        return <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />;
+      case 'Alerta crítica':
+        return <StopOutlined style={{ color: '#cf1322' }} />;
+      default:
+        return <InfoCircleOutlined style={{ color: '#d9d9d9' }} />;
+    }
+  };
+
+  // Función para obtener el color del nivel de alerta
+  const getNivelAlertaColor = (nivelAlerta) => {
+    switch (nivelAlerta) {
+      case 'Sin riesgo / Bajo':
+        return '#52c41a';
+      case 'Alerta moderada':
+        return '#faad14';
+      case 'Alerta alta':
+        return '#ff4d4f';
+      case 'Alerta crítica':
+        return '#cf1322';
+      default:
+        return '#d9d9d9';
     }
   };
 
@@ -261,19 +180,24 @@ const Alertas = () => {
           <Col xs={24} md={12}>
             <Space size="large">
               <Space>
+                <Badge count={critica} color="#cf1322">
+                  <Tag color="#cf1322" style={{ padding: '4px 8px' }}>
+                    Crítica: {critica}
+                  </Tag>
+                </Badge>
                 <Badge count={alta} color="#ff4d4f">
                   <Tag color="#ff4d4f" style={{ padding: '4px 8px' }}>
                     Alta: {alta}
                   </Tag>
                 </Badge>
-                <Badge count={media} color="#faad14">
+                <Badge count={moderada} color="#faad14">
                   <Tag color="#faad14" style={{ padding: '4px 8px' }}>
-                    Media: {media}
+                    Moderada: {moderada}
                   </Tag>
                 </Badge>
-                <Badge count={baja} color="#52c41a">
+                <Badge count={sinRiesgo} color="#52c41a">
                   <Tag color="#52c41a" style={{ padding: '4px 8px' }}>
-                    Baja: {baja}
+                    Sin Riesgo: {sinRiesgo}
                   </Tag>
                 </Badge>
               </Space>
@@ -281,15 +205,11 @@ const Alertas = () => {
           </Col>
         </Row>
         
+
+        
         <Row style={{ marginTop: '16px' }}>
           <Col>
             <Space>
-              <Button 
-                icon={<FilterOutlined />} 
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                Mostrar filtros
-              </Button>
               <Button 
                 icon={<ReloadOutlined />} 
                 onClick={() => {
@@ -317,20 +237,87 @@ const Alertas = () => {
       {/* Lista de alertas */}
       {!loading && (
         <div className="alertas-list">
+          {/* Referencia de porcentajes de alerta */}
+          <div style={{ 
+            background: '#f8f9fa', 
+            padding: '16px', 
+            borderRadius: '8px', 
+            marginBottom: '24px',
+            border: '1px solid #e9ecef'
+          }}>
+            <Text strong style={{ fontSize: '14px', color: '#495057', marginBottom: '8px', display: 'block' }}>
+              📊 Referencia de Niveles de Alerta
+            </Text>
+            <Row gutter={[16, 8]}>
+              <Col xs={12} sm={6}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ 
+                    width: '12px', 
+                    height: '12px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#52c41a' 
+                  }} />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Sin riesgo / Bajo: 0-29%
+                  </Text>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ 
+                    width: '12px', 
+                    height: '12px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#faad14' 
+                  }} />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Alerta moderada: 30-59%
+                  </Text>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ 
+                    width: '12px', 
+                    height: '12px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#ff4d4f' 
+                  }} />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Alerta alta: 60-79%
+                  </Text>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ 
+                    width: '12px', 
+                    height: '12px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#cf1322' 
+                  }} />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Alerta crítica: 80-100%
+                  </Text>
+                </div>
+              </Col>
+            </Row>
+          </div>
+          
           <Row gutter={[16, 16]}>
             {alertasFiltradas.map((alerta) => (
               <Col xs={24} md={12} lg={8} key={alerta.id}>
                 <Card
-                  className={`alerta-card alerta-${alerta.prioridad}`}
+                  className="alerta-card"
                   style={{ 
-                    borderLeft: `4px solid ${getMotivoColor(alerta.motivo)}`,
+                    borderLeft: `4px solid ${getNivelAlertaColor(alerta.nivelAlerta)}`,
                     marginBottom: '16px'
                   }}
                   bodyStyle={{ padding: '16px' }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      {getPrioridadIcon(alerta.prioridad)}
+                      {getNivelAlertaIcon(alerta.nivelAlerta)}
                       <div>
                         <Text strong style={{ fontSize: '16px', display: 'block' }}>
                           {alerta.estudiante.nombre}
@@ -341,12 +328,27 @@ const Alertas = () => {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {getPrioridadTag(alerta.prioridad)}
+                      <Tag color={getNivelAlertaColor(alerta.nivelAlerta)} style={{ fontWeight: '500' }}>
+                        {alerta.nivelAlerta}
+                      </Tag>
                       <DownOutlined style={{ color: '#999', cursor: 'pointer' }} />
                     </div>
                   </div>
                   
                   <Divider style={{ margin: '12px 0' }} />
+                  
+                  {/* Factor de alerta calculado */}
+                  {alerta.nivelAlerta && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      {alerta.scoreNormalizado !== undefined && (
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          Factor de alerta: {alerta.scoreNormalizado}%
+                        </Text>
+                      )}
+                    </div>
+                  )}
+                  
+
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                     {getMotivoIcon(alerta.motivo)}

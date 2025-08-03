@@ -1,5 +1,8 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 
+// Importar utilidades de alerta
+import { calcularNivelAlertaDerivacion } from '../utils/alertaUtils.js';
+
 // Función para manejar errores de la API
 const handleApiError = (error) => {
   console.error('Error en la API:', error);
@@ -99,9 +102,30 @@ export const obtenerAlertas = async () => {
           const derivacionesResponse = await obtenerDerivacionesEstudiante(estudiante.id);
           const derivaciones = derivacionesResponse.derivaciones || derivacionesResponse;
           
+          // Para cada derivación, obtener sus seguimientos de la subcolección
+          const derivacionesConSeguimientos = await Promise.all(
+            (derivaciones || []).map(async (derivacion) => {
+              try {
+                // Obtener seguimientos de la subcolección
+                const seguimientosData = await apiRequest(`/estudiantes/${estudiante.id}/derivaciones/${derivacion.id}/seguimientos`);
+                const seguimientos = seguimientosData.seguimientos || seguimientosData || [];
+                return {
+                  ...derivacion,
+                  seguimientos: seguimientos
+                };
+              } catch (error) {
+                console.error(`Error al obtener seguimientos para derivación ${derivacion.id}:`, error);
+                return {
+                  ...derivacion,
+                  seguimientos: []
+                };
+              }
+            })
+          );
+          
           return {
             ...estudiante,
-            derivaciones: derivaciones || []
+            derivaciones: derivacionesConSeguimientos
           };
         } catch (error) {
           console.error(`Error al obtener derivaciones para estudiante ${estudiante.id}:`, error);
@@ -127,6 +151,8 @@ export const obtenerAlertas = async () => {
           })[0];
 
         if (derivacionMasReciente) {
+          // Calcular nivel de alerta para la derivación
+          const nivelAlerta = calcularNivelAlertaDerivacion(derivacionMasReciente);
           // Crear alerta basada en la derivación
           const alerta = {
             id: `alerta_${estudiante.id}_${derivacionMasReciente.id}`,
@@ -140,9 +166,13 @@ export const obtenerAlertas = async () => {
             motivo: derivacionMasReciente.motivo || 'Derivación psicosocial',
             descripcion: derivacionMasReciente.descripcion || 'Estudiante derivado para atención psicosocial',
             derivacion: derivacionMasReciente,
-            estudianteCompleto: estudiante
+            estudianteCompleto: estudiante,
+            nivelAlerta: nivelAlerta.nivelAlerta,
+            scoreReal: nivelAlerta.scoreReal,
+            scoreNormalizado: nivelAlerta.scoreNormalizado,
+            colorAlerta: nivelAlerta.color,
+            iconoAlerta: nivelAlerta.icono
           };
-
           alertas.push(alerta);
         }
       }
