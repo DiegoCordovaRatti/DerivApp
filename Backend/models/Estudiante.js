@@ -716,11 +716,13 @@ export const obtenerAlertasRecientes = async () => {
               estudiante: {
                 id: estudiante.id,
                 nombre: estudiante.nombre,
-                rut: estudiante.rut
+                rut: estudiante.rut,
+                curso: estudiante.curso
               },
               derivacion: {
                 id: derivacion.id,
-                motivo: derivacion.motivo
+                motivo: derivacion.motivo,
+                descripcion: derivacion.descripcion
               }
             });
           }

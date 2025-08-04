@@ -21,7 +21,7 @@ router.use('/formularios', formularioRoutes);
 router.use('/actividades', actividadRoutes);
 router.use('/intervenciones', intervencionRoutes);
 router.use('/derivaciones', derivacionRoutes);
-router.use('/', alertaRoutes);
+router.use('/alertas', alertaRoutes);
 router.use('/dashboard', dashboardRoutes);
 
 // Ruta de prueba
