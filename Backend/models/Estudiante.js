@@ -534,6 +534,77 @@ export const obtenerAlertaReciente = async (estudianteId, derivacionId) => {
   }
 };
 
+// Obtener estudiantes con sus derivaciones
+export const obtenerEstudiantesConDerivaciones = async () => {
+  try {
+    const estudiantes = await obtenerEstudiantes();
+    
+    // Obtener derivaciones para cada estudiante
+    const estudiantesConDerivaciones = await Promise.all(
+      estudiantes.map(async (estudiante) => {
+        try {
+          const derivaciones = await obtenerDerivacionesEstudiante(estudiante.id);
+          return {
+            ...estudiante,
+            derivaciones: derivaciones || []
+          };
+        } catch (error) {
+          console.error(`Error al cargar derivaciones para estudiante ${estudiante.id}:`, error);
+          return {
+            ...estudiante,
+            derivaciones: []
+          };
+        }
+      })
+    );
+    
+    return estudiantesConDerivaciones;
+  } catch (error) {
+    console.error('Error al obtener estudiantes con derivaciones:', error);
+    throw error;
+  }
+};
+
+// Obtener alertas recientes de todos los estudiantes
+export const obtenerAlertasRecientes = async () => {
+  try {
+    const alertas = [];
+    const estudiantes = await obtenerEstudiantesConDerivaciones();
+    
+    for (const estudiante of estudiantes) {
+      if (estudiante.derivaciones && estudiante.derivaciones.length > 0) {
+        for (const derivacion of estudiante.derivaciones) {
+          const alertaReciente = await obtenerAlertaReciente(estudiante.id, derivacion.id);
+          if (alertaReciente) {
+            alertas.push({
+              ...alertaReciente,
+              estudiante: {
+                id: estudiante.id,
+                nombre: estudiante.nombre,
+                rut: estudiante.rut
+              },
+              derivacion: {
+                id: derivacion.id,
+                motivo: derivacion.motivo
+              }
+            });
+          }
+        }
+      }
+    }
+    
+    // Ordenar por fecha de creación (más recientes primero)
+    return alertas.sort((a, b) => {
+      const fechaA = a.fecha_creacion?.toDate?.() || new Date(a.fecha_creacion);
+      const fechaB = b.fecha_creacion?.toDate?.() || new Date(b.fecha_creacion);
+      return fechaB - fechaA;
+    });
+  } catch (error) {
+    console.error('Error al obtener alertas recientes:', error);
+    throw error;
+  }
+};
+
 export default {
   crearEstudiante,
   obtenerEstudiantes,
@@ -564,5 +635,7 @@ export default {
   actualizarAlerta,
   eliminarAlerta,
   obtenerAlertaReciente,
+  obtenerAlertasRecientes,
+  obtenerEstudiantesConDerivaciones,
   validarEstudiante
 };

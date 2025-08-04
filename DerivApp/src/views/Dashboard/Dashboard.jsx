@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Card, Row, Col, Typography, Button, Space, List} from 'antd';
+  Card, Row, Col, Typography, Button, Space, List, Spin, message
+} from 'antd';
 import { 
   UserOutlined, 
   BellOutlined, 
@@ -13,17 +14,69 @@ import {
   RightOutlined
 } from '@ant-design/icons';
 import './Dashboard.scss';
+import { 
+  obtenerEstadisticasDashboard, 
+  obtenerAlertasRecientes, 
+  obtenerEventosProximos 
+} from '../../services/dashboardService';
+import dayjs from '../../utils/dayjs';
 
 const { Title, Text } = Typography;
 
 const Dashboard = () => {
-  // Datos simulados para las tarjetas de acceso rápido
+  const [loading, setLoading] = useState(true);
+  const [estadisticas, setEstadisticas] = useState({
+    totalEstudiantesDerivados: 0,
+    derivacionesActivas: 0,
+    derivacionesCerradas: 0,
+    alertasRecientes: 0,
+    alertasCriticas: 0,
+    alertasAltas: 0
+  });
+  const [alertasRecientes, setAlertasRecientes] = useState([]);
+  const [eventosProximos, setEventosProximos] = useState([]);
+
+  // Cargar datos del dashboard
+  useEffect(() => {
+    cargarDatosDashboard();
+  }, []);
+
+  const cargarDatosDashboard = async () => {
+    try {
+      setLoading(true);
+      
+      // Cargar estadísticas
+      const statsResponse = await obtenerEstadisticasDashboard();
+      if (statsResponse.success) {
+        setEstadisticas(statsResponse.estadisticas);
+      }
+
+      // Cargar alertas recientes
+      const alertasResponse = await obtenerAlertasRecientes();
+      if (alertasResponse.success) {
+        setAlertasRecientes(alertasResponse.alertas);
+      }
+
+      // Cargar eventos próximos
+      const eventosResponse = await obtenerEventosProximos();
+      if (eventosResponse.success) {
+        setEventosProximos(eventosResponse.eventos);
+      }
+    } catch (error) {
+      console.error('Error al cargar datos del dashboard:', error);
+      message.error('Error al cargar los datos del dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Datos dinámicos para las tarjetas de acceso rápido
   const quickAccessCards = [
     {
       title: 'Estudiantes derivados',
       description: 'Gestionar casos y seguimientos',
       icon: <UserOutlined style={{ fontSize: '24px', color: '#1890ff' }} />,
-      count: 18,
+      count: estadisticas.totalEstudiantesDerivados,
       color: '#1890ff',
       link: '/expedientes'
     },
@@ -31,7 +84,7 @@ const Dashboard = () => {
       title: 'Alertas',
       description: 'Revisar notificaciones importantes',
       icon: <BellOutlined style={{ fontSize: '24px', color: '#ff4d4f' }} />,
-      count: 3,
+      count: estadisticas.alertasRecientes,
       color: '#ff4d4f',
       link: '/alertas'
     },
@@ -39,7 +92,7 @@ const Dashboard = () => {
       title: 'Calendario',
       description: 'Ver y agendar citas',
       icon: <CalendarOutlined style={{ fontSize: '24px', color: '#52c41a' }} />,
-      count: 5,
+      count: eventosProximos.length,
       color: '#52c41a',
       link: '/agenda'
     },
@@ -52,74 +105,84 @@ const Dashboard = () => {
     }
   ];
 
-  // Datos simulados para las alertas
-  const recentAlerts = [
-    {
-      type: 'critical',
-      title: 'Situación crítica',
-      description: 'Descripción de una situación crítica',
-      time: 'Hace 0 min',
-      color: '#ff4d4f'
-    },
-    {
-      type: 'warning',
-      title: 'Situación de riesgo',
-      description: 'Descripción de una situación de riesgo',
-      time: 'Hace 0 min',
-      color: '#faad14'
-    },
-  ];
+  // Función para formatear el tiempo transcurrido
+  const getTiempoTranscurrido = (fecha) => {
+    if (!fecha) return 'Hace un momento';
+    return dayjs(fecha).fromNow();
+  };
 
-  // Datos simulados para los eventos
-  const upcomingEvents = [
-    {
-      title: 'Titulo de asunto',
-      date: 'Fecha de asunto',
-      time: '00:00',
-      location: 'Lugar de asunto',
-      buttonText: 'Seguimiento',
-      buttonType: 'primary'
-    },
-    {
-      title: 'Titulo de asunto',
-      date: 'Fecha de asunto',
-      time: '00:00',
-      location: 'Lugar de asunto',
-      buttonText: 'Seguimiento',
-      buttonType: 'primary'
-    },
-    {
-      title: 'Titulo de asunto',
-      date: 'Fecha de asunto',
-      time: '00:00',
-      location: 'Lugar de asunto',
-      buttonText: 'Seguimiento',
-      buttonType: 'primary'
-    },
-    {
-      title: 'Titulo de asunto',
-      date: 'Fecha de asunto',
-      time: '00:00',
-      location: 'Lugar de asunto',
-      buttonText: 'Seguimiento',
-      buttonType: 'primary'
-    },
-    
-  ];
+  // Función para obtener el título de la alerta
+  const getTituloAlerta = (nivelAlerta) => {
+    const titulos = {
+      'Alerta crítica': 'Situación crítica',
+      'Alerta alta': 'Situación de alto riesgo',
+      'Alerta moderada': 'Situación de riesgo moderado',
+      'Sin riesgo / Bajo': 'Situación bajo control'
+    };
+    return titulos[nivelAlerta] || 'Alerta';
+  };
+
+  // Función para obtener la descripción de la alerta
+  const getDescripcionAlerta = (nivelAlerta, estudiante) => {
+    const descripciones = {
+      'Alerta crítica': `Alerta crítica detectada para ${estudiante?.nombre || 'el estudiante'}`,
+      'Alerta alta': `Alerta alta detectada para ${estudiante?.nombre || 'el estudiante'}`,
+      'Alerta moderada': `Alerta moderada detectada para ${estudiante?.nombre || 'el estudiante'}`,
+      'Sin riesgo / Bajo': `Situación bajo control para ${estudiante?.nombre || 'el estudiante'}`
+    };
+    return descripciones[nivelAlerta] || 'Alerta detectada';
+  };
+
+  // Función para formatear la fecha del evento
+  const formatearFechaEvento = (fecha) => {
+    if (!fecha) return 'Fecha no definida';
+    return dayjs(fecha).format('DD/MM/YYYY');
+  };
+
+  // Función para obtener el texto del botón según el tipo de evento
+  const getTextoBoton = (tipo) => {
+    const textos = {
+      'seguimiento': 'Seguimiento',
+      'reunion': 'Reunión',
+      'evaluacion': 'Evaluación',
+      'visita': 'Visita'
+    };
+    return textos[tipo] || 'Ver detalles';
+  };
+
+  // Función para obtener el tipo de botón según el tipo de evento
+  const getTipoBoton = (tipo) => {
+    const tipos = {
+      'seguimiento': 'primary',
+      'reunion': 'default',
+      'evaluacion': 'primary',
+      'visita': 'primary'
+    };
+    return tipos[tipo] || 'default';
+  };
 
   return (
     <div className="dashboard-container">
-      {/* Header Banner */}
-      <div className="dashboard-header">
-        <div className="header-content">
-          <Title level={2} style={{ color: 'white', margin: 0 }}>
-            Buenas tardes, USUARIO
-          </Title>
-          <Text style={{ color: 'white', fontSize: '16px' }}>
-            Bienvenido/a nuevamente a DerivApp. Tienes 0 alertas pendientes y 0 eventos programados para hoy.
-          </Text>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <Spin size="large" />
+          <div style={{ marginTop: '16px', color: '#666' }}>
+            Cargando dashboard...
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Header Banner */}
+          <div className="dashboard-header">
+            <div className="header-content">
+              <Title level={2} style={{ color: 'white', margin: 0 }}>
+                Buenas tardes, USUARIO
+              </Title>
+              <Text style={{ color: 'white', fontSize: '16px' }}>
+                Bienvenido/a nuevamente a DerivApp. Tienes {estadisticas.alertasRecientes} alertas pendientes y {eventosProximos.length} eventos programados para hoy.
+              </Text>
+            </div>
+          </div>
 
       {/* Quick Access Cards */}
       <div className="quick-access-section">
@@ -171,27 +234,39 @@ const Dashboard = () => {
             }
             className="alerts-card"
           >
-            <List dataSource={recentAlerts} renderItem={(alert, index) => (
-                <List.Item className="alert-item">
-                  <div className="alert-content">
-                    <div className="alert-icon">
-                      <ExclamationCircleOutlined style={{ color: alert.color, fontSize: '16px' }} />
-                    </div>
-                    <div className="alert-details">
-                      <div className="alert-header">
-                        <Text strong>{alert.title}</Text>
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {alert.time}
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <Spin />
+              </div>
+            ) : alertasRecientes.length > 0 ? (
+              <List 
+                dataSource={alertasRecientes} 
+                renderItem={(alerta, index) => (
+                  <List.Item className="alert-item">
+                    <div className="alert-content">
+                      <div className="alert-icon">
+                        <ExclamationCircleOutlined style={{ color: alerta.color, fontSize: '16px' }} />
+                      </div>
+                      <div className="alert-details">
+                        <div className="alert-header">
+                          <Text strong>{getTituloAlerta(alerta.nivelAlerta)}</Text>
+                          <Text type="secondary" style={{ fontSize: '12px' }}>
+                            {getTiempoTranscurrido(alerta.fecha)}
+                          </Text>
+                        </div>
+                        <Text type="secondary" style={{ fontSize: '14px' }}>
+                          {getDescripcionAlerta(alerta.nivelAlerta, alerta.estudiante)}
                         </Text>
                       </div>
-                      <Text type="secondary" style={{ fontSize: '14px' }}>
-                        {alert.description}
-                      </Text>
                     </div>
-                  </div>
-                </List.Item>
-              )}
-            />
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                No hay alertas recientes
+              </div>
+            )}
           </Card>
         </Col>
 
@@ -200,7 +275,7 @@ const Dashboard = () => {
           <Card 
             title="Próximos eventos" 
             extra={
-              <Link to="/calendario">
+              <Link to="/agenda">
                 <Button type="link" style={{ padding: 0 }}>
                   Ver calendario <RightOutlined />
                 </Button>
@@ -208,44 +283,56 @@ const Dashboard = () => {
             }
             className="events-card"
           >
-            <List
-              dataSource={upcomingEvents}
-              renderItem={(event, index) => (
-                <List.Item className="event-item">
-                  <div className="event-content">
-                    <div className="event-details">
-                      <div className="event-header">
-                        <Text strong>{event.title}</Text>
-                        <Button 
-                          type={event.buttonType} 
-                          size="small"
-                          style={{ marginLeft: 'auto' }}
-                        >
-                          {event.buttonText}
-                        </Button>
-                      </div>
-                      <div className="event-info">
-                        <Space size="small">
-                          <ClockCircleOutlined style={{ color: '#1890ff' }} />
-                          <Text type="secondary">{event.date}</Text>
-                          <Text type="secondary">•</Text>
-                          <Text type="secondary">{event.time}</Text>
-                        </Space>
-                        <div style={{ marginTop: '4px' }}>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <Spin />
+              </div>
+            ) : eventosProximos.length > 0 ? (
+              <List
+                dataSource={eventosProximos}
+                renderItem={(evento, index) => (
+                  <List.Item className="event-item">
+                    <div className="event-content">
+                      <div className="event-details">
+                        <div className="event-header">
+                          <Text strong>{evento.titulo}</Text>
+                          <Button 
+                            type={getTipoBoton(evento.tipo)} 
+                            size="small"
+                            style={{ marginLeft: 'auto' }}
+                          >
+                            {getTextoBoton(evento.tipo)}
+                          </Button>
+                        </div>
+                        <div className="event-info">
                           <Space size="small">
-                            <EnvironmentOutlined style={{ color: '#52c41a' }} />
-                            <Text type="secondary">{event.location}</Text>
+                            <ClockCircleOutlined style={{ color: '#1890ff' }} />
+                            <Text type="secondary">{formatearFechaEvento(evento.fecha)}</Text>
+                            <Text type="secondary">•</Text>
+                            <Text type="secondary">{evento.hora}</Text>
                           </Space>
+                          <div style={{ marginTop: '4px' }}>
+                            <Space size="small">
+                              <EnvironmentOutlined style={{ color: '#52c41a' }} />
+                              <Text type="secondary">{evento.ubicacion}</Text>
+                            </Space>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </List.Item>
-              )}
-            />
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                No hay eventos próximos
+              </div>
+            )}
           </Card>
         </Col>
       </Row>
+        </>
+      )}
     </div>
   );
 };
