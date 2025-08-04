@@ -1,0 +1,377 @@
+.agenda-container {
+  padding: 24px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  .agenda-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 16px 24px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #f0f0f0;
+
+    h2 {
+      margin: 0;
+      color: #1890ff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+  }
+
+  .calendar-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+
+    .ant-card-head {
+      background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+      color: white;
+      border-bottom: none;
+
+      .ant-card-head-title {
+        color: white;
+        font-weight: 600;
+      }
+    }
+
+    .ant-calendar {
+      .ant-calendar-header {
+        background: #fafafa;
+        border-bottom: 1px solid #f0f0f0;
+      }
+
+      .ant-calendar-body {
+        .ant-calendar-date {
+          position: relative;
+          min-height: 80px;
+          padding: 4px 8px;
+          border-radius: 6px;
+          transition: all 0.3s ease;
+
+          &:hover {
+            background-color: #e6f7ff;
+            transform: scale(1.02);
+          }
+
+          .calendar-events {
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+
+            .calendar-event {
+              padding: 4px 6px;
+              border-radius: 4px;
+              color: white;
+              font-size: 10px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              margin-bottom: 2px;
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+
+              &:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+              }
+
+              .event-time {
+                font-weight: bold;
+                font-size: 9px;
+                margin-bottom: 2px;
+              }
+
+              .event-title {
+                font-weight: 600;
+                line-height: 1.2;
+                margin-bottom: 2px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+
+              .event-student {
+                font-size: 8px;
+                opacity: 0.9;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .upcoming-events-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+
+    .ant-card-head {
+      background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+      color: white;
+      border-bottom: none;
+
+      .ant-card-head-title {
+        color: white;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+    }
+
+    .event-list-item {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 1px solid #f0f0f0;
+      background: white;
+
+      &:hover {
+        background-color: #f6ffed;
+        border-color: #b7eb8f;
+        transform: translateX(4px);
+      }
+
+      .event-list-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+
+        span {
+          font-weight: 600;
+          color: #262626;
+        }
+      }
+
+      .event-list-description {
+        color: #8c8c8c;
+        font-size: 12px;
+        line-height: 1.4;
+
+        div {
+          margin-bottom: 2px;
+        }
+
+        .event-type {
+          margin-top: 4px;
+        }
+      }
+    }
+  }
+
+  .stats-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+
+    .ant-card-head {
+      background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+      color: white;
+      border-bottom: none;
+
+      .ant-card-head-title {
+        color: white;
+        font-weight: 600;
+      }
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 16px 8px;
+      background: #fafafa;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #f0f0f0;
+        transform: translateY(-2px);
+      }
+
+      .stat-number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1890ff;
+        margin-bottom: 4px;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: #8c8c8c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+
+  // Modal styles
+  .ant-modal {
+    .ant-modal-header {
+      background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+      border-bottom: none;
+
+      .ant-modal-title {
+        color: white;
+        font-weight: 600;
+      }
+    }
+
+    .ant-modal-content {
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .ant-form-item-label > label {
+      font-weight: 600;
+      color: #262626;
+    }
+
+    .ant-input,
+    .ant-select-selector,
+    .ant-picker {
+      border-radius: 6px;
+      border: 1px solid #d9d9d9;
+      transition: all 0.3s ease;
+
+      &:hover,
+      &:focus {
+        border-color: #1890ff;
+        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+      }
+    }
+
+    .ant-btn {
+      border-radius: 6px;
+      font-weight: 600;
+      height: 40px;
+      padding: 0 24px;
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .agenda-header {
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+
+      h2 {
+        font-size: 20px;
+      }
+    }
+
+    .calendar-card {
+      .ant-calendar {
+        .ant-calendar-body {
+          .ant-calendar-date {
+            min-height: 60px;
+            padding: 2px 4px;
+
+            .calendar-events {
+              .calendar-event {
+                font-size: 8px;
+                padding: 2px 4px;
+
+                .event-time {
+                  font-size: 7px;
+                }
+
+                .event-student {
+                  font-size: 7px;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .upcoming-events-card {
+      .event-list-item {
+        padding: 8px;
+
+        .event-list-title {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+        }
+      }
+    }
+
+    .stats-card {
+      .stat-item {
+        padding: 12px 4px;
+
+        .stat-number {
+          font-size: 20px;
+        }
+
+        .stat-label {
+          font-size: 10px;
+        }
+      }
+    }
+  }
+
+  // Animation for new events
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .calendar-event {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  // Loading states
+  .ant-spin {
+    .ant-spin-dot {
+      font-size: 24px;
+    }
+  }
+
+  // Custom scrollbar
+  .ant-list {
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+  }
+}
