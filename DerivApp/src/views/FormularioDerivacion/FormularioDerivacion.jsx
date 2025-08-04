@@ -13,7 +13,6 @@ import {
   DatePicker,
   message,
   AutoComplete,
-  Modal,
   Spin
 } from 'antd';
 import {
@@ -28,15 +27,14 @@ import {
   PhoneOutlined,
   MailOutlined,
   SearchOutlined,
-  PlusOutlined,
   UserAddOutlined
 } from '@ant-design/icons';
 import { 
   obtenerEstudiantes, 
-  crearEstudiante, 
   buscarEstudiantes,
   crearDerivacion 
 } from '../../services/estudianteService';
+import { CrearEstudianteModal } from '../../components/modal';
 import './FormularioDerivacion.scss';
 
 const { Title, Text } = Typography;
@@ -46,7 +44,6 @@ const { Panel } = Collapse;
 
 const FormularioDerivacion = () => {
   const [form] = Form.useForm();
-  const [formEstudiante] = Form.useForm();
   const [activeKeys, setActiveKeys] = useState(['1']); // Datos del estudiante expandidos
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -176,46 +173,30 @@ const FormularioDerivacion = () => {
   // Función para cerrar el modal
   const handleCancel = () => {
     setModalVisible(false);
-    formEstudiante.resetFields();
   };
 
-  // Función para crear un nuevo estudiante
-  const handleCrearEstudiante = async () => {
-    try {
-      setLoading(true);
-      const values = await formEstudiante.validateFields();
-      
-      // Crear el estudiante en la base de datos
-      const response = await crearEstudiante(values);
-      const nuevoEstudiante = response.estudiante;
-      
-      // Agregar el nuevo estudiante a la lista local
-      setEstudiantes(prev => [...prev, nuevoEstudiante]);
-      
-      message.success(`Estudiante creado exitosamente: ${nuevoEstudiante.nombre}`);
-      handleCancel();
-      
-      // Seleccionar automáticamente el nuevo estudiante
-      setEstudianteSeleccionado(nuevoEstudiante);
-      form.setFieldsValue({
-        estudiante_id: nuevoEstudiante.id,
-        nombre: nuevoEstudiante.nombre,
-        rut: nuevoEstudiante.rut,
-        curso: nuevoEstudiante.curso,
-        establecimientoId: nuevoEstudiante.establecimientoId,
-        estado: nuevoEstudiante.estado,
-        telefono_contacto: nuevoEstudiante.telefono_contacto || '',
-        email_contacto: nuevoEstudiante.email_contacto || '',
-        apoderado: nuevoEstudiante.apoderado || '',
-        direccion: nuevoEstudiante.direccion || ''
-      });
-      
-    } catch (error) {
-      console.error('Error al crear estudiante:', error);
-      message.error(error.message || 'Error al crear el estudiante');
-    } finally {
-      setLoading(false);
-    }
+  // Función para manejar el éxito de crear estudiante
+  const handleEstudianteCreado = (nuevoEstudiante) => {
+    // Agregar el nuevo estudiante a la lista local
+    setEstudiantes(prev => [...prev, nuevoEstudiante]);
+    
+    // Cerrar el modal
+    setModalVisible(false);
+    
+    // Seleccionar automáticamente el nuevo estudiante
+    setEstudianteSeleccionado(nuevoEstudiante);
+    form.setFieldsValue({
+      estudiante_id: nuevoEstudiante.id,
+      nombre: nuevoEstudiante.nombre,
+      rut: nuevoEstudiante.rut,
+      curso: nuevoEstudiante.curso,
+      establecimientoId: nuevoEstudiante.establecimientoId,
+      estado: nuevoEstudiante.estado,
+      telefono_contacto: nuevoEstudiante.telefono_contacto || '',
+      email_contacto: nuevoEstudiante.email_contacto || '',
+      apoderado: nuevoEstudiante.apoderado || '',
+      direccion: nuevoEstudiante.direccion || ''
+    });
   };
 
   const handlePanelChange = (keys) => {
@@ -257,7 +238,7 @@ const FormularioDerivacion = () => {
       // Preparar datos de la derivación
       const datosDerivacion = {
         fecha_derivacion: values.fecha_derivacion?.toISOString() || new Date().toISOString(),
-        estado: values.estado_derivacion,
+        estado_derivacion: values.estado_derivacion,
         motivo: values.motivo,
         derivado_por: values.derivado_por,
         responsable_id: values.responsable_id,
@@ -338,7 +319,7 @@ const FormularioDerivacion = () => {
         style={{ marginTop: '24px' }}
         initialValues={{
           estado: 'activo',
-          estado_derivacion: 'en_proceso'
+          estado_derivacion: 'abierta'
         }}
       >
         <Collapse
@@ -620,10 +601,8 @@ const FormularioDerivacion = () => {
                     placeholder="Seleccionar estado"
                     size="large"
                   >
-                    <Option value="activo">Activo</Option>
-                    <Option value="pendiente">Pendiente</Option>
-                    <Option value="seguimiento">Seguimiento</Option>
-                    <Option value="cerrado">Cerrado</Option>
+                    <Option value="abierta">Abierta</Option>
+                    <Option value="cerrada">Cerrada</Option>
                   </Select>
                 </Form.Item>
               </Col>
@@ -771,175 +750,12 @@ const FormularioDerivacion = () => {
       </Form>
 
       {/* Modal para crear nuevo estudiante */}
-      <Modal
-        title={
-          <Space>
-            <UserAddOutlined style={{ color: '#1890ff' }} />
-            <span>Crear Nuevo Estudiante</span>
-          </Space>
-        }
-        open={modalVisible}
+      <CrearEstudianteModal
+        visible={modalVisible}
         onCancel={handleCancel}
-        footer={[
-          <Button key="cancel" onClick={handleCancel}>
-            Cancelar
-          </Button>,
-          <Button 
-            key="submit" 
-            type="primary" 
-            onClick={handleCrearEstudiante}
-            icon={<PlusOutlined />}
-            loading={loading}
-          >
-            Crear Estudiante
-          </Button>
-        ]}
-        width={800}
-        destroyOnClose
-      >
-        <Form
-          form={formEstudiante}
-          layout="vertical"
-          initialValues={{
-            estado: 'activo',
-            establecimientoId: 'RBD9493'
-          }}
-        >
-          <Row gutter={[16, 16]}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="Nombre Completo *"
-                name="nombre"
-                rules={[
-                  { required: true, message: 'Por favor ingrese el nombre del estudiante' },
-                  { min: 2, message: 'El nombre debe tener al menos 2 caracteres' }
-                ]}
-              >
-                <Input
-                  placeholder="Nombre completo del estudiante"
-                  size="large"
-                  prefix={<UserOutlined />}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="RUT *"
-                name="rut"
-                rules={[
-                  { required: true, message: 'Por favor ingrese el RUT' },
-                  { 
-                    pattern: /^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$/, 
-                    message: 'Formato inválido (ej: 12.345.678-9)' 
-                  }
-                ]}
-              >
-                <Input
-                  placeholder="12.345.678-9"
-                  size="large"
-                  prefix={<IdcardOutlined />}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="Curso *"
-                name="curso"
-                rules={[
-                  { required: true, message: 'Por favor ingrese el curso' },
-                  { min: 2, message: 'El curso debe tener al menos 2 caracteres' }
-                ]}
-              >
-                <Input
-                  placeholder="Ej: 3°A, 4°B"
-                  size="large"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="Establecimiento ID *"
-                name="establecimientoId"
-                rules={[{ required: true, message: 'Por favor ingrese el ID del establecimiento' }]}
-              >
-                <Input
-                  placeholder="RBD9493"
-                  size="large"
-                  prefix={<HomeOutlined />}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="Estado del Estudiante *"
-                name="estado"
-                rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
-              >
-                <Select
-                  placeholder="Seleccionar estado"
-                  size="large"
-                >
-                  <Option value="activo">Activo</Option>
-                  <Option value="egresado">Egresado</Option>
-                  <Option value="derivado">Derivado</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="Teléfono de Contacto"
-                name="telefono_contacto"
-              >
-                <Input
-                  placeholder="+56 9 1234 5678"
-                  size="large"
-                  prefix={<PhoneOutlined />}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="Email de Contacto"
-                name="email_contacto"
-                rules={[
-                  { type: 'email', message: 'Por favor ingrese un email válido' }
-                ]}
-              >
-                <Input
-                  placeholder="contacto@email.com"
-                  size="large"
-                  type="email"
-                  prefix={<MailOutlined />}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="Nombre del Apoderado"
-                name="apoderado"
-              >
-                <Input
-                  placeholder="Nombre del apoderado"
-                  size="large"
-                  prefix={<UserOutlined />}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="Dirección"
-                name="direccion"
-              >
-                <Input
-                  placeholder="Dirección del estudiante"
-                  size="large"
-                  prefix={<HomeOutlined />}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-      </Modal>
+        onSuccess={handleEstudianteCreado}
+        loading={loading}
+      />
     </div>
   );
 };

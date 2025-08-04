@@ -109,8 +109,13 @@ const Expedientes = () => {
         })
       );
       
+      // Filtrar estudiantes que tengan al menos una derivación (abierta o cerrada)
+      const estudiantesConDerivacionesFiltrados = estudiantesConDerivaciones.filter(
+        estudiante => estudiante.derivaciones && estudiante.derivaciones.length > 0
+      );
+      
       // Ordenar estudiantes por prioridad (más alta a más baja)
-      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantesConDerivaciones);
+      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantesConDerivacionesFiltrados);
       
       setEstudiantes(estudiantesOrdenados);
       setEstudiantesFiltrados(estudiantesOrdenados);
@@ -138,7 +143,35 @@ const Expedientes = () => {
       // El backend puede devolver { estudiantes: [...] } o directamente el array
       const estudiantesData = response.estudiantes || response;
       const estudiantesProcesados = procesarEstudiantes(estudiantesData);
-      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantesProcesados);
+      
+      // Cargar derivaciones para cada estudiante encontrado
+      const estudiantesConDerivaciones = await Promise.all(
+        estudiantesProcesados.map(async (estudiante) => {
+          try {
+            const derivacionesResponse = await obtenerDerivacionesEstudiante(estudiante.id);
+            const derivacionesData = derivacionesResponse.derivaciones || derivacionesResponse;
+            const derivacionesProcesadas = procesarDerivaciones(derivacionesData);
+            
+            return {
+              ...estudiante,
+              derivaciones: derivacionesProcesadas
+            };
+          } catch (error) {
+            console.error(`Error al cargar derivaciones para estudiante ${estudiante.id}:`, error);
+            return {
+              ...estudiante,
+              derivaciones: []
+            };
+          }
+        })
+      );
+      
+      // Filtrar estudiantes que tengan al menos una derivación
+      const estudiantesConDerivacionesFiltrados = estudiantesConDerivaciones.filter(
+        estudiante => estudiante.derivaciones && estudiante.derivaciones.length > 0
+      );
+      
+      const estudiantesOrdenados = ordenarEstudiantesPorPrioridad(estudiantesConDerivacionesFiltrados);
       setEstudiantesFiltrados(estudiantesOrdenados);
     } catch (error) {
       console.error('Error al buscar estudiantes:', error);
@@ -624,10 +657,10 @@ const Expedientes = () => {
       <div className="expedientes-header">
         <div>
           <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
-            Estudiantes derivados
+            Estudiantes con derivaciones
           </Title>
           <Text type="secondary" style={{ fontSize: '16px' }}>
-            Gestiona los expedientes y seguimientos de los estudiantes derivados al equipo psicosocial.
+            Gestiona los expedientes y seguimientos de los estudiantes que tienen derivaciones registradas.
           </Text>
         </div>
         
@@ -638,7 +671,7 @@ const Expedientes = () => {
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={16}>
             <Input
-              placeholder="Buscar por nombre o RUT (ej: 12.345.678-9)"
+              placeholder="Buscar estudiantes con derivaciones por nombre o RUT"
               prefix={<SearchOutlined />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
