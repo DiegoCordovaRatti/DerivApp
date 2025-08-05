@@ -1,81 +1,84 @@
 .dashboard-container {
-  min-height: 100vh;
+  padding: 24px;
   background-color: #f5f5f5;
-  padding: 0;
+  min-height: 100vh;
 
   .dashboard-header {
     background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
-    padding: 32px 24px;
+    border-radius: 12px;
+    padding: 32px;
     margin-bottom: 24px;
-    border-radius: 0 0 16px 16px;
-    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+    color: white;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 200px;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      transform: translate(50%, -50%);
+    }
 
     .header-content {
-      max-width: 1200px;
-      margin: 0 auto;
+      position: relative;
+      z-index: 1;
 
       h2 {
-        margin-bottom: 8px !important;
-        color: white !important;
+        margin-bottom: 8px;
         font-weight: 600;
-      }
-
-      .ant-typography {
-        color: rgba(255, 255, 255, 0.9) !important;
-        line-height: 1.5;
       }
     }
   }
 
   .quick-access-section {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 24px;
-
-    h3 {
-      margin-bottom: 24px !important;
-      color: #262626;
-      font-weight: 600;
-    }
+    margin-bottom: 24px;
 
     .quick-access-card {
-      height: 200px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid #f0f0f0;
       transition: all 0.3s ease;
+      height: 100%;
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
       }
 
       .card-content {
-        height: 100%;
         display: flex;
-        flex-direction: column;
-        justify-content: space-between;
         align-items: center;
-        text-align: center;
-        padding: 16px 8px;
+        gap: 16px;
+        padding: 8px 0;
 
         .card-icon {
-          margin-bottom: 12px;
+          flex-shrink: 0;
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(24, 144, 255, 0.1);
+          border-radius: 8px;
         }
 
         .card-text {
           flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
+          min-width: 0;
 
           h5 {
-            margin: 0 0 4px 0 !important;
-            color: #262626;
+            margin: 0 0 4px 0;
             font-weight: 600;
+            color: #262626;
           }
 
           .ant-typography {
-            color: #8c8c8c;
+            margin: 0;
             line-height: 1.4;
           }
         }
@@ -83,144 +86,308 @@
         .card-count {
           font-size: 24px;
           font-weight: 700;
-          margin-top: 8px;
+          margin-left: auto;
         }
       }
     }
   }
 
-  .alerts-card,
-  .events-card {
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  .alerts-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #f0f0f0;
     height: 100%;
 
     .ant-card-head {
-      border-bottom: 1px solid #f0f0f0;
-      padding: 16px 24px;
+      background: #ff4d4f;
+      color: white;
+      border-radius: 8px 8px 0 0;
 
       .ant-card-head-title {
+        color: white;
         font-weight: 600;
-        color: #262626;
+      }
+    }
+
+    .alert-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+
+      &:last-child {
+        border-bottom: none;
       }
 
-      .ant-card-extra {
-        .ant-btn-link {
-          color: #1890ff;
-          font-weight: 500;
+      .alert-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
 
-          &:hover {
-            color: #40a9ff;
-          }
+        .alert-icon {
+          flex-shrink: 0;
+          margin-top: 2px;
         }
-      }
-    }
 
-    .ant-card-body {
-      padding: 0;
-    }
-  }
+        .alert-details {
+          flex: 1;
+          min-width: 0;
 
-  .alert-item,
-  .event-item {
-    padding: 16px 24px !important;
-    border-bottom: 1px solid #f0f0f0;
+          .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
 
-    &:last-child {
-      border-bottom: none;
-    }
-
-    .alert-content,
-    .event-content {
-      width: 100%;
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-
-      .alert-icon {
-        flex-shrink: 0;
-        margin-top: 2px;
-      }
-
-      .alert-details,
-      .event-details {
-        flex: 1;
-
-        .alert-header,
-        .event-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 4px;
+            .ant-typography {
+              margin: 0;
+            }
+          }
 
           .ant-typography {
-            color: #262626;
-            font-weight: 500;
+            margin: 0;
+            line-height: 1.4;
           }
-
-          .ant-typography-secondary {
-            color: #8c8c8c;
-            font-size: 12px;
-          }
-        }
-
-        .ant-typography-secondary {
-          color: #595959;
-          line-height: 1.4;
-        }
-      }
-
-      .event-info {
-        margin-top: 8px;
-
-        .ant-space {
-          color: #8c8c8c;
-          font-size: 13px;
         }
       }
     }
   }
 
-  // Responsive adjustments
+  .events-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #f0f0f0;
+    height: 100%;
+
+    .ant-card-head {
+      background: #52c41a;
+      color: white;
+      border-radius: 8px 8px 0 0;
+
+      .ant-card-head-title {
+        color: white;
+        font-weight: 600;
+      }
+    }
+
+    .event-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .event-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+
+        .event-icon {
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .event-details {
+          flex: 1;
+          min-width: 0;
+
+          .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            gap: 8px;
+
+            .ant-typography {
+              margin: 0;
+              flex: 1;
+              min-width: 0;
+            }
+
+            .ant-space {
+              flex-shrink: 0;
+            }
+          }
+
+          .event-info {
+            .ant-space {
+              margin-bottom: 4px;
+            }
+
+            .ant-typography {
+              margin: 0;
+              line-height: 1.4;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .stats-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #f0f0f0;
+
+    .ant-card-head {
+      background: #722ed1;
+      color: white;
+      border-radius: 8px 8px 0 0;
+
+      .ant-card-head-title {
+        color: white;
+        font-weight: 600;
+      }
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #e6f7ff;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-number {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1890ff;
+        margin-bottom: 8px;
+        line-height: 1;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: #666;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+
+  // Responsive design
   @media (max-width: 768px) {
+    padding: 16px;
+
     .dashboard-header {
-      padding: 24px 16px;
+      padding: 24px;
       margin-bottom: 16px;
 
       .header-content {
         h2 {
-          font-size: 20px !important;
-        }
-
-        .ant-typography {
-          font-size: 14px !important;
+          font-size: 20px;
         }
       }
     }
 
     .quick-access-section {
-      padding: 0 16px;
-
       .quick-access-card {
-        height: 120px;
-
         .card-content {
-          padding: 12px 8px;
+          flex-direction: column;
+          text-align: center;
+          gap: 12px;
+
+          .card-icon {
+            margin: 0 auto;
+          }
 
           .card-count {
-            font-size: 20px;
+            margin-left: 0;
+            margin-top: 8px;
           }
         }
       }
     }
 
-    .alert-item,
-    .event-item {
-      padding: 12px 16px !important;
+    .alerts-card,
+    .events-card {
+      .alert-item,
+      .event-item {
+        .alert-content,
+        .event-content {
+          flex-direction: column;
+          gap: 8px;
 
-      .alert-content,
-      .event-content {
-        gap: 8px;
+          .alert-icon,
+          .event-icon {
+            align-self: flex-start;
+          }
+        }
+      }
+    }
+
+    .stats-card {
+      .stat-item {
+        padding: 12px;
+
+        .stat-number {
+          font-size: 24px;
+        }
+
+        .stat-label {
+          font-size: 12px;
+        }
+      }
+    }
+  }
+
+  // Loading states
+  .ant-spin {
+    .ant-spin-dot {
+      font-size: 24px;
+    }
+  }
+
+  // Empty states
+  .ant-card-body {
+    .ant-empty {
+      .ant-empty-description {
+        color: #999;
+      }
+    }
+  }
+
+  // Animation for cards
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .quick-access-card,
+  .alerts-card,
+  .events-card,
+  .stats-card {
+    animation: fadeInUp 0.5s ease-out;
+  }
+
+  // Custom scrollbar for cards
+  .ant-card-body {
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+
+      &:hover {
+        background: #a8a8a8;
       }
     }
   }

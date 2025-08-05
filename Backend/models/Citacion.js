@@ -1,4 +1,4 @@
-import db from '../config/fireBaseDB.js';
+import { db } from '../config/fireBaseDB.js';
 import { 
   collection, 
   addDoc, 
