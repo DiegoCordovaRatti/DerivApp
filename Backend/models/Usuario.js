@@ -1,4 +1,4 @@
-import db from '../config/fireBaseDB.js';
+import { db } from '../config/fireBaseDB.js';
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
 
 // Validación de datos de usuario

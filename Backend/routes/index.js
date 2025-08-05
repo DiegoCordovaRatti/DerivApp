@@ -9,6 +9,7 @@ import intervencionRoutes from './intervencionRoutes.js';
 import derivacionRoutes from './derivacionRoutes.js';
 import alertaRoutes from './alertaRoutes.js';
 import dashboardRoutes from './dashboardRoutes.js';
+import eventoRoutes from './eventoRoutes.js';
 
 const router = express.Router();
 
@@ -23,6 +24,7 @@ router.use('/intervenciones', intervencionRoutes);
 router.use('/derivaciones', derivacionRoutes);
 router.use('/alertas', alertaRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/eventos', eventoRoutes);
 
 // Ruta de prueba
 router.get('/', (req, res) => {
@@ -37,7 +39,10 @@ router.get('/', (req, res) => {
       formularios: '/api/formularios',
       actividades: '/api/actividades',
       intervenciones: '/api/intervenciones',
-      derivaciones: '/api/derivaciones'
+      derivaciones: '/api/derivaciones',
+      alertas: '/api/alertas',
+      dashboard: '/api/dashboard',
+      eventos: '/api/eventos'
     },
     estructura: {
       estudiantes: {
@@ -46,6 +51,11 @@ router.get('/', (req, res) => {
       },
       establecimientos: {
         equipo: '/api/establecimientos/:id/equipo'
+      },
+      eventos: {
+        proximos: '/api/eventos/proximos',
+        estadisticas: '/api/eventos/estadisticas',
+        desdeAlerta: '/api/eventos/desde-alerta'
       }
     }
   });

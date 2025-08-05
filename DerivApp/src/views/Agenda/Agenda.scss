@@ -1,41 +1,133 @@
 .agenda-container {
-  padding: 24px;
-  background-color: #f5f5f5;
-  min-height: 100vh;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
+  min-height: calc(100vh - 64px);
 
   .agenda-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-    padding: 16px 24px;
-    background: white;
+
+    h2 {
+      margin-bottom: 0;
+      color: #1890ff;
+    }
+  }
+
+  .calendar-main {
+    .calendar-card {
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid #f0f0f0;
+
+      .ant-card-head {
+        background: #1890ff;
+        color: white;
+        border-radius: 8px 8px 0 0;
+
+        .ant-card-head-title {
+          color: white;
+          font-weight: 600;
+        }
+      }
+
+      .ant-card-body {
+        padding: 24px;
+      }
+
+      // Estilos para el calendario
+      .ant-picker-calendar {
+        .ant-picker-calendar-header {
+          padding: 16px 24px;
+          border-bottom: 1px solid #f0f0f0;
+        }
+
+        .ant-picker-calendar-date {
+          height: 120px;
+          padding: 8px;
+          border: 1px solid #f0f0f0;
+          transition: all 0.3s ease;
+
+          &:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+
+          .ant-picker-calendar-date-value {
+            font-size: 16px;
+            font-weight: 500;
+          }
+        }
+
+        .ant-picker-calendar-date-today {
+          background-color: #e6f7ff;
+          border-color: #1890ff;
+        }
+      }
+
+      // Estilos para eventos en el calendario
+      .calendar-events {
+        margin-top: 8px;
+        max-height: 80px;
+        overflow-y: auto;
+
+        .calendar-event {
+          margin-bottom: 4px;
+          padding: 4px 8px;
+          border-radius: 4px;
+          color: white;
+          font-size: 11px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+
+          &:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          }
+
+          .event-time {
+            font-weight: 600;
+            margin-bottom: 2px;
+          }
+
+          .event-title {
+            font-weight: 500;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .event-student {
+            font-size: 10px;
+            opacity: 0.9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Estilos para el sidebar
+.ant-layout-sider {
+  .upcoming-events-card {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border: 1px solid #f0f0f0;
 
-    h2 {
-      margin: 0;
-      color: #1890ff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 600;
-    }
-  }
-
-  .calendar-card {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #f0f0f0;
-
     .ant-card-head {
-      background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+      background: #52c41a;
       color: white;
-      border-bottom: none;
+      border-radius: 8px 8px 0 0;
 
       .ant-card-head-title {
         color: white;
@@ -43,148 +135,53 @@
       }
     }
 
-    .ant-calendar {
-      .ant-calendar-header {
-        background: #fafafa;
-        border-bottom: 1px solid #f0f0f0;
-      }
-
-      .ant-calendar-body {
-        .ant-calendar-date {
-          position: relative;
-          min-height: 80px;
-          padding: 4px 8px;
-          border-radius: 6px;
-          transition: all 0.3s ease;
-
-          &:hover {
-            background-color: #e6f7ff;
-            transform: scale(1.02);
-          }
-
-          .calendar-events {
-            margin-top: 4px;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-
-            .calendar-event {
-              padding: 4px 6px;
-              border-radius: 4px;
-              color: white;
-              font-size: 10px;
-              cursor: pointer;
-              transition: all 0.2s ease;
-              margin-bottom: 2px;
-              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-
-              &:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-              }
-
-              .event-time {
-                font-weight: bold;
-                font-size: 9px;
-                margin-bottom: 2px;
-              }
-
-              .event-title {
-                font-weight: 600;
-                line-height: 1.2;
-                margin-bottom: 2px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-              }
-
-              .event-student {
-                font-size: 8px;
-                opacity: 0.9;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  .upcoming-events-card {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #f0f0f0;
-
-    .ant-card-head {
-      background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
-      color: white;
-      border-bottom: none;
-
-      .ant-card-head-title {
-        color: white;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
+    .ant-card-body {
+      padding: 16px;
+      height: 320px;
+      overflow-y: auto;
     }
 
     .event-list-item {
-      padding: 12px;
       border-radius: 6px;
       margin-bottom: 8px;
-      cursor: pointer;
       transition: all 0.3s ease;
-      border: 1px solid #f0f0f0;
-      background: white;
 
       &:hover {
-        background-color: #f6ffed;
-        border-color: #b7eb8f;
-        transform: translateX(4px);
+        background-color: #f8f9fa;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
 
-      .event-list-title {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 4px;
+      .ant-list-item-meta {
+        align-items: flex-start;
 
-        span {
-          font-weight: 600;
-          color: #262626;
-        }
-      }
-
-      .event-list-description {
-        color: #8c8c8c;
-        font-size: 12px;
-        line-height: 1.4;
-
-        div {
-          margin-bottom: 2px;
-        }
-
-        .event-type {
+        .ant-list-item-meta-avatar {
           margin-top: 4px;
+        }
+
+        .ant-list-item-meta-content {
+          .ant-list-item-meta-title {
+            margin-bottom: 8px;
+          }
+
+          .ant-list-item-meta-description {
+            color: #666;
+            font-size: 12px;
+          }
         }
       }
     }
   }
 
   .stats-card {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border-radius: 8px;
-    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border: 1px solid #f0f0f0;
 
     .ant-card-head {
-      background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+      background: #722ed1;
       color: white;
-      border-bottom: none;
+      border-radius: 8px 8px 0 0;
 
       .ant-card-head-title {
         color: white;
@@ -192,170 +189,80 @@
       }
     }
 
+    .ant-card-body {
+      padding: 16px;
+    }
+
     .stat-item {
       text-align: center;
-      padding: 16px 8px;
-      background: #fafafa;
+      padding: 12px;
+      background: #f8f9fa;
       border-radius: 6px;
       transition: all 0.3s ease;
 
       &:hover {
-        background: #f0f0f0;
-        transform: translateY(-2px);
+        background: #e6f7ff;
+        transform: translateY(-1px);
       }
 
       .stat-number {
         font-size: 24px;
-        font-weight: bold;
+        font-weight: 700;
         color: #1890ff;
         margin-bottom: 4px;
       }
 
       .stat-label {
         font-size: 12px;
-        color: #8c8c8c;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        color: #666;
+        font-weight: 500;
       }
     }
   }
+}
 
-  // Modal styles
-  .ant-modal {
-    .ant-modal-header {
-      background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
-      border-bottom: none;
-
-      .ant-modal-title {
-        color: white;
-        font-weight: 600;
-      }
-    }
-
-    .ant-modal-content {
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .ant-form-item-label > label {
-      font-weight: 600;
-      color: #262626;
-    }
-
-    .ant-input,
-    .ant-select-selector,
-    .ant-picker {
-      border-radius: 6px;
-      border: 1px solid #d9d9d9;
-      transition: all 0.3s ease;
-
-      &:hover,
-      &:focus {
-        border-color: #1890ff;
-        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
-      }
-    }
-
-    .ant-btn {
-      border-radius: 6px;
-      font-weight: 600;
-      height: 40px;
-      padding: 0 24px;
-    }
+// Responsive design
+@media (max-width: 1200px) {
+  .ant-layout-sider {
+    width: 300px !important;
   }
+}
 
-  // Responsive design
-  @media (max-width: 768px) {
-    padding: 16px;
-
+@media (max-width: 768px) {
+  .agenda-container {
     .agenda-header {
       flex-direction: column;
       gap: 16px;
-      text-align: center;
-
-      h2 {
-        font-size: 20px;
-      }
-    }
-
-    .calendar-card {
-      .ant-calendar {
-        .ant-calendar-body {
-          .ant-calendar-date {
-            min-height: 60px;
-            padding: 2px 4px;
-
-            .calendar-events {
-              .calendar-event {
-                font-size: 8px;
-                padding: 2px 4px;
-
-                .event-time {
-                  font-size: 7px;
-                }
-
-                .event-student {
-                  font-size: 7px;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    .upcoming-events-card {
-      .event-list-item {
-        padding: 8px;
-
-        .event-list-title {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 4px;
-        }
-      }
-    }
-
-    .stats-card {
-      .stat-item {
-        padding: 12px 4px;
-
-        .stat-number {
-          font-size: 20px;
-        }
-
-        .stat-label {
-          font-size: 10px;
-        }
-      }
+      align-items: flex-start;
     }
   }
 
-  // Animation for new events
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .ant-layout-sider {
+    width: 100% !important;
+    position: relative !important;
+    height: auto !important;
   }
+}
 
-  .calendar-event {
-    animation: slideIn 0.3s ease-out;
+// Animaciones
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-
-  // Loading states
-  .ant-spin {
-    .ant-spin-dot {
-      font-size: 24px;
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
 
-  // Custom scrollbar
-  .ant-list {
+.calendar-event {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+// Scrollbar personalizado para el sidebar
+.ant-layout-sider {
+  .ant-card-body {
     &::-webkit-scrollbar {
       width: 6px;
     }

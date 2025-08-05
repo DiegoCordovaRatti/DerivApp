@@ -39,7 +39,14 @@ const apiRequest = async (endpoint, options = {}) => {
 
 // Obtener todos los estudiantes
 export const obtenerEstudiantes = async () => {
-  return await apiRequest('/estudiantes');
+  try {
+    const response = await apiRequest('/estudiantes');
+    // Asegurar que devuelva un array
+    return response.estudiantes || response || [];
+  } catch (error) {
+    console.error('Error al obtener estudiantes:', error);
+    return [];
+  }
 };
 
 // Obtener estudiante por ID

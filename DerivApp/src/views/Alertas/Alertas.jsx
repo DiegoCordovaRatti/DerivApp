@@ -11,7 +11,12 @@ import {
   Badge,
   Divider,
   Spin,
-  message
+  message,
+  Modal,
+  Form,
+  DatePicker,
+  TimePicker,
+  Select
 } from 'antd';
 import {
   SearchOutlined,
@@ -25,19 +30,31 @@ import {
   UserOutlined,
   DownOutlined,
   CheckCircleOutlined,
-  StopOutlined
+  StopOutlined,
+  BellOutlined,
+  ScheduleOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { obtenerAlertas } from '../../services/alertaService';
+import { crearEventoDesdeAlerta } from '../../services/eventoService';
+import dayjs from 'dayjs';
 import './Alertas.scss';
 
 
 const { Title, Text } = Typography;
+const { Option } = Select;
+const { TextArea } = Input;
 
 const Alertas = () => {
   const [searchText, setSearchText] = useState('');
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alertasFiltradas, setAlertasFiltradas] = useState([]);
+  const [expandedCards, setExpandedCards] = useState(new Set());
+  const [isModalAgendarVisible, setIsModalAgendarVisible] = useState(false);
+  const [alertaSeleccionada, setAlertaSeleccionada] = useState(null);
+  const [formAgendar] = Form.useForm();
+  const navigate = useNavigate();
 
   // Cargar alertas desde el backend
   const cargarAlertas = async () => {
@@ -88,7 +105,61 @@ const Alertas = () => {
 
   const { sinRiesgo, moderada, alta, critica } = contarAlertasPorNivel();
 
+  // Función para manejar la expansión de tarjetas
+  const toggleCardExpansion = (alertaId) => {
+    const newExpandedCards = new Set(expandedCards);
+    if (newExpandedCards.has(alertaId)) {
+      newExpandedCards.delete(alertaId);
+    } else {
+      newExpandedCards.add(alertaId);
+    }
+    setExpandedCards(newExpandedCards);
+  };
 
+  // Función para manejar el botón "Apagar alerta"
+  const handleApagarAlerta = (alertaId) => {
+    message.info('Función "Apagar alerta" será implementada próximamente');
+    // Aquí se implementará la lógica para apagar la alerta
+  };
+
+  // Función para manejar el botón "Agendar"
+  const handleAgendar = (alerta) => {
+    setAlertaSeleccionada(alerta);
+    setIsModalAgendarVisible(true);
+    formAgendar.resetFields();
+  };
+
+  // Función para crear evento desde alerta
+  const handleCrearEventoDesdeAlerta = async (values) => {
+    try {
+      const datosEvento = {
+        titulo: values.titulo,
+        descripcion: values.descripcion,
+        fecha: values.fecha.toDate(),
+        hora: values.hora.format('HH:mm'),
+        tipo: values.tipo,
+        prioridad: values.prioridad,
+        status: 'pendiente'
+      };
+
+      await crearEventoDesdeAlerta(alertaSeleccionada, datosEvento);
+      
+      setIsModalAgendarVisible(false);
+      formAgendar.resetFields();
+      setAlertaSeleccionada(null);
+      
+      message.success('Evento creado exitosamente desde la alerta');
+      
+      // Opcional: navegar a la agenda
+      setTimeout(() => {
+        navigate('/agenda');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error al crear evento desde alerta:', error);
+      message.error('Error al crear el evento');
+    }
+  };
 
   // Función para obtener el icono según el tipo de motivo
   const getMotivoIcon = (motivo) => {
@@ -308,12 +379,15 @@ const Alertas = () => {
             {alertasFiltradas.map((alerta) => (
               <Col xs={24} md={12} lg={8} key={alerta.id}>
                 <Card
-                  className="alerta-card"
+                  className={`alerta-card ${expandedCards.has(alerta.id) ? 'expanded' : ''}`}
                   style={{ 
                     borderLeft: `4px solid ${getNivelAlertaColor(alerta.nivelAlerta)}`,
-                    marginBottom: '16px'
+                    marginBottom: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
                   }}
                   bodyStyle={{ padding: '16px' }}
+                  onClick={() => toggleCardExpansion(alerta.id)}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -331,7 +405,14 @@ const Alertas = () => {
                       <Tag color={getNivelAlertaColor(alerta.nivelAlerta)} style={{ fontWeight: '500' }}>
                         {alerta.nivelAlerta}
                       </Tag>
-                      <DownOutlined style={{ color: '#999', cursor: 'pointer' }} />
+                      <DownOutlined 
+                        style={{ 
+                          color: '#999', 
+                          cursor: 'pointer',
+                          transform: expandedCards.has(alerta.id) ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.3s ease'
+                        }} 
+                      />
                     </div>
                   </div>
                   
@@ -360,6 +441,46 @@ const Alertas = () => {
                   <Text type="secondary" style={{ fontSize: '14px' }}>
                     {alerta.descripcion}
                   </Text>
+
+                  {/* Contenido expandido */}
+                  {expandedCards.has(alerta.id) && (
+                    <div style={{ 
+                      marginTop: '16px', 
+                      paddingTop: '16px', 
+                      borderTop: '1px solid #f0f0f0',
+                      animation: 'slideDown 0.3s ease-out'
+                    }}>
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                        <Text strong style={{ fontSize: '14px', color: '#262626', display: 'block', marginBottom: '8px' }}>
+                          Acciones disponibles:
+                        </Text>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <Button 
+                            type="default" 
+                            icon={<BellOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApagarAlerta(alerta.id);
+                            }}
+                            style={{ flex: 1 }}
+                          >
+                            Apagar alerta
+                          </Button>
+                          <Button 
+                            type="primary" 
+                            icon={<ScheduleOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAgendar(alerta);
+                            }}
+                            style={{ flex: 1 }}
+                          >
+                            Agendar
+                          </Button>
+                        </div>
+                      </Space>
+                    </div>
+                  )}
                 </Card>
               </Col>
             ))}
@@ -379,6 +500,130 @@ const Alertas = () => {
           </Text>
         </div>
       )}
+
+      {/* Modal para crear evento desde alerta */}
+      <Modal
+        title={`Crear Evento - ${alertaSeleccionada?.estudiante?.nombre}`}
+        open={isModalAgendarVisible}
+        onCancel={() => {
+          setIsModalAgendarVisible(false);
+          setAlertaSeleccionada(null);
+          formAgendar.resetFields();
+        }}
+        footer={null}
+        width={600}
+      >
+        {alertaSeleccionada && (
+          <div style={{ marginBottom: '16px', padding: '12px', background: '#f8f9fa', borderRadius: '6px' }}>
+            <Text strong>Información de la Alerta:</Text>
+            <div style={{ marginTop: '8px' }}>
+              <Text type="secondary">Estudiante: {alertaSeleccionada.estudiante.nombre} ({alertaSeleccionada.estudiante.curso})</Text>
+              <br />
+              <Text type="secondary">Motivo: {alertaSeleccionada.motivo}</Text>
+              <br />
+              <Text type="secondary">Nivel de Alerta: {alertaSeleccionada.nivelAlerta}</Text>
+            </div>
+          </div>
+        )}
+        
+        <Form
+          form={formAgendar}
+          layout="vertical"
+          onFinish={handleCrearEventoDesdeAlerta}
+          initialValues={{
+            tipo: 'seguimiento',
+            prioridad: 'media',
+            fecha: dayjs(),
+            hora: dayjs()
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="titulo"
+                label="Título del Evento"
+                rules={[{ required: true, message: 'Por favor ingresa el título' }]}
+              >
+                <Input placeholder="Ej: Seguimiento de alerta" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="tipo"
+                label="Tipo de Evento"
+                rules={[{ required: true, message: 'Por favor selecciona el tipo' }]}
+              >
+                <Select>
+                  <Option value="seguimiento">Seguimiento</Option>
+                  <Option value="evaluacion">Evaluación</Option>
+                  <Option value="intervencion">Intervención</Option>
+                  <Option value="reunion">Reunión</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="fecha"
+                label="Fecha"
+                rules={[{ required: true, message: 'Por favor selecciona la fecha' }]}
+              >
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="hora"
+                label="Hora"
+                rules={[{ required: true, message: 'Por favor selecciona la hora' }]}
+              >
+                <TimePicker style={{ width: '100%' }} format="HH:mm" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="prioridad"
+                label="Prioridad"
+                rules={[{ required: true, message: 'Por favor selecciona la prioridad' }]}
+              >
+                <Select>
+                  <Option value="baja">Baja</Option>
+                  <Option value="media">Media</Option>
+                  <Option value="alta">Alta</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            name="descripcion"
+            label="Descripción"
+            rules={[{ required: true, message: 'Por favor ingresa la descripción' }]}
+          >
+            <TextArea rows={4} placeholder="Descripción detallada del evento..." />
+          </Form.Item>
+
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                Crear Evento
+              </Button>
+              <Button onClick={() => {
+                setIsModalAgendarVisible(false);
+                setAlertaSeleccionada(null);
+                formAgendar.resetFields();
+              }}>
+                Cancelar
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

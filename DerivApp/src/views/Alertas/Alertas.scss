@@ -48,10 +48,18 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       border: 1px solid #f0f0f0;
       cursor: pointer;
+      position: relative;
+      overflow: hidden;
 
       &:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      &.expanded {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        border-color: #1890ff;
       }
 
       &.alerta-alta {
@@ -99,138 +107,78 @@
           color: white;
           background: #1890ff;
         }
-
-        .estudiante-details {
-          flex: 1;
-
-          .estudiante-nombre {
-            font-weight: 600;
-            font-size: 16px;
-            color: #262626;
-            margin-bottom: 4px;
-          }
-
-          .estudiante-curso {
-            font-size: 12px;
-            color: #8c8c8c;
-          }
-        }
       }
 
-      .alerta-prioridad {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
+      // Estilos para los botones de acción
+      .ant-btn {
+        border-radius: 6px;
+        font-weight: 500;
+        height: 36px;
+        transition: all 0.3s ease;
 
-        .prioridad-icon {
-          font-size: 16px;
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
 
-        .prioridad-tag {
-          font-weight: 500;
-          border-radius: 4px;
-        }
-      }
-
-      .alerta-motivo {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
-
-        .motivo-icon {
-          font-size: 14px;
-        }
-
-        .motivo-texto {
-          font-weight: 600;
-          font-size: 14px;
-        }
-      }
-
-      .alerta-descripcion {
-        color: #8c8c8c;
-        font-size: 14px;
-        line-height: 1.5;
-      }
-
-      .alerta-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid #f0f0f0;
-
-        .expand-icon {
-          color: #8c8c8c;
-          cursor: pointer;
-          transition: transform 0.3s ease;
+        &.ant-btn-default {
+          border-color: #d9d9d9;
+          color: #595959;
 
           &:hover {
+            border-color: #1890ff;
             color: #1890ff;
-            transform: rotate(180deg);
+          }
+        }
+
+        &.ant-btn-primary {
+          background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+          border: none;
+
+          &:hover {
+            background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
           }
         }
       }
     }
   }
 
-  // Responsive design
+  // Animación para la expansión de tarjetas
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+      max-height: 0;
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      max-height: 200px;
+    }
+  }
+
+  // Animación para el icono de flecha
+  @keyframes rotateDown {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(180deg);
+    }
+  }
+
+  // Responsive design para las tarjetas expandibles
   @media (max-width: 768px) {
-    padding: 16px;
-
-    .alertas-filters {
-      padding: 16px;
-
-      .ant-row {
-        margin-bottom: 16px;
-      }
-
-      .ant-space {
-        flex-wrap: wrap;
-      }
-    }
-
-    .alertas-list {
-      .alerta-card {
-        margin-bottom: 16px;
-
-        .estudiante-info {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 8px;
-
-          .estudiante-avatar {
-            width: 32px;
-            height: 32px;
-            font-size: 12px;
-          }
-        }
-      }
-    }
-  }
-
-  @media (max-width: 480px) {
-    .alertas-header {
-      margin-bottom: 24px;
-
-      h2 {
-        font-size: 20px;
-      }
-    }
-
-    .alertas-filters {
-      .ant-col {
-        margin-bottom: 12px;
-      }
-    }
-
     .alertas-list {
       .alerta-card {
         .ant-card-body {
           padding: 12px;
+        }
+
+        // Ajustar botones en móvil
+        .ant-btn {
+          height: 32px;
+          font-size: 12px;
         }
       }
     }
