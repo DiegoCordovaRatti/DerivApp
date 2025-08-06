@@ -29,12 +29,13 @@ import {
   SearchOutlined,
   UserAddOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { 
   obtenerEstudiantes, 
   buscarEstudiantes,
   crearDerivacion 
 } from '../../services/estudianteService';
-import { CrearEstudianteModal } from '../../components/modal';
+import { CrearEstudianteModal, ResumenDerivacionModal } from '../../components/modal';
 import {
   obtenerTiposCaso,
   obtenerMotivosPorTipoCaso,
@@ -52,6 +53,7 @@ const { Panel } = Collapse;
 
 const FormularioDerivacion = () => {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
   const [activeKeys, setActiveKeys] = useState(['1']); // Datos del estudiante expandidos
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -66,12 +68,33 @@ const FormularioDerivacion = () => {
   const [opcionesDescripciones, setOpcionesDescripciones] = useState([]);
   const [tipoCasoSeleccionado, setTipoCasoSeleccionado] = useState(null);
   const [motivoSeleccionado, setMotivoSeleccionado] = useState(null);
+  
+  // Estados para el modal de resumen
+  const [modalResumenVisible, setModalResumenVisible] = useState(false);
+  const [derivacionCreada, setDerivacionCreada] = useState(null);
+  
+  // Estado para validar si el formulario está completo
+  const [formularioCompleto, setFormularioCompleto] = useState(false);
 
   // Cargar estudiantes al montar el componente
   useEffect(() => {
     cargarEstudiantes();
     cargarTiposCaso();
   }, []);
+
+  // Validar formulario cuando cambien los valores
+  useEffect(() => {
+    const interval = setInterval(() => {
+      validarFormularioCompleto();
+    }, 300);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Log cuando cambia el estado del formulario
+  useEffect(() => {
+    console.log('Estado formularioCompleto cambió a:', formularioCompleto);
+  }, [formularioCompleto]);
 
   // Función para cargar todos los estudiantes
   const cargarEstudiantes = async () => {
@@ -210,24 +233,25 @@ const FormularioDerivacion = () => {
 
   // Función para autocompletar campos cuando se selecciona un estudiante
   const handleEstudianteSelect = (value, option) => {
-    const estudiante = option.estudiante;
+    const estudianteSeleccionado = option.estudiante;
+    setEstudianteSeleccionado(estudianteSeleccionado);
     
-    if (estudiante) {
-      setEstudianteSeleccionado(estudiante);
-      form.setFieldsValue({
-        nombre: estudiante.nombre,
-        rut: estudiante.rut,
-        curso: estudiante.curso,
-        establecimientoId: estudiante.establecimientoId,
-        estado: estudiante.estado,
-        telefono_contacto: estudiante.telefono_contacto || '',
-        email_contacto: estudiante.email_contacto || '',
-        apoderado: estudiante.apoderado || '',
-        direccion: estudiante.direccion || ''
-      });
-      
-      message.success(`Estudiante seleccionado: ${estudiante.nombre}`);
-    }
+    // Llenar automáticamente los campos del estudiante
+    form.setFieldsValue({
+      estudiante_id: estudianteSeleccionado.id,
+      nombre: estudianteSeleccionado.nombre,
+      rut: estudianteSeleccionado.rut,
+      curso: estudianteSeleccionado.curso,
+      establecimientoId: estudianteSeleccionado.establecimientoId,
+      estado: estudianteSeleccionado.estado,
+      telefono_contacto: estudianteSeleccionado.telefono_contacto || '',
+      email_contacto: estudianteSeleccionado.email_contacto || '',
+      apoderado: estudianteSeleccionado.apoderado || '',
+      direccion: estudianteSeleccionado.direccion || ''
+    });
+    
+    // Validar formulario después de seleccionar estudiante
+    setTimeout(() => validarFormularioCompleto(), 100);
   };
 
   // Función para manejar cambios en el campo de búsqueda
@@ -334,6 +358,9 @@ const FormularioDerivacion = () => {
       motivo: undefined,
       descripcion: ''
     });
+    
+    // Validar formulario después del cambio
+    setTimeout(() => validarFormularioCompleto(), 100);
   };
 
   // Función para manejar selección de motivo
@@ -360,6 +387,9 @@ const FormularioDerivacion = () => {
         descripcion: ''
       });
     }
+    
+    // Validar formulario después del cambio
+    setTimeout(() => validarFormularioCompleto(), 100);
   };
 
   // Función para manejar selección de descripción
@@ -381,6 +411,9 @@ const FormularioDerivacion = () => {
         console.log('Usuario escribiendo descripción personalizada');
       }
     }
+    
+    // Validar formulario después del cambio
+    setTimeout(() => validarFormularioCompleto(), 100);
   };
 
   // Función para filtrar tipos de caso
@@ -419,22 +452,72 @@ const FormularioDerivacion = () => {
     });
   };
 
-  const handlePanelChange = (keys) => {
-    setActiveKeys(keys);
+  // Función para mostrar modal de resumen
+  const mostrarResumenDerivacion = (derivacion) => {
+    setDerivacionCreada(derivacion);
+    setModalResumenVisible(true);
   };
 
-  const handleGuardarBorrador = async () => {
-    try {
-      setLoading(true);
-      const values = await form.validateFields();
-      console.log('Datos del formulario (borrador):', values);
-      message.success('Borrador guardado correctamente');
-    } catch (error) {
-      console.error('Error al guardar borrador:', error);
-      message.error('Error al guardar el borrador');
-    } finally {
-      setLoading(false);
+  // Función para cerrar modal de resumen
+  const cerrarResumenDerivacion = () => {
+    setModalResumenVisible(false);
+    setDerivacionCreada(null);
+  };
+
+  // Función para ir a expedientes desde el modal
+  const irAExpedientes = () => {
+    setModalResumenVisible(false);
+    setDerivacionCreada(null);
+    navigate('/expedientes');
+  };
+
+  // Función para validar si el formulario está completo
+  const validarFormularioCompleto = () => {
+    const valores = form.getFieldsValue();
+    
+    // Campos requeridos del estudiante
+    const estudianteCompleto = Boolean(estudianteSeleccionado && 
+      estudianteSeleccionado.nombre && 
+      estudianteSeleccionado.rut && 
+      estudianteSeleccionado.curso);
+    
+    // Campos requeridos de la derivación
+    const tipoCasoCompleto = Boolean(valores.tipo_caso && valores.tipo_caso.trim() !== '');
+    const motivoCompleto = Boolean(valores.motivo && valores.motivo.trim() !== '');
+    const descripcionCompleta = Boolean(valores.descripcion && valores.descripcion.trim() !== '');
+    const prioridadCompleta = Boolean(valores.prioridad && valores.prioridad.trim() !== '');
+    const estadoCompleto = Boolean(valores.estado_derivacion && valores.estado_derivacion.trim() !== '');
+    
+    const derivacionCompleta = tipoCasoCompleto && motivoCompleto && descripcionCompleta && prioridadCompleta && estadoCompleto;
+    
+    const esCompleto = estudianteCompleto && derivacionCompleta;
+    
+    // Debug logs
+    console.log('=== Validación del Formulario ===');
+    console.log('Estudiante seleccionado:', estudianteSeleccionado);
+    console.log('Estudiante completo:', estudianteCompleto);
+    console.log('Valores del formulario:', valores);
+    console.log('Tipo caso completo:', tipoCasoCompleto);
+    console.log('Motivo completo:', motivoCompleto);
+    console.log('Descripción completa:', descripcionCompleta);
+    console.log('Prioridad completa:', prioridadCompleta);
+    console.log('Estado completo:', estadoCompleto);
+    console.log('Derivación completa:', derivacionCompleta);
+    console.log('Formulario completo:', esCompleto);
+    console.log('Estado formularioCompleto actual:', formularioCompleto);
+    console.log('================================');
+    
+    // Actualizar estado inmediatamente si es diferente
+    if (esCompleto !== formularioCompleto) {
+      console.log('Actualizando formularioCompleto de', formularioCompleto, 'a', esCompleto);
+      setFormularioCompleto(esCompleto);
     }
+    
+    return esCompleto;
+  };
+
+  const handlePanelChange = (keys) => {
+    setActiveKeys(keys);
   };
 
   const handleEnviarDerivacion = async () => {
@@ -458,28 +541,47 @@ const FormularioDerivacion = () => {
       // Preparar datos de la derivación
       const datosDerivacion = {
         fecha_derivacion: values.fecha_derivacion?.toISOString() || new Date().toISOString(),
-        estado_derivacion: values.estado_derivacion,
+        estado_derivacion: values.estado_derivacion || 'pendiente',
         motivo: values.motivo,
-        derivado_por: values.derivado_por,
+        derivado_por: values.derivado_por || 'Usuario del sistema',
         responsable_id: values.responsable_id,
-        responsable: mapeoResponsables[values.responsable_id] || values.responsable_id, // Convertir ID a nombre
+        responsable: mapeoResponsables[values.responsable_id] || values.responsable_id,
         prioridad: values.prioridad,
         tipo_caso: values.tipo_caso,
         observaciones: values.observaciones,
-        // Campos adicionales que pueden estar en el formulario
-        descripcion: values.descripcion || values.motivo, // Usar descripción específica o motivo como fallback
-        fecha_evaluacion: null, // Campo para evaluación futura
-        resultado: null, // Campo para resultado futuro
-        seguimientos: [] // Array vacío para seguimientos futuros
+        descripcion: values.descripcion || values.motivo,
+        fecha_evaluacion: null,
+        resultado: null,
+        seguimientos: []
       };
 
       // Crear la derivación en la base de datos
       console.log('Datos de derivación a enviar:', datosDerivacion);
-      const response = await crearDerivacion(estudianteSeleccionado.id, datosDerivacion);
+      console.log('ID del estudiante:', estudianteSeleccionado.id);
       
-      message.success('Derivación enviada correctamente');
+      const response = await crearDerivacion(estudianteSeleccionado.id, datosDerivacion);
+      console.log('Respuesta de crearDerivacion:', response);
+      
+      // Mostrar modal independientemente de la respuesta del servidor
+      // (asumiendo que si llegamos aquí, la derivación se creó)
+      
+      // Limpiar formulario
       form.resetFields();
       setEstudianteSeleccionado(null);
+      setTipoCasoSeleccionado(null);
+      setMotivoSeleccionado(null);
+      setOpcionesMotivos([]);
+      setOpcionesDescripciones([]);
+      
+      // Mostrar modal de resumen
+      mostrarResumenDerivacion(datosDerivacion);
+      
+      if (response && response.success) {
+        console.log('Respuesta exitosa del servidor');
+      } else {
+        console.error('Error en la respuesta:', response);
+        message.error(response?.message || 'Error al enviar la derivación');
+      }
       
     } catch (error) {
       console.error('Error al enviar derivación:', error);
@@ -944,36 +1046,41 @@ const FormularioDerivacion = () => {
         {/* Botones de Acción */}
         <div className="formulario-actions">
           <Row gutter={[16, 16]} justify="center">
-            <Col>
-              <Button
-                size="large"
-                icon={<SaveOutlined />}
-                onClick={handleGuardarBorrador}
-                loading={loading}
-                style={{
-                  height: '48px',
-                  paddingLeft: '24px',
-                  paddingRight: '24px'
-                }}
-              >
-                Guardar Borrador
-              </Button>
-            </Col>
-            <Col>
+            <Col xs={24}>
               <Button
                 type="primary"
                 size="large"
                 icon={<SendOutlined />}
                 onClick={handleEnviarDerivacion}
                 loading={loading}
-                style={{
-                  height: '48px',
-                  paddingLeft: '24px',
-                  paddingRight: '24px'
-                }}
+                disabled={!formularioCompleto}
+                style={{ width: '100%' }}
               >
-                Enviar Derivación
+                {loading ? 'Enviando...' : 'Enviar Derivación'}
               </Button>
+              {console.log('Botón disabled:', !formularioCompleto, 'formularioCompleto:', formularioCompleto)}
+              {!formularioCompleto && (
+                <div style={{ textAlign: 'center', marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Complete todos los campos requeridos para enviar la derivación
+                  </Text>
+                  <br />
+                  <Button 
+                    size="small" 
+                    type="link" 
+                    onClick={() => {
+                      console.log('Estado actual:', {
+                        formularioCompleto,
+                        estudianteSeleccionado,
+                        valores: form.getFieldsValue()
+                      });
+                      validarFormularioCompleto();
+                    }}
+                  >
+                    Debug: Verificar Validación
+                  </Button>
+                </div>
+              )}
             </Col>
           </Row>
         </div>
@@ -985,6 +1092,15 @@ const FormularioDerivacion = () => {
         onCancel={handleCancel}
         onSuccess={handleEstudianteCreado}
         loading={loading}
+      />
+      
+      {/* Modal de Resumen de Derivación */}
+      <ResumenDerivacionModal
+        visible={modalResumenVisible}
+        onClose={cerrarResumenDerivacion}
+        derivacion={derivacionCreada}
+        estudiante={estudianteSeleccionado}
+        onIrAExpedientes={irAExpedientes}
       />
     </div>
   );
