@@ -96,7 +96,7 @@ const CrearEstudianteModal = ({
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
             <Form.Item
-              label="Nombre Completo *"
+              label="Nombre Completo"
               name="nombre"
               rules={[
                 { required: true, message: 'Por favor ingrese el nombre del estudiante' },
@@ -112,7 +112,7 @@ const CrearEstudianteModal = ({
           </Col>
           <Col xs={24} md={12}>
             <Form.Item
-              label="RUT *"
+              label="RUT"
               name="rut"
               rules={[
                 { required: true, message: 'Por favor ingrese el RUT' },
@@ -131,7 +131,7 @@ const CrearEstudianteModal = ({
           </Col>
           <Col xs={24} md={12}>
             <Form.Item
-              label="Curso *"
+              label="Curso"
               name="curso"
               rules={[
                 { required: true, message: 'Por favor seleccione el curso' }
@@ -162,7 +162,7 @@ const CrearEstudianteModal = ({
           </Col>
           <Col xs={24} md={12}>
             <Form.Item
-              label="Establecimiento ID *"
+              label="Establecimiento ID"
               name="establecimientoId"
               rules={[{ required: true, message: 'Por favor ingrese el ID del establecimiento' }]}
             >
@@ -175,7 +175,7 @@ const CrearEstudianteModal = ({
           </Col>
           <Col xs={24} md={12}>
             <Form.Item
-              label="Estado del Estudiante *"
+              label="Estado del Estudiante"
               name="estado"
               rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
             >
@@ -184,7 +184,6 @@ const CrearEstudianteModal = ({
                 size="large"
               >
                 <Option value="activo">Activo</Option>
-                <Option value="egresado">Egresado</Option>
                 <Option value="derivado">Derivado</Option>
               </Select>
             </Form.Item>

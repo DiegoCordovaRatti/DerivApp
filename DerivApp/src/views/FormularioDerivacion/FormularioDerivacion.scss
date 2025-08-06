@@ -192,6 +192,67 @@
       }
     }
   }
+
+  // Estilos para campos de autocompletado
+  .ant-select-auto-complete {
+    .ant-select-selector {
+      border-radius: 6px;
+    }
+  }
+
+  .autocomplete-field {
+    .ant-select-dropdown {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    // Estilos para indicar que se puede escribir texto personalizado
+    .ant-select-selection-placeholder {
+      color: #8c8c8c;
+      font-style: italic;
+    }
+
+    // Estilos para las opciones recomendadas
+    .ant-select-item-option {
+      &:hover {
+        background-color: #f0f8ff;
+      }
+    }
+
+    // Estilos para texto personalizado vs recomendaciones
+    .ant-select-item-option-content {
+      font-weight: 500;
+    }
+  }
+
+  // Estilos para campos deshabilitados
+  .ant-select-disabled {
+    .ant-select-selector {
+      background-color: #f5f5f5;
+      color: #999;
+    }
+  }
+
+  // Estilos para mensajes de ayuda
+  .field-help {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+  }
+
+  // Estilos para botón de limpiar
+  .clear-button {
+    margin-top: 32px;
+    height: 40px;
+  }
+
+  // Estilos para indicar texto personalizado
+  .custom-text-indicator {
+    font-size: 11px;
+    color: #52c41a;
+    margin-top: 4px;
+    font-style: italic;
+  }
 }
 
 // Responsive design

@@ -35,6 +35,14 @@ import {
   crearDerivacion 
 } from '../../services/estudianteService';
 import { CrearEstudianteModal } from '../../components/modal';
+import {
+  obtenerTiposCaso,
+  obtenerMotivosPorTipoCaso,
+  obtenerDescripcionesPorMotivo,
+  filtrarTiposCaso,
+  filtrarMotivos,
+  filtrarDescripciones
+} from '../../utils/formAutocompleteUtils';
 import './FormularioDerivacion.scss';
 
 const { Title, Text } = Typography;
@@ -50,10 +58,19 @@ const FormularioDerivacion = () => {
   const [estudiantes, setEstudiantes] = useState([]);
   const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
+  const [opcionesEstudiantes, setOpcionesEstudiantes] = useState([]);
+  
+  // Estados para autocompletado
+  const [opcionesTiposCaso, setOpcionesTiposCaso] = useState([]);
+  const [opcionesMotivos, setOpcionesMotivos] = useState([]);
+  const [opcionesDescripciones, setOpcionesDescripciones] = useState([]);
+  const [tipoCasoSeleccionado, setTipoCasoSeleccionado] = useState(null);
+  const [motivoSeleccionado, setMotivoSeleccionado] = useState(null);
 
   // Cargar estudiantes al montar el componente
   useEffect(() => {
     cargarEstudiantes();
+    cargarTiposCaso();
   }, []);
 
   // Función para cargar todos los estudiantes
@@ -61,27 +78,12 @@ const FormularioDerivacion = () => {
     try {
       setLoadingEstudiantes(true);
       const response = await obtenerEstudiantes();
-      setEstudiantes(response.estudiantes || []);
-    } catch (error) {
-      console.error('Error al cargar estudiantes:', error);
-      message.error('Error al cargar la lista de estudiantes');
-    } finally {
-      setLoadingEstudiantes(false);
-    }
-  };
-
-  // Función para filtrar estudiantes por nombre
-  const filtrarEstudiantes = (searchText) => {
-    if (!searchText) return [];
-    
-    return estudiantes
-      .filter(estudiante => 
-        estudiante.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
-        estudiante.rut.includes(searchText) ||
-        estudiante.curso.toLowerCase().includes(searchText.toLowerCase())
-      )
-      .map(estudiante => ({
-        value: estudiante.id,
+      const estudiantesData = response.estudiantes || response || [];
+      setEstudiantes(estudiantesData);
+      
+      // Crear opciones iniciales para el AutoComplete
+      const opcionesIniciales = estudiantesData.map(estudiante => ({
+        value: estudiante.nombre,
         label: (
           <div style={{ 
             display: 'flex', 
@@ -108,6 +110,88 @@ const FormularioDerivacion = () => {
         ),
         estudiante: estudiante
       }));
+      setOpcionesEstudiantes(opcionesIniciales);
+    } catch (error) {
+      console.error('Error al cargar estudiantes:', error);
+      message.error('Error al cargar la lista de estudiantes');
+    } finally {
+      setLoadingEstudiantes(false);
+    }
+  };
+
+  // Función para filtrar estudiantes por nombre
+  const filtrarEstudiantes = (searchText) => {
+    if (!searchText) {
+      // Si no hay texto de búsqueda, mostrar todos los estudiantes
+      const opciones = estudiantes.map(estudiante => ({
+        value: estudiante.nombre,
+        label: (
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            padding: '4px 0'
+          }}>
+            <div>
+              <div style={{ fontWeight: '500', color: '#1890ff' }}>
+                {estudiante.nombre}
+              </div>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                {estudiante.curso} • {estudiante.rut}
+              </div>
+            </div>
+            <div style={{ 
+              fontSize: '11px', 
+              color: '#999',
+              textAlign: 'right'
+            }}>
+              {estudiante.estado}
+            </div>
+          </div>
+        ),
+        estudiante: estudiante
+      }));
+      setOpcionesEstudiantes(opciones);
+      return;
+    }
+    
+    // Filtrar estudiantes según el texto de búsqueda
+    const opcionesFiltradas = estudiantes
+      .filter(estudiante => 
+        estudiante.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
+        estudiante.rut.includes(searchText) ||
+        estudiante.curso.toLowerCase().includes(searchText.toLowerCase())
+      )
+      .map(estudiante => ({
+        value: estudiante.nombre,
+        label: (
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            padding: '4px 0'
+          }}>
+            <div>
+              <div style={{ fontWeight: '500', color: '#1890ff' }}>
+                {estudiante.nombre}
+              </div>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                {estudiante.curso} • {estudiante.rut}
+              </div>
+            </div>
+            <div style={{ 
+              fontSize: '11px', 
+              color: '#999',
+              textAlign: 'right'
+            }}>
+              {estudiante.estado}
+            </div>
+          </div>
+        ),
+        estudiante: estudiante
+      }));
+    
+    setOpcionesEstudiantes(opcionesFiltradas);
   };
 
   // Función para filtrar opciones del autocomplete
@@ -180,6 +264,36 @@ const FormularioDerivacion = () => {
     // Agregar el nuevo estudiante a la lista local
     setEstudiantes(prev => [...prev, nuevoEstudiante]);
     
+    // Actualizar las opciones del AutoComplete
+    setOpcionesEstudiantes(prev => [...prev, {
+      value: nuevoEstudiante.nombre,
+      label: (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          padding: '4px 0'
+        }}>
+          <div>
+            <div style={{ fontWeight: '500', color: '#1890ff' }}>
+              {nuevoEstudiante.nombre}
+            </div>
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              {nuevoEstudiante.curso} • {nuevoEstudiante.rut}
+            </div>
+          </div>
+          <div style={{ 
+            fontSize: '11px', 
+            color: '#999',
+            textAlign: 'right'
+          }}>
+            {nuevoEstudiante.estado}
+          </div>
+        </div>
+      ),
+      estudiante: nuevoEstudiante
+    }]);
+    
     // Cerrar el modal
     setModalVisible(false);
     
@@ -196,6 +310,112 @@ const FormularioDerivacion = () => {
       email_contacto: nuevoEstudiante.email_contacto || '',
       apoderado: nuevoEstudiante.apoderado || '',
       direccion: nuevoEstudiante.direccion || ''
+    });
+  };
+
+  // Función para cargar opciones de tipos de caso
+  const cargarTiposCaso = () => {
+    const tipos = obtenerTiposCaso();
+    setOpcionesTiposCaso(tipos);
+  };
+
+  // Función para manejar selección de tipo de caso
+  const handleTipoCasoSelect = (value) => {
+    setTipoCasoSeleccionado(value);
+    setMotivoSeleccionado(null);
+    setOpcionesDescripciones([]);
+    
+    // Cargar motivos para el tipo de caso seleccionado
+    const motivos = obtenerMotivosPorTipoCaso(value);
+    setOpcionesMotivos(motivos);
+    
+    // Limpiar campos dependientes
+    form.setFieldsValue({
+      motivo: undefined,
+      descripcion: ''
+    });
+  };
+
+  // Función para manejar selección de motivo
+  const handleMotivoSelect = (value) => {
+    setMotivoSeleccionado(value);
+    
+    // Cargar descripciones para el motivo seleccionado
+    const descripciones = obtenerDescripcionesPorMotivo(tipoCasoSeleccionado, value);
+    setOpcionesDescripciones(descripciones);
+    
+    // Limpiar campo de descripción
+    form.setFieldsValue({
+      descripcion: ''
+    });
+  };
+
+  // Función para manejar cambio de texto personalizado en motivo
+  const handleMotivoChange = (value) => {
+    // Si el usuario está escribiendo texto personalizado, limpiar las descripciones
+    if (value && !opcionesMotivos.some(opcion => opcion.value === value)) {
+      setMotivoSeleccionado(null);
+      setOpcionesDescripciones([]);
+      form.setFieldsValue({
+        descripcion: ''
+      });
+    }
+  };
+
+  // Función para manejar selección de descripción
+  const handleDescripcionSelect = (value) => {
+    form.setFieldsValue({
+      descripcion: value
+    });
+  };
+
+  // Función para manejar cambio de texto personalizado en descripción
+  const handleDescripcionChange = (value) => {
+    // Permitir que el usuario escriba libremente
+    // Si hay un motivo seleccionado y el texto no coincide con una plantilla, 
+    // significa que está escribiendo texto personalizado
+    if (value && motivoSeleccionado) {
+      const esPlantillaRecomendada = opcionesDescripciones.some(opcion => opcion.value === value);
+      if (!esPlantillaRecomendada) {
+        // El usuario está escribiendo texto personalizado
+        console.log('Usuario escribiendo descripción personalizada');
+      }
+    }
+  };
+
+  // Función para filtrar tipos de caso
+  const handleFiltrarTiposCaso = (searchText) => {
+    const tiposFiltrados = filtrarTiposCaso(searchText);
+    setOpcionesTiposCaso(tiposFiltrados);
+  };
+
+  // Función para filtrar motivos
+  const handleFiltrarMotivos = (searchText) => {
+    if (!tipoCasoSeleccionado) return;
+    
+    const motivosFiltrados = filtrarMotivos(tipoCasoSeleccionado, searchText);
+    setOpcionesMotivos(motivosFiltrados);
+  };
+
+  // Función para filtrar descripciones
+  const handleFiltrarDescripciones = (searchText) => {
+    if (!tipoCasoSeleccionado || !motivoSeleccionado) return;
+    
+    const descripcionesFiltradas = filtrarDescripciones(tipoCasoSeleccionado, motivoSeleccionado, searchText);
+    setOpcionesDescripciones(descripcionesFiltradas);
+  };
+
+  // Función para limpiar campos de autocompletado
+  const limpiarCamposAutocompletado = () => {
+    setTipoCasoSeleccionado(null);
+    setMotivoSeleccionado(null);
+    setOpcionesMotivos([]);
+    setOpcionesDescripciones([]);
+    
+    form.setFieldsValue({
+      tipo_caso: undefined,
+      motivo: undefined,
+      descripcion: ''
     });
   };
 
@@ -342,7 +562,7 @@ const FormularioDerivacion = () => {
             <Row gutter={[16, 16]}>
               <Col xs={24}>
                 <Form.Item
-                  label="Buscar Estudiante *"
+                  label="Buscar Estudiante"
                   name="estudiante_id"
                   rules={[{ required: true, message: 'Por favor busque y seleccione un estudiante' }]}
                 >
@@ -350,41 +570,14 @@ const FormularioDerivacion = () => {
                     placeholder="Escriba el nombre, RUT o curso del estudiante"
                     size="large"
                     prefix={<SearchOutlined />}
-                    options={estudiantes.map(estudiante => ({
-                      value: estudiante.nombre,
-                      label: (
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          padding: '4px 0'
-                        }}>
-                          <div>
-                            <div style={{ fontWeight: '500', color: '#1890ff' }}>
-                              {estudiante.nombre}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#666' }}>
-                              {estudiante.curso} • {estudiante.rut}
-                            </div>
-                          </div>
-                          <div style={{ 
-                            fontSize: '11px', 
-                            color: '#999',
-                            textAlign: 'right'
-                          }}>
-                            {estudiante.estado}
-                          </div>
-                        </div>
-                      ),
-                      estudiante: estudiante
-                    }))}
+                    options={opcionesEstudiantes} // Usar el estado para las opciones
                     onSearch={filtrarEstudiantes}
                     onSelect={handleEstudianteSelect}
-                    filterOption={filterOption}
+                    filterOption={false} // Deshabilitar el filtrado automático para usar nuestro filtro personalizado
                     showSearch
                     allowClear
                     style={{ width: '100%' }}
-                    onSearchChange={handleSearchChange}
+                    onChange={handleSearchChange}
                     notFoundContent={
                       loadingEstudiantes ? (
                         <div style={{ textAlign: 'center', padding: '10px' }}>
@@ -403,7 +596,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Nombre Completo *"
+                  label="Nombre Completo"
                   name="nombre"
                   rules={[
                     { required: true, message: 'Por favor ingrese el nombre del estudiante' },
@@ -421,7 +614,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="RUT *"
+                  label="RUT"
                   name="rut"
                   rules={[
                     { required: true, message: 'Por favor ingrese el RUT' },
@@ -442,7 +635,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Curso *"
+                  label="Curso"
                   name="curso"
                   rules={[
                     { required: true, message: 'Por favor ingrese el curso' },
@@ -459,7 +652,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Establecimiento ID *"
+                  label="Establecimiento ID"
                   name="establecimientoId"
                   rules={[{ required: true, message: 'Por favor ingrese el ID del establecimiento' }]}
                 >
@@ -474,7 +667,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Estado del Estudiante *"
+                  label="Estado del Estudiante"
                   name="estado"
                   rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
                 >
@@ -579,7 +772,7 @@ const FormularioDerivacion = () => {
             <Row gutter={[16, 16]}>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Fecha de Derivación *"
+                  label="Fecha de Derivación"
                   name="fecha_derivacion"
                   rules={[{ required: true, message: 'Por favor seleccione la fecha de derivación' }]}
                 >
@@ -593,7 +786,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Estado de la Derivación *"
+                  label="Estado de la Derivación"
                   name="estado_derivacion"
                   rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
                 >
@@ -631,32 +824,57 @@ const FormularioDerivacion = () => {
                   <Select
                     placeholder="Seleccionar tipo"
                     size="large"
+                    showSearch
+                    optionFilterProp="children"
+                    onChange={handleTipoCasoSelect}
+                    allowClear
+                    style={{ width: '100%' }}
+                    notFoundContent="No se encontraron tipos de caso"
                   >
-                    <Option value="conductual">Conductual</Option>
-                    <Option value="emocional">Emocional</Option>
-                    <Option value="academico">Académico</Option>
-                    <Option value="familiar">Familiar</Option>
-                    <Option value="social">Social</Option>
-                    <Option value="higiene">Higiene</Option>
-                    <Option value="asistencia">Asistencia</Option>
+                    {opcionesTiposCaso.map(tipo => (
+                      <Option key={tipo.value} value={tipo.value}>
+                        {tipo.label}
+                      </Option>
+                    ))}
                   </Select>
                 </Form.Item>
               </Col>
+              <Col xs={24} md={12}>
+                <Button 
+                  type="default" 
+                  onClick={limpiarCamposAutocompletado}
+                  className="clear-button"
+                >
+                  Limpiar Campos
+                </Button>
+              </Col>
               <Col xs={24}>
                 <Form.Item
-                  label="Motivo de la Derivación *"
+                  label="Motivo de la Derivación"
                   name="motivo"
                   rules={[
                     { required: true, message: 'Por favor describa el motivo de la derivación' },
                     { min: 10, message: 'El motivo debe tener al menos 10 caracteres' }
                   ]}
                 >
-                  <Input
-                    placeholder="Describa el motivo de la derivación"
-                    rows={4}
-                    showCount
-                    maxLength={150}
-                    style={{ resize: 'vertical' }}
+                  <AutoComplete
+                    placeholder="Describa el motivo de la derivación o seleccione una opción recomendada"
+                    size="large"
+                    options={opcionesMotivos}
+                    onSearch={handleFiltrarMotivos}
+                    onSelect={handleMotivoSelect}
+                    onChange={handleMotivoChange}
+                    filterOption={false}
+                    showSearch
+                    allowClear
+                    style={{ width: '100%' }}
+                    notFoundContent={
+                      !tipoCasoSeleccionado 
+                        ? "Primero seleccione un tipo de caso" 
+                        : "No se encontraron motivos recomendados"
+                    }
+                    disabled={!tipoCasoSeleccionado}
+                    className="autocomplete-field"
                   />
                 </Form.Item>
               </Col>
@@ -666,18 +884,30 @@ const FormularioDerivacion = () => {
                   name="descripcion"
                   rules={[{ required: true, message: 'Por favor describa el motivo de la derivación' }]}
                 >
-                  <TextArea
-                    placeholder="Describa con más detalle la situación del estudiante"
-                    rows={4}
-                    showCount
-                    maxLength={1000}
-                    style={{ resize: 'vertical' }}
+                  <AutoComplete
+                    placeholder="Describa con más detalle la situación del estudiante o seleccione una plantilla recomendada"
+                    size="large"
+                    options={opcionesDescripciones}
+                    onSearch={handleFiltrarDescripciones}
+                    onSelect={handleDescripcionSelect}
+                    onChange={handleDescripcionChange}
+                    filterOption={false}
+                    showSearch
+                    allowClear
+                    style={{ width: '100%' }}
+                    notFoundContent={
+                      !motivoSeleccionado 
+                        ? "Escriba su descripción personalizada" 
+                        : "No se encontraron plantillas recomendadas"
+                    }
+                    disabled={false}
+                    className="autocomplete-field"
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Derivado Por *"
+                  label="Derivado Por"
                   name="derivado_por"
                   rules={[{ required: true, message: 'Por favor ingrese quién deriva el caso' }]}
                 >
@@ -689,7 +919,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Responsable Asignado *"
+                  label="Responsable Asignado"
                   name="responsable_id"
                   rules={[{ required: true, message: 'Por favor seleccione el responsable' }]}
                 >
