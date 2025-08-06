@@ -21,10 +21,9 @@ export const calcularNivelAlerta = (seguimientos, prioridad, estado) => {
 
   // Mapeo de valores de resultado
   const valoresResultado = {
-    'positivo': -2,
+    'positivo': -1,
     'neutro': 0,
-    'pendiente': 1,
-    'negativo': 2
+    'negativo': 1
   };
 
   // Mapeo de factores de prioridad
@@ -78,8 +77,8 @@ export const calcularNivelAlerta = (seguimientos, prioridad, estado) => {
 
   // Calcular score máximo y mínimo
   const N = seguimientosValidos;
-  const valorMaximo = 2; // "Negativo" es el valor más alto
-  const valorMinimo = -2; // "Positivo" es el valor más bajo
+  const valorMaximo = 1; // "Negativo" es el valor más alto
+  const valorMinimo = -1; // "Positivo" es el valor más bajo
 
   const scoreMaximo = N * valorMaximo * factorPrioridad * factorEstado;
   const scoreMinimo = N * valorMinimo * factorPrioridad * factorEstado;

@@ -174,7 +174,6 @@ const AgregarSeguimientoModal = ({
             <Option value="positivo">Positivo</Option>
             <Option value="neutro">Neutro</Option>
             <Option value="negativo">Negativo</Option>
-            <Option value="pendiente">Pendiente</Option>
           </Select>
         </Form.Item>
 

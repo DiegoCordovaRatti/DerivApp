@@ -295,7 +295,7 @@ const Expedientes = () => {
       descripcion: derivacion.descripcion || '',
       observaciones: derivacion.observaciones || '',
       prioridad: derivacion.prioridad || 'baja',
-      estado: derivacion.estado || 'pendiente',
+      estado: derivacion.estado || 'abierta',
       fecha_evaluacion: derivacion.fecha_evaluacion ? dayjs(derivacion.fecha_evaluacion) : null,
       resultado: derivacion.resultado || ''
     });
@@ -339,7 +339,6 @@ const Expedientes = () => {
   const getEstadoColor = (estado) => {
     const colores = {
       activo: 'green',
-      pendiente: 'orange',
       seguimiento: 'blue',
       cerrado: 'default'
     };
@@ -350,7 +349,6 @@ const Expedientes = () => {
   const getEstadoText = (estado) => {
     const textos = {
       activo: 'Activo',
-      pendiente: 'Pendiente',
       seguimiento: 'Seguimiento',
       cerrado: 'Cerrado'
     };

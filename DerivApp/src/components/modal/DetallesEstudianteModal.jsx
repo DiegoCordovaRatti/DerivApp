@@ -361,7 +361,6 @@ const DetallesEstudianteModal = ({
                               seguimiento.resultado === 'positivo' ? 'green' :
                               seguimiento.resultado === 'negativo' ? 'red' :
                               seguimiento.resultado === 'neutro' ? 'blue' :
-                              seguimiento.resultado === 'pendiente' ? 'orange' :
                               'default'
                             }>
                               {seguimiento.resultado ? seguimiento.resultado.toUpperCase() : 'Sin resultado'}

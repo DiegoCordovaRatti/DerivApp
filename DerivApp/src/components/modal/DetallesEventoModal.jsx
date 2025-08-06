@@ -50,26 +50,19 @@ const DetallesEventoModal = ({ evento, visible, onClose }) => {
     return dayjs(eventDate).format('HH:mm');
   };
 
-  // Obtener texto del estado
-  const getEstadoText = (status) => {
-    const estados = {
-      'pendiente': 'Pendiente',
-      'confirmado': 'Confirmado',
-      'cancelado': 'Cancelado',
-      'completado': 'Completado'
-    };
-    return estados[status] || status;
+  const statusMapping = {
+    'completado': 'Completado',
+    'en_proceso': 'En Proceso',
+    'cancelado': 'Cancelado'
   };
 
-  // Obtener color del estado
-  const getEstadoColor = (status) => {
-    const colores = {
-      'pendiente': 'orange',
-      'confirmado': 'green',
-      'cancelado': 'red',
-      'completado': 'blue'
-    };
-    return colores[status] || 'default';
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completado': return 'green';
+      case 'en_proceso': return 'blue';
+      case 'cancelado': return 'red';
+      default: return 'default';
+    }
   };
 
   return (
@@ -103,8 +96,8 @@ const DetallesEventoModal = ({ evento, visible, onClose }) => {
             <Tag color={getPriorityColor(evento.prioridad)} size="large">
               {evento.prioridad?.toUpperCase()}
             </Tag>
-            <Tag color={getEstadoColor(evento.status)} size="large">
-              {getEstadoText(evento.status)}
+            <Tag color={getStatusColor(evento.status)} size="large">
+              {statusMapping[evento.status] || evento.status}
             </Tag>
           </Space>
         </div>
