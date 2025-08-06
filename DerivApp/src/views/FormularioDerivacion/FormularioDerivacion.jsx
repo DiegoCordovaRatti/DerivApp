@@ -29,12 +29,21 @@ import {
   SearchOutlined,
   UserAddOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { 
   obtenerEstudiantes, 
   buscarEstudiantes,
   crearDerivacion 
 } from '../../services/estudianteService';
-import { CrearEstudianteModal } from '../../components/modal';
+import { CrearEstudianteModal, ResumenDerivacionModal } from '../../components/modal';
+import {
+  obtenerTiposCaso,
+  obtenerMotivosPorTipoCaso,
+  obtenerDescripcionesPorMotivo,
+  filtrarTiposCaso,
+  filtrarMotivos,
+  filtrarDescripciones
+} from '../../utils/formAutocompleteUtils';
 import './FormularioDerivacion.scss';
 
 const { Title, Text } = Typography;
@@ -44,44 +53,60 @@ const { Panel } = Collapse;
 
 const FormularioDerivacion = () => {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
   const [activeKeys, setActiveKeys] = useState(['1']); // Datos del estudiante expandidos
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [estudiantes, setEstudiantes] = useState([]);
   const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
+  const [opcionesEstudiantes, setOpcionesEstudiantes] = useState([]);
+  
+  // Estados para autocompletado
+  const [opcionesTiposCaso, setOpcionesTiposCaso] = useState([]);
+  const [opcionesMotivos, setOpcionesMotivos] = useState([]);
+  const [opcionesDescripciones, setOpcionesDescripciones] = useState([]);
+  const [tipoCasoSeleccionado, setTipoCasoSeleccionado] = useState(null);
+  const [motivoSeleccionado, setMotivoSeleccionado] = useState(null);
+  
+  // Estados para el modal de resumen
+  const [modalResumenVisible, setModalResumenVisible] = useState(false);
+  const [derivacionCreada, setDerivacionCreada] = useState(null);
+  
+  // Estado para validar si el formulario está completo
+  const [formularioCompleto, setFormularioCompleto] = useState(false);
 
   // Cargar estudiantes al montar el componente
   useEffect(() => {
     cargarEstudiantes();
+    cargarTiposCaso();
   }, []);
+
+  // Validar formulario cuando cambien los valores
+  useEffect(() => {
+    const interval = setInterval(() => {
+      validarFormularioCompleto();
+    }, 300);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Log cuando cambia el estado del formulario
+  useEffect(() => {
+    console.log('Estado formularioCompleto cambió a:', formularioCompleto);
+  }, [formularioCompleto]);
 
   // Función para cargar todos los estudiantes
   const cargarEstudiantes = async () => {
     try {
       setLoadingEstudiantes(true);
       const response = await obtenerEstudiantes();
-      setEstudiantes(response.estudiantes || []);
-    } catch (error) {
-      console.error('Error al cargar estudiantes:', error);
-      message.error('Error al cargar la lista de estudiantes');
-    } finally {
-      setLoadingEstudiantes(false);
-    }
-  };
-
-  // Función para filtrar estudiantes por nombre
-  const filtrarEstudiantes = (searchText) => {
-    if (!searchText) return [];
-    
-    return estudiantes
-      .filter(estudiante => 
-        estudiante.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
-        estudiante.rut.includes(searchText) ||
-        estudiante.curso.toLowerCase().includes(searchText.toLowerCase())
-      )
-      .map(estudiante => ({
-        value: estudiante.id,
+      const estudiantesData = response.estudiantes || response || [];
+      setEstudiantes(estudiantesData);
+      
+      // Crear opciones iniciales para el AutoComplete
+      const opcionesIniciales = estudiantesData.map(estudiante => ({
+        value: estudiante.nombre,
         label: (
           <div style={{ 
             display: 'flex', 
@@ -108,6 +133,88 @@ const FormularioDerivacion = () => {
         ),
         estudiante: estudiante
       }));
+      setOpcionesEstudiantes(opcionesIniciales);
+    } catch (error) {
+      console.error('Error al cargar estudiantes:', error);
+      message.error('Error al cargar la lista de estudiantes');
+    } finally {
+      setLoadingEstudiantes(false);
+    }
+  };
+
+  // Función para filtrar estudiantes por nombre
+  const filtrarEstudiantes = (searchText) => {
+    if (!searchText) {
+      // Si no hay texto de búsqueda, mostrar todos los estudiantes
+      const opciones = estudiantes.map(estudiante => ({
+        value: estudiante.nombre,
+        label: (
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            padding: '4px 0'
+          }}>
+            <div>
+              <div style={{ fontWeight: '500', color: '#1890ff' }}>
+                {estudiante.nombre}
+              </div>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                {estudiante.curso} • {estudiante.rut}
+              </div>
+            </div>
+            <div style={{ 
+              fontSize: '11px', 
+              color: '#999',
+              textAlign: 'right'
+            }}>
+              {estudiante.estado}
+            </div>
+          </div>
+        ),
+        estudiante: estudiante
+      }));
+      setOpcionesEstudiantes(opciones);
+      return;
+    }
+    
+    // Filtrar estudiantes según el texto de búsqueda
+    const opcionesFiltradas = estudiantes
+      .filter(estudiante => 
+        estudiante.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
+        estudiante.rut.includes(searchText) ||
+        estudiante.curso.toLowerCase().includes(searchText.toLowerCase())
+      )
+      .map(estudiante => ({
+        value: estudiante.nombre,
+        label: (
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            padding: '4px 0'
+          }}>
+            <div>
+              <div style={{ fontWeight: '500', color: '#1890ff' }}>
+                {estudiante.nombre}
+              </div>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                {estudiante.curso} • {estudiante.rut}
+              </div>
+            </div>
+            <div style={{ 
+              fontSize: '11px', 
+              color: '#999',
+              textAlign: 'right'
+            }}>
+              {estudiante.estado}
+            </div>
+          </div>
+        ),
+        estudiante: estudiante
+      }));
+    
+    setOpcionesEstudiantes(opcionesFiltradas);
   };
 
   // Función para filtrar opciones del autocomplete
@@ -126,24 +233,25 @@ const FormularioDerivacion = () => {
 
   // Función para autocompletar campos cuando se selecciona un estudiante
   const handleEstudianteSelect = (value, option) => {
-    const estudiante = option.estudiante;
+    const estudianteSeleccionado = option.estudiante;
+    setEstudianteSeleccionado(estudianteSeleccionado);
     
-    if (estudiante) {
-      setEstudianteSeleccionado(estudiante);
-      form.setFieldsValue({
-        nombre: estudiante.nombre,
-        rut: estudiante.rut,
-        curso: estudiante.curso,
-        establecimientoId: estudiante.establecimientoId,
-        estado: estudiante.estado,
-        telefono_contacto: estudiante.telefono_contacto || '',
-        email_contacto: estudiante.email_contacto || '',
-        apoderado: estudiante.apoderado || '',
-        direccion: estudiante.direccion || ''
-      });
-      
-      message.success(`Estudiante seleccionado: ${estudiante.nombre}`);
-    }
+    // Llenar automáticamente los campos del estudiante
+    form.setFieldsValue({
+      estudiante_id: estudianteSeleccionado.id,
+      nombre: estudianteSeleccionado.nombre,
+      rut: estudianteSeleccionado.rut,
+      curso: estudianteSeleccionado.curso,
+      establecimientoId: estudianteSeleccionado.establecimientoId,
+      estado: estudianteSeleccionado.estado,
+      telefono_contacto: estudianteSeleccionado.telefono_contacto || '',
+      email_contacto: estudianteSeleccionado.email_contacto || '',
+      apoderado: estudianteSeleccionado.apoderado || '',
+      direccion: estudianteSeleccionado.direccion || ''
+    });
+    
+    // Validar formulario después de seleccionar estudiante
+    setTimeout(() => validarFormularioCompleto(), 100);
   };
 
   // Función para manejar cambios en el campo de búsqueda
@@ -180,6 +288,36 @@ const FormularioDerivacion = () => {
     // Agregar el nuevo estudiante a la lista local
     setEstudiantes(prev => [...prev, nuevoEstudiante]);
     
+    // Actualizar las opciones del AutoComplete
+    setOpcionesEstudiantes(prev => [...prev, {
+      value: nuevoEstudiante.nombre,
+      label: (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          padding: '4px 0'
+        }}>
+          <div>
+            <div style={{ fontWeight: '500', color: '#1890ff' }}>
+              {nuevoEstudiante.nombre}
+            </div>
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              {nuevoEstudiante.curso} • {nuevoEstudiante.rut}
+            </div>
+          </div>
+          <div style={{ 
+            fontSize: '11px', 
+            color: '#999',
+            textAlign: 'right'
+          }}>
+            {nuevoEstudiante.estado}
+          </div>
+        </div>
+      ),
+      estudiante: nuevoEstudiante
+    }]);
+    
     // Cerrar el modal
     setModalVisible(false);
     
@@ -199,22 +337,187 @@ const FormularioDerivacion = () => {
     });
   };
 
-  const handlePanelChange = (keys) => {
-    setActiveKeys(keys);
+  // Función para cargar opciones de tipos de caso
+  const cargarTiposCaso = () => {
+    const tipos = obtenerTiposCaso();
+    setOpcionesTiposCaso(tipos);
   };
 
-  const handleGuardarBorrador = async () => {
-    try {
-      setLoading(true);
-      const values = await form.validateFields();
-      console.log('Datos del formulario (borrador):', values);
-      message.success('Borrador guardado correctamente');
-    } catch (error) {
-      console.error('Error al guardar borrador:', error);
-      message.error('Error al guardar el borrador');
-    } finally {
-      setLoading(false);
+  // Función para manejar selección de tipo de caso
+  const handleTipoCasoSelect = (value) => {
+    setTipoCasoSeleccionado(value);
+    setMotivoSeleccionado(null);
+    setOpcionesDescripciones([]);
+    
+    // Cargar motivos para el tipo de caso seleccionado
+    const motivos = obtenerMotivosPorTipoCaso(value);
+    setOpcionesMotivos(motivos);
+    
+    // Limpiar campos dependientes
+    form.setFieldsValue({
+      motivo: undefined,
+      descripcion: ''
+    });
+    
+    // Validar formulario después del cambio
+    setTimeout(() => validarFormularioCompleto(), 100);
+  };
+
+  // Función para manejar selección de motivo
+  const handleMotivoSelect = (value) => {
+    setMotivoSeleccionado(value);
+    
+    // Cargar descripciones para el motivo seleccionado
+    const descripciones = obtenerDescripcionesPorMotivo(tipoCasoSeleccionado, value);
+    setOpcionesDescripciones(descripciones);
+    
+    // Limpiar campo de descripción
+    form.setFieldsValue({
+      descripcion: ''
+    });
+  };
+
+  // Función para manejar cambio de texto personalizado en motivo
+  const handleMotivoChange = (value) => {
+    // Si el usuario está escribiendo texto personalizado, limpiar las descripciones
+    if (value && !opcionesMotivos.some(opcion => opcion.value === value)) {
+      setMotivoSeleccionado(null);
+      setOpcionesDescripciones([]);
+      form.setFieldsValue({
+        descripcion: ''
+      });
     }
+    
+    // Validar formulario después del cambio
+    setTimeout(() => validarFormularioCompleto(), 100);
+  };
+
+  // Función para manejar selección de descripción
+  const handleDescripcionSelect = (value) => {
+    form.setFieldsValue({
+      descripcion: value
+    });
+  };
+
+  // Función para manejar cambio de texto personalizado en descripción
+  const handleDescripcionChange = (value) => {
+    // Permitir que el usuario escriba libremente
+    // Si hay un motivo seleccionado y el texto no coincide con una plantilla, 
+    // significa que está escribiendo texto personalizado
+    if (value && motivoSeleccionado) {
+      const esPlantillaRecomendada = opcionesDescripciones.some(opcion => opcion.value === value);
+      if (!esPlantillaRecomendada) {
+        // El usuario está escribiendo texto personalizado
+        console.log('Usuario escribiendo descripción personalizada');
+      }
+    }
+    
+    // Validar formulario después del cambio
+    setTimeout(() => validarFormularioCompleto(), 100);
+  };
+
+  // Función para filtrar tipos de caso
+  const handleFiltrarTiposCaso = (searchText) => {
+    const tiposFiltrados = filtrarTiposCaso(searchText);
+    setOpcionesTiposCaso(tiposFiltrados);
+  };
+
+  // Función para filtrar motivos
+  const handleFiltrarMotivos = (searchText) => {
+    if (!tipoCasoSeleccionado) return;
+    
+    const motivosFiltrados = filtrarMotivos(tipoCasoSeleccionado, searchText);
+    setOpcionesMotivos(motivosFiltrados);
+  };
+
+  // Función para filtrar descripciones
+  const handleFiltrarDescripciones = (searchText) => {
+    if (!tipoCasoSeleccionado || !motivoSeleccionado) return;
+    
+    const descripcionesFiltradas = filtrarDescripciones(tipoCasoSeleccionado, motivoSeleccionado, searchText);
+    setOpcionesDescripciones(descripcionesFiltradas);
+  };
+
+  // Función para limpiar campos de autocompletado
+  const limpiarCamposAutocompletado = () => {
+    setTipoCasoSeleccionado(null);
+    setMotivoSeleccionado(null);
+    setOpcionesMotivos([]);
+    setOpcionesDescripciones([]);
+    
+    form.setFieldsValue({
+      tipo_caso: undefined,
+      motivo: undefined,
+      descripcion: ''
+    });
+  };
+
+  // Función para mostrar modal de resumen
+  const mostrarResumenDerivacion = (derivacion) => {
+    setDerivacionCreada(derivacion);
+    setModalResumenVisible(true);
+  };
+
+  // Función para cerrar modal de resumen
+  const cerrarResumenDerivacion = () => {
+    setModalResumenVisible(false);
+    setDerivacionCreada(null);
+  };
+
+  // Función para ir a expedientes desde el modal
+  const irAExpedientes = () => {
+    setModalResumenVisible(false);
+    setDerivacionCreada(null);
+    navigate('/expedientes');
+  };
+
+  // Función para validar si el formulario está completo
+  const validarFormularioCompleto = () => {
+    const valores = form.getFieldsValue();
+    
+    // Campos requeridos del estudiante
+    const estudianteCompleto = Boolean(estudianteSeleccionado && 
+      estudianteSeleccionado.nombre && 
+      estudianteSeleccionado.rut && 
+      estudianteSeleccionado.curso);
+    
+    // Campos requeridos de la derivación
+    const tipoCasoCompleto = Boolean(valores.tipo_caso && valores.tipo_caso.trim() !== '');
+    const motivoCompleto = Boolean(valores.motivo && valores.motivo.trim() !== '');
+    const descripcionCompleta = Boolean(valores.descripcion && valores.descripcion.trim() !== '');
+    const prioridadCompleta = Boolean(valores.prioridad && valores.prioridad.trim() !== '');
+    const estadoCompleto = Boolean(valores.estado_derivacion && valores.estado_derivacion.trim() !== '');
+    
+    const derivacionCompleta = tipoCasoCompleto && motivoCompleto && descripcionCompleta && prioridadCompleta && estadoCompleto;
+    
+    const esCompleto = estudianteCompleto && derivacionCompleta;
+    
+    // Debug logs
+    console.log('=== Validación del Formulario ===');
+    console.log('Estudiante seleccionado:', estudianteSeleccionado);
+    console.log('Estudiante completo:', estudianteCompleto);
+    console.log('Valores del formulario:', valores);
+    console.log('Tipo caso completo:', tipoCasoCompleto);
+    console.log('Motivo completo:', motivoCompleto);
+    console.log('Descripción completa:', descripcionCompleta);
+    console.log('Prioridad completa:', prioridadCompleta);
+    console.log('Estado completo:', estadoCompleto);
+    console.log('Derivación completa:', derivacionCompleta);
+    console.log('Formulario completo:', esCompleto);
+    console.log('Estado formularioCompleto actual:', formularioCompleto);
+    console.log('================================');
+    
+    // Actualizar estado inmediatamente si es diferente
+    if (esCompleto !== formularioCompleto) {
+      console.log('Actualizando formularioCompleto de', formularioCompleto, 'a', esCompleto);
+      setFormularioCompleto(esCompleto);
+    }
+    
+    return esCompleto;
+  };
+
+  const handlePanelChange = (keys) => {
+    setActiveKeys(keys);
   };
 
   const handleEnviarDerivacion = async () => {
@@ -238,28 +541,47 @@ const FormularioDerivacion = () => {
       // Preparar datos de la derivación
       const datosDerivacion = {
         fecha_derivacion: values.fecha_derivacion?.toISOString() || new Date().toISOString(),
-        estado_derivacion: values.estado_derivacion,
+        estado_derivacion: values.estado_derivacion || 'pendiente',
         motivo: values.motivo,
-        derivado_por: values.derivado_por,
+        derivado_por: values.derivado_por || 'Usuario del sistema',
         responsable_id: values.responsable_id,
-        responsable: mapeoResponsables[values.responsable_id] || values.responsable_id, // Convertir ID a nombre
+        responsable: mapeoResponsables[values.responsable_id] || values.responsable_id,
         prioridad: values.prioridad,
         tipo_caso: values.tipo_caso,
         observaciones: values.observaciones,
-        // Campos adicionales que pueden estar en el formulario
-        descripcion: values.descripcion || values.motivo, // Usar descripción específica o motivo como fallback
-        fecha_evaluacion: null, // Campo para evaluación futura
-        resultado: null, // Campo para resultado futuro
-        seguimientos: [] // Array vacío para seguimientos futuros
+        descripcion: values.descripcion || values.motivo,
+        fecha_evaluacion: null,
+        resultado: null,
+        seguimientos: []
       };
 
       // Crear la derivación en la base de datos
       console.log('Datos de derivación a enviar:', datosDerivacion);
-      const response = await crearDerivacion(estudianteSeleccionado.id, datosDerivacion);
+      console.log('ID del estudiante:', estudianteSeleccionado.id);
       
-      message.success('Derivación enviada correctamente');
+      const response = await crearDerivacion(estudianteSeleccionado.id, datosDerivacion);
+      console.log('Respuesta de crearDerivacion:', response);
+      
+      // Mostrar modal independientemente de la respuesta del servidor
+      // (asumiendo que si llegamos aquí, la derivación se creó)
+      
+      // Limpiar formulario
       form.resetFields();
       setEstudianteSeleccionado(null);
+      setTipoCasoSeleccionado(null);
+      setMotivoSeleccionado(null);
+      setOpcionesMotivos([]);
+      setOpcionesDescripciones([]);
+      
+      // Mostrar modal de resumen
+      mostrarResumenDerivacion(datosDerivacion);
+      
+      if (response && response.success) {
+        console.log('Respuesta exitosa del servidor');
+      } else {
+        console.error('Error en la respuesta:', response);
+        message.error(response?.message || 'Error al enviar la derivación');
+      }
       
     } catch (error) {
       console.error('Error al enviar derivación:', error);
@@ -342,7 +664,7 @@ const FormularioDerivacion = () => {
             <Row gutter={[16, 16]}>
               <Col xs={24}>
                 <Form.Item
-                  label="Buscar Estudiante *"
+                  label="Buscar Estudiante"
                   name="estudiante_id"
                   rules={[{ required: true, message: 'Por favor busque y seleccione un estudiante' }]}
                 >
@@ -350,41 +672,14 @@ const FormularioDerivacion = () => {
                     placeholder="Escriba el nombre, RUT o curso del estudiante"
                     size="large"
                     prefix={<SearchOutlined />}
-                    options={estudiantes.map(estudiante => ({
-                      value: estudiante.nombre,
-                      label: (
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          padding: '4px 0'
-                        }}>
-                          <div>
-                            <div style={{ fontWeight: '500', color: '#1890ff' }}>
-                              {estudiante.nombre}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#666' }}>
-                              {estudiante.curso} • {estudiante.rut}
-                            </div>
-                          </div>
-                          <div style={{ 
-                            fontSize: '11px', 
-                            color: '#999',
-                            textAlign: 'right'
-                          }}>
-                            {estudiante.estado}
-                          </div>
-                        </div>
-                      ),
-                      estudiante: estudiante
-                    }))}
+                    options={opcionesEstudiantes} // Usar el estado para las opciones
                     onSearch={filtrarEstudiantes}
                     onSelect={handleEstudianteSelect}
-                    filterOption={filterOption}
+                    filterOption={false} // Deshabilitar el filtrado automático para usar nuestro filtro personalizado
                     showSearch
                     allowClear
                     style={{ width: '100%' }}
-                    onSearchChange={handleSearchChange}
+                    onChange={handleSearchChange}
                     notFoundContent={
                       loadingEstudiantes ? (
                         <div style={{ textAlign: 'center', padding: '10px' }}>
@@ -403,7 +698,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Nombre Completo *"
+                  label="Nombre Completo"
                   name="nombre"
                   rules={[
                     { required: true, message: 'Por favor ingrese el nombre del estudiante' },
@@ -421,7 +716,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="RUT *"
+                  label="RUT"
                   name="rut"
                   rules={[
                     { required: true, message: 'Por favor ingrese el RUT' },
@@ -442,7 +737,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Curso *"
+                  label="Curso"
                   name="curso"
                   rules={[
                     { required: true, message: 'Por favor ingrese el curso' },
@@ -459,7 +754,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Establecimiento ID *"
+                  label="Establecimiento ID"
                   name="establecimientoId"
                   rules={[{ required: true, message: 'Por favor ingrese el ID del establecimiento' }]}
                 >
@@ -474,7 +769,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Estado del Estudiante *"
+                  label="Estado del Estudiante"
                   name="estado"
                   rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
                 >
@@ -579,7 +874,7 @@ const FormularioDerivacion = () => {
             <Row gutter={[16, 16]}>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Fecha de Derivación *"
+                  label="Fecha de Derivación"
                   name="fecha_derivacion"
                   rules={[{ required: true, message: 'Por favor seleccione la fecha de derivación' }]}
                 >
@@ -593,7 +888,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Estado de la Derivación *"
+                  label="Estado de la Derivación"
                   name="estado_derivacion"
                   rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
                 >
@@ -631,32 +926,57 @@ const FormularioDerivacion = () => {
                   <Select
                     placeholder="Seleccionar tipo"
                     size="large"
+                    showSearch
+                    optionFilterProp="children"
+                    onChange={handleTipoCasoSelect}
+                    allowClear
+                    style={{ width: '100%' }}
+                    notFoundContent="No se encontraron tipos de caso"
                   >
-                    <Option value="conductual">Conductual</Option>
-                    <Option value="emocional">Emocional</Option>
-                    <Option value="academico">Académico</Option>
-                    <Option value="familiar">Familiar</Option>
-                    <Option value="social">Social</Option>
-                    <Option value="higiene">Higiene</Option>
-                    <Option value="asistencia">Asistencia</Option>
+                    {opcionesTiposCaso.map(tipo => (
+                      <Option key={tipo.value} value={tipo.value}>
+                        {tipo.label}
+                      </Option>
+                    ))}
                   </Select>
                 </Form.Item>
               </Col>
+              <Col xs={24} md={12}>
+                <Button 
+                  type="default" 
+                  onClick={limpiarCamposAutocompletado}
+                  className="clear-button"
+                >
+                  Limpiar Campos
+                </Button>
+              </Col>
               <Col xs={24}>
                 <Form.Item
-                  label="Motivo de la Derivación *"
+                  label="Motivo de la Derivación"
                   name="motivo"
                   rules={[
                     { required: true, message: 'Por favor describa el motivo de la derivación' },
                     { min: 10, message: 'El motivo debe tener al menos 10 caracteres' }
                   ]}
                 >
-                  <Input
-                    placeholder="Describa el motivo de la derivación"
-                    rows={4}
-                    showCount
-                    maxLength={150}
-                    style={{ resize: 'vertical' }}
+                  <AutoComplete
+                    placeholder="Describa el motivo de la derivación o seleccione una opción recomendada"
+                    size="large"
+                    options={opcionesMotivos}
+                    onSearch={handleFiltrarMotivos}
+                    onSelect={handleMotivoSelect}
+                    onChange={handleMotivoChange}
+                    filterOption={false}
+                    showSearch
+                    allowClear
+                    style={{ width: '100%' }}
+                    notFoundContent={
+                      !tipoCasoSeleccionado 
+                        ? "Primero seleccione un tipo de caso" 
+                        : "No se encontraron motivos recomendados"
+                    }
+                    disabled={!tipoCasoSeleccionado}
+                    className="autocomplete-field"
                   />
                 </Form.Item>
               </Col>
@@ -666,18 +986,30 @@ const FormularioDerivacion = () => {
                   name="descripcion"
                   rules={[{ required: true, message: 'Por favor describa el motivo de la derivación' }]}
                 >
-                  <TextArea
-                    placeholder="Describa con más detalle la situación del estudiante"
-                    rows={4}
-                    showCount
-                    maxLength={1000}
-                    style={{ resize: 'vertical' }}
+                  <AutoComplete
+                    placeholder="Describa con más detalle la situación del estudiante o seleccione una plantilla recomendada"
+                    size="large"
+                    options={opcionesDescripciones}
+                    onSearch={handleFiltrarDescripciones}
+                    onSelect={handleDescripcionSelect}
+                    onChange={handleDescripcionChange}
+                    filterOption={false}
+                    showSearch
+                    allowClear
+                    style={{ width: '100%' }}
+                    notFoundContent={
+                      !motivoSeleccionado 
+                        ? "Escriba su descripción personalizada" 
+                        : "No se encontraron plantillas recomendadas"
+                    }
+                    disabled={false}
+                    className="autocomplete-field"
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Derivado Por *"
+                  label="Derivado Por"
                   name="derivado_por"
                   rules={[{ required: true, message: 'Por favor ingrese quién deriva el caso' }]}
                 >
@@ -689,7 +1021,7 @@ const FormularioDerivacion = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="Responsable Asignado *"
+                  label="Responsable Asignado"
                   name="responsable_id"
                   rules={[{ required: true, message: 'Por favor seleccione el responsable' }]}
                 >
@@ -714,36 +1046,41 @@ const FormularioDerivacion = () => {
         {/* Botones de Acción */}
         <div className="formulario-actions">
           <Row gutter={[16, 16]} justify="center">
-            <Col>
-              <Button
-                size="large"
-                icon={<SaveOutlined />}
-                onClick={handleGuardarBorrador}
-                loading={loading}
-                style={{
-                  height: '48px',
-                  paddingLeft: '24px',
-                  paddingRight: '24px'
-                }}
-              >
-                Guardar Borrador
-              </Button>
-            </Col>
-            <Col>
+            <Col xs={24}>
               <Button
                 type="primary"
                 size="large"
                 icon={<SendOutlined />}
                 onClick={handleEnviarDerivacion}
                 loading={loading}
-                style={{
-                  height: '48px',
-                  paddingLeft: '24px',
-                  paddingRight: '24px'
-                }}
+                disabled={!formularioCompleto}
+                style={{ width: '100%' }}
               >
-                Enviar Derivación
+                {loading ? 'Enviando...' : 'Enviar Derivación'}
               </Button>
+              {console.log('Botón disabled:', !formularioCompleto, 'formularioCompleto:', formularioCompleto)}
+              {!formularioCompleto && (
+                <div style={{ textAlign: 'center', marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Complete todos los campos requeridos para enviar la derivación
+                  </Text>
+                  <br />
+                  <Button 
+                    size="small" 
+                    type="link" 
+                    onClick={() => {
+                      console.log('Estado actual:', {
+                        formularioCompleto,
+                        estudianteSeleccionado,
+                        valores: form.getFieldsValue()
+                      });
+                      validarFormularioCompleto();
+                    }}
+                  >
+                    Debug: Verificar Validación
+                  </Button>
+                </div>
+              )}
             </Col>
           </Row>
         </div>
@@ -755,6 +1092,15 @@ const FormularioDerivacion = () => {
         onCancel={handleCancel}
         onSuccess={handleEstudianteCreado}
         loading={loading}
+      />
+      
+      {/* Modal de Resumen de Derivación */}
+      <ResumenDerivacionModal
+        visible={modalResumenVisible}
+        onClose={cerrarResumenDerivacion}
+        derivacion={derivacionCreada}
+        estudiante={estudianteSeleccionado}
+        onIrAExpedientes={irAExpedientes}
       />
     </div>
   );
