@@ -541,7 +541,7 @@ const FormularioDerivacion = () => {
       // Preparar datos de la derivación
       const datosDerivacion = {
         fecha_derivacion: values.fecha_derivacion?.toISOString() || new Date().toISOString(),
-        estado_derivacion: values.estado_derivacion || 'pendiente',
+        estado_derivacion: values.estado_derivacion || 'abierta',
         motivo: values.motivo,
         derivado_por: values.derivado_por || 'Usuario del sistema',
         responsable_id: values.responsable_id,

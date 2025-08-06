@@ -17,11 +17,9 @@ const ResumenDerivacionModal = ({ visible, onClose, derivacion, estudiante, onIr
 
   const getEstadoColor = (estado) => {
     switch (estado) {
-      case 'pendiente': return 'orange';
-      case 'en_proceso': return 'blue';
-      case 'completada': return 'green';
-      case 'borrador': return 'gray';
-      default: return 'blue';
+      case 'abierta': return 'blue';
+      case 'cerrada': return 'green';
+      default: return 'default';
     }
   };
 
