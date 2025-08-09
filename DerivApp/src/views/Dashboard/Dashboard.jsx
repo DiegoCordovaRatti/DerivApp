@@ -19,7 +19,7 @@ import {
   obtenerEstadisticasDashboard, 
   obtenerAlertasRecientes
 } from '../../services/dashboardService';
-import { obtenerEventosProximos, obtenerEstadisticasEventos } from '../../services/eventoService';
+import { obtenerEventosProximosTodasDerivaciones, obtenerEstadisticasEventosTodasDerivaciones } from '../../services/eventoService';
 import { DetallesEventoModal } from '../../components/modal';
 import dayjs from 'dayjs';
 
@@ -54,8 +54,8 @@ const Dashboard = () => {
       const [statsResponse, alertasResponse, eventosResponse, statsEventosResponse] = await Promise.all([
         obtenerEstadisticasDashboard(),
         obtenerAlertasRecientes(),
-        obtenerEventosProximos(),
-        obtenerEstadisticasEventos()
+        obtenerEventosProximosTodasDerivaciones(),
+        obtenerEstadisticasEventosTodasDerivaciones()
       ]);
 
       // Procesar estadísticas del dashboard

@@ -18,6 +18,7 @@ import {
   cambiarEstadoDerivacion,
   obtenerDerivacionesPorEstado,
   obtenerDerivacionesRecientes,
+  obtenerEstudiantesConDerivaciones,
   // Métodos de seguimientos
   crearSeguimiento,
   obtenerSeguimientosDerivacion,
@@ -463,6 +464,47 @@ export const obtenerDerivacionesRecientesCtrl = async (req, res) => {
   }
 };
 
+// Obtener todas las derivaciones para selección de eventos
+export const obtenerTodasDerivacionesCtrl = async (req, res) => {
+  try {
+    const derivaciones = await obtenerEstudiantesConDerivaciones();
+    
+    // Extraer solo las derivaciones con información básica del estudiante
+    const derivacionesSimplificadas = [];
+    derivaciones.forEach(estudiante => {
+      if (estudiante.derivaciones && estudiante.derivaciones.length > 0) {
+        estudiante.derivaciones.forEach(derivacion => {
+          derivacionesSimplificadas.push({
+            id: derivacion.id,
+            estudianteId: estudiante.id,
+            estudiante: {
+              nombre: estudiante.nombre,
+              rut: estudiante.rut,
+              curso: estudiante.curso
+            },
+            motivo: derivacion.motivo,
+            descripcion: derivacion.descripcion,
+            estado: derivacion.estado_derivacion,
+            prioridad: derivacion.prioridad,
+            fecha_creacion: derivacion.fecha_creacion
+          });
+        });
+      }
+    });
+    
+    res.json({
+      derivaciones: derivacionesSimplificadas,
+      total: derivacionesSimplificadas.length
+    });
+  } catch (error) {
+    console.error('Error al obtener todas las derivaciones:', error);
+    res.status(500).json({
+      error: 'Error al obtener derivaciones',
+      details: error.message
+    });
+  }
+};
+
 // Eliminar derivación
 export const eliminarDerivacionCtrl = async (req, res) => {
   try {
@@ -625,6 +667,7 @@ export default {
   cambiarEstadoDerivacionCtrl,
   obtenerDerivacionesPorEstadoCtrl,
   obtenerDerivacionesRecientesCtrl,
+  obtenerTodasDerivacionesCtrl,
   // Métodos de seguimientos
   crearSeguimientoCtrl,
   obtenerSeguimientosDerivacionCtrl,

@@ -62,4 +62,9 @@ export const obtenerDerivacionesPorEstado = async (estado) => {
 
 export const obtenerDerivacionesRecientes = async () => {
   return await apiRequest('GET', '/derivaciones/recientes');
+};
+
+// Obtener todas las derivaciones para selección de eventos
+export const obtenerTodasDerivaciones = async () => {
+  return await apiRequest('GET', '/derivaciones');
 }; 
