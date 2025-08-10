@@ -32,13 +32,14 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { 
-  obtenerEventos, 
+  obtenerEventosTodasDerivaciones, 
   crearEvento, 
-  obtenerEventosProximos, 
-  obtenerEstadisticasEventos,
+  obtenerEventosProximosTodasDerivaciones, 
+  obtenerEstadisticasEventosTodasDerivaciones,
   crearEventoDesdeAlerta 
 } from '../../services/eventoService';
 import { obtenerEstudiantes } from '../../services/estudianteService';
+import { obtenerTodasDerivaciones } from '../../services/expedienteService';
 import { DetallesEventoModal } from '../../components/modal';
 import './Agenda.scss';
 
@@ -53,6 +54,7 @@ const Agenda = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [form] = Form.useForm();
   const [estudiantes, setEstudiantes] = useState([]);
+  const [derivaciones, setDerivaciones] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [estadisticas, setEstadisticas] = useState({});
   const [estudiantesLoading, setEstudiantesLoading] = useState(false);
@@ -65,11 +67,12 @@ const Agenda = () => {
       setLoading(true);
       setEstudiantesLoading(true);
       
-      const [eventosData, eventosProximosData, estadisticasData, estudiantesData] = await Promise.all([
-        obtenerEventos(),
-        obtenerEventosProximos(),
-        obtenerEstadisticasEventos(),
-        obtenerEstudiantes()
+      const [eventosData, eventosProximosData, estadisticasData, estudiantesData, derivacionesData] = await Promise.all([
+        obtenerEventosTodasDerivaciones(),
+        obtenerEventosProximosTodasDerivaciones(),
+        obtenerEstadisticasEventosTodasDerivaciones(),
+        obtenerEstudiantes(),
+        obtenerTodasDerivaciones()
       ]);
 
       setEvents(eventosData);
@@ -87,6 +90,7 @@ const Agenda = () => {
       
       setEstadisticas(estadisticasData);
       setEstudiantes(Array.isArray(estudiantesData) ? estudiantesData : []);
+      setDerivaciones(derivacionesData?.derivaciones || []);
     } catch (error) {
       console.error('Error al cargar datos:', error);
       message.error('Error al cargar los datos de la agenda');
@@ -180,6 +184,11 @@ const Agenda = () => {
   // Crear nuevo evento
   const handleCreateEvent = async (values) => {
     try {
+      if (!values.derivacionId) {
+        message.error('Debe seleccionar una derivación para crear el evento');
+        return;
+      }
+
       const eventoData = {
         titulo: values.title,
         descripcion: values.description,
@@ -201,7 +210,7 @@ const Agenda = () => {
         }
       }
 
-      const nuevoEvento = await crearEvento(eventoData);
+      const nuevoEvento = await crearEvento(eventoData, values.derivacionId);
       setEvents([...events, nuevoEvento]);
       setIsModalVisible(false);
       form.resetFields();
@@ -474,6 +483,34 @@ const Agenda = () => {
               </Form.Item>
             </Col>
           </Row>
+
+          <Form.Item
+            name="derivacionId"
+            label="Derivación"
+            rules={[{ required: true, message: 'Por favor selecciona la derivación' }]}
+          >
+            <Select
+              placeholder="Seleccionar derivación"
+              allowClear
+              showSearch
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                option?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }
+            >
+              {Array.isArray(derivaciones) && derivaciones.length > 0 ? (
+                derivaciones.map(derivacion => (
+                  <Option key={derivacion.id} value={derivacion.id}>
+                    {derivacion.estudiante?.nombre} - {derivacion.motivo}
+                  </Option>
+                ))
+              ) : (
+                <Option value="" disabled>
+                  No hay derivaciones disponibles
+                </Option>
+              )}
+            </Select>
+          </Form.Item>
 
           <Form.Item
             name="description"

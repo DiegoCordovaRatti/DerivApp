@@ -237,7 +237,7 @@ const FormularioDerivacion = () => {
     setEstudianteSeleccionado(estudianteSeleccionado);
     
     // Llenar automáticamente los campos del estudiante
-    form.setFieldsValue({
+      form.setFieldsValue({
       estudiante_id: estudianteSeleccionado.id,
       nombre: estudianteSeleccionado.nombre,
       rut: estudianteSeleccionado.rut,
@@ -285,9 +285,9 @@ const FormularioDerivacion = () => {
 
   // Función para manejar el éxito de crear estudiante
   const handleEstudianteCreado = (nuevoEstudiante) => {
-    // Agregar el nuevo estudiante a la lista local
-    setEstudiantes(prev => [...prev, nuevoEstudiante]);
-    
+      // Agregar el nuevo estudiante a la lista local
+      setEstudiantes(prev => [...prev, nuevoEstudiante]);
+      
     // Actualizar las opciones del AutoComplete
     setOpcionesEstudiantes(prev => [...prev, {
       value: nuevoEstudiante.nombre,
@@ -320,21 +320,21 @@ const FormularioDerivacion = () => {
     
     // Cerrar el modal
     setModalVisible(false);
-    
-    // Seleccionar automáticamente el nuevo estudiante
-    setEstudianteSeleccionado(nuevoEstudiante);
-    form.setFieldsValue({
-      estudiante_id: nuevoEstudiante.id,
-      nombre: nuevoEstudiante.nombre,
-      rut: nuevoEstudiante.rut,
-      curso: nuevoEstudiante.curso,
-      establecimientoId: nuevoEstudiante.establecimientoId,
-      estado: nuevoEstudiante.estado,
-      telefono_contacto: nuevoEstudiante.telefono_contacto || '',
-      email_contacto: nuevoEstudiante.email_contacto || '',
-      apoderado: nuevoEstudiante.apoderado || '',
-      direccion: nuevoEstudiante.direccion || ''
-    });
+      
+      // Seleccionar automáticamente el nuevo estudiante
+      setEstudianteSeleccionado(nuevoEstudiante);
+      form.setFieldsValue({
+        estudiante_id: nuevoEstudiante.id,
+        nombre: nuevoEstudiante.nombre,
+        rut: nuevoEstudiante.rut,
+        curso: nuevoEstudiante.curso,
+        establecimientoId: nuevoEstudiante.establecimientoId,
+        estado: nuevoEstudiante.estado,
+        telefono_contacto: nuevoEstudiante.telefono_contacto || '',
+        email_contacto: nuevoEstudiante.email_contacto || '',
+        apoderado: nuevoEstudiante.apoderado || '',
+        direccion: nuevoEstudiante.direccion || ''
+      });
   };
 
   // Función para cargar opciones de tipos de caso
@@ -789,7 +789,7 @@ const FormularioDerivacion = () => {
           </Panel>
 
         {/* Sección 2: Datos de Contacto */}
-        <Panel
+          <Panel
             header={
               <Space>
                 <TeamOutlined style={{ color: '#722ed1' }} />
@@ -863,69 +863,69 @@ const FormularioDerivacion = () => {
           {/* Sección 3: Datos de la Derivación */}
           <Panel
             header={
-              <Space>
+          <Space>
                 <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
                 <Text strong>Datos de la Derivación</Text>
-              </Space>
-            }
+          </Space>
+        }
             key="3"
             className="form-panel"
-          >
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Form.Item
+        >
+          <Row gutter={[16, 16]}>
+            <Col xs={24} md={12}>
+              <Form.Item
                   label="Fecha de Derivación"
                   name="fecha_derivacion"
                   rules={[{ required: true, message: 'Por favor seleccione la fecha de derivación' }]}
                 >
                   <DatePicker
                     placeholder="Seleccionar fecha"
-                    size="large"
+                  size="large"
                     style={{ width: '100%' }}
                     format="DD/MM/YYYY"
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
                   label="Estado de la Derivación"
                   name="estado_derivacion"
                   rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
                 >
                   <Select
                     placeholder="Seleccionar estado"
-                    size="large"
+                  size="large"
                   >
                     <Option value="abierta">Abierta</Option>
                     <Option value="cerrada">Cerrada</Option>
                   </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
                   label="Prioridad"
                   name="prioridad"
                   rules={[{ required: true, message: 'Por favor seleccione la prioridad' }]}
                 >
                   <Select
                     placeholder="Seleccionar prioridad"
-                    size="large"
+                  size="large"
                   >
                     <Option value="baja">Baja</Option>
                     <Option value="media">Media</Option>
                     <Option value="alta">Alta</Option>
                   </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
                   label="Tipo de Caso"
                   name="tipo_caso"
                   rules={[{ required: true, message: 'Por favor seleccione el tipo de caso' }]}
-                >
-                  <Select
+              >
+                <Select
                     placeholder="Seleccionar tipo"
-                    size="large"
+                  size="large"
                     showSearch
                     optionFilterProp="children"
                     onChange={handleTipoCasoSelect}
@@ -938,10 +938,10 @@ const FormularioDerivacion = () => {
                         {tipo.label}
                       </Option>
                     ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
                 <Button 
                   type="default" 
                   onClick={limpiarCamposAutocompletado}
@@ -951,7 +951,7 @@ const FormularioDerivacion = () => {
                 </Button>
               </Col>
               <Col xs={24}>
-                <Form.Item
+              <Form.Item
                   label="Motivo de la Derivación"
                   name="motivo"
                   rules={[
@@ -961,7 +961,7 @@ const FormularioDerivacion = () => {
                 >
                   <AutoComplete
                     placeholder="Describa el motivo de la derivación o seleccione una opción recomendada"
-                    size="large"
+                  size="large"
                     options={opcionesMotivos}
                     onSearch={handleFiltrarMotivos}
                     onSelect={handleMotivoSelect}
@@ -977,18 +977,18 @@ const FormularioDerivacion = () => {
                     }
                     disabled={!tipoCasoSeleccionado}
                     className="autocomplete-field"
-                  />
-                </Form.Item>
-              </Col>
+                />
+              </Form.Item>
+            </Col>
               <Col xs={24}>
-                <Form.Item
+              <Form.Item
                   label="Descripción Detallada"
                   name="descripcion"
                   rules={[{ required: true, message: 'Por favor describa el motivo de la derivación' }]}
                 >
                   <AutoComplete
                     placeholder="Describa con más detalle la situación del estudiante o seleccione una plantilla recomendada"
-                    size="large"
+                  size="large"
                     options={opcionesDescripciones}
                     onSearch={handleFiltrarDescripciones}
                     onSelect={handleDescripcionSelect}
@@ -1004,30 +1004,30 @@ const FormularioDerivacion = () => {
                     }
                     disabled={false}
                     className="autocomplete-field"
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
                   label="Derivado Por"
                   name="derivado_por"
                   rules={[{ required: true, message: 'Por favor ingrese quién deriva el caso' }]}
-                >
-                  <Input
+              >
+                <Input
                     placeholder="Nombre de quien deriva el caso"
-                    size="large"
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
+                  size="large"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
                   label="Responsable Asignado"
                   name="responsable_id"
                   rules={[{ required: true, message: 'Por favor seleccione el responsable' }]}
-                >
+              >
                   <Select
                     placeholder="Seleccionar responsable"
-                    size="large"
+                  size="large"
                     showSearch
                     optionFilterProp="children"
                   >
@@ -1035,9 +1035,9 @@ const FormularioDerivacion = () => {
                     <Option value="trabajo_social">Trabajo Social</Option>
                     <Option value="jefe_convivencia">Jefe de Convivencia</Option>
                   </Select>
-                </Form.Item>
-              </Col>
-            </Row>
+              </Form.Item>
+            </Col>
+          </Row>
           </Panel>
         </Collapse>
 
@@ -1084,7 +1084,7 @@ const FormularioDerivacion = () => {
             </Col>
           </Row>
         </div>
-      </Form>
+        </Form>
 
       {/* Modal para crear nuevo estudiante */}
       <CrearEstudianteModal

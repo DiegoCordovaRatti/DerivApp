@@ -16,7 +16,16 @@ import {
 
 const router = express.Router();
 
-// Rutas básicas CRUD
+// Middleware para logging
+router.use((req, res, next) => {
+  console.log('=== EVENTO ROUTE HIT ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Params:', req.params);
+  next();
+});
+
+// Rutas básicas CRUD - ahora como subcolección de derivaciones
 router.post('/', crearEventoController);
 router.get('/', obtenerEventosController);
 router.get('/estadisticas', obtenerEstadisticasEventosController);

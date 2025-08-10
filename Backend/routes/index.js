@@ -24,7 +24,28 @@ router.use('/intervenciones', intervencionRoutes);
 router.use('/derivaciones', derivacionRoutes);
 router.use('/alertas', alertaRoutes);
 router.use('/dashboard', dashboardRoutes);
-router.use('/eventos', eventoRoutes);
+// Los eventos ahora son subcolección de derivaciones
+// router.use('/eventos', eventoRoutes);
+
+// Rutas globales para eventos (de todas las derivaciones) - para la vista de Agenda
+router.get('/eventos/todas-derivaciones', (req, res) => {
+  // Importar dinámicamente para evitar dependencias circulares
+  import('../controllers/eventoController.js').then(({ obtenerEventosTodasDerivacionesController }) => {
+    obtenerEventosTodasDerivacionesController(req, res);
+  });
+});
+
+router.get('/eventos/proximos-todas-derivaciones', (req, res) => {
+  import('../controllers/eventoController.js').then(({ obtenerEventosProximosTodasDerivacionesController }) => {
+    obtenerEventosProximosTodasDerivacionesController(req, res);
+  });
+});
+
+router.get('/eventos/estadisticas-todas-derivaciones', (req, res) => {
+  import('../controllers/eventoController.js').then(({ obtenerEstadisticasEventosTodasDerivacionesController }) => {
+    obtenerEstadisticasEventosTodasDerivacionesController(req, res);
+  });
+});
 
 // Ruta de prueba
 router.get('/', (req, res) => {
@@ -53,9 +74,9 @@ router.get('/', (req, res) => {
         equipo: '/api/establecimientos/:id/equipo'
       },
       eventos: {
-        proximos: '/api/eventos/proximos',
-        estadisticas: '/api/eventos/estadisticas',
-        desdeAlerta: '/api/eventos/desde-alerta'
+        proximos: '/api/derivaciones/:derivacionId/eventos/proximos',
+        estadisticas: '/api/derivaciones/:derivacionId/eventos/estadisticas',
+        desdeAlerta: '/api/derivaciones/:derivacionId/eventos/desde-alerta'
       }
     }
   });

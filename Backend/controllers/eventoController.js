@@ -10,13 +10,27 @@ import {
   obtenerEventosPorTipo,
   obtenerEventosPorPrioridad,
   crearEventoDesdeAlerta,
-  obtenerEstadisticasEventos
+  obtenerEstadisticasEventos,
+  obtenerEventosTodasDerivaciones,
+  obtenerEventosProximosTodasDerivaciones,
+  obtenerEstadisticasEventosTodasDerivaciones
 } from '../models/Evento.js';
+
+console.log('=== EVENTO CONTROLLER LOADED ===');
 
 // Crear un nuevo evento
 export const crearEventoController = async (req, res) => {
   try {
+    const derivacionId = req.derivacionId || req.params.derivacionId;
     const datosEvento = req.body;
+    
+    // Validar que derivacionId esté presente
+    if (!derivacionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de derivación no encontrado en la URL'
+      });
+    }
     
     // Validar campos requeridos
     if (!datosEvento.titulo || !datosEvento.fecha || !datosEvento.tipo) {
@@ -26,13 +40,22 @@ export const crearEventoController = async (req, res) => {
       });
     }
 
-    const evento = await crearEvento(datosEvento);
+    // Necesitamos el estudianteId para acceder a la subcolección correcta
+    if (!datosEvento.estudianteId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Falta el ID del estudiante'
+      });
+    }
+
+    const evento = await crearEvento(datosEvento, datosEvento.estudianteId, derivacionId);
     
     res.status(201).json({
       success: true,
       message: 'Evento creado exitosamente',
       evento
     });
+    
   } catch (error) {
     console.error('Error al crear evento:', error);
     res.status(500).json({
@@ -43,10 +66,20 @@ export const crearEventoController = async (req, res) => {
   }
 };
 
-// Obtener todos los eventos
+// Obtener todos los eventos de una derivación
 export const obtenerEventosController = async (req, res) => {
   try {
-    const eventos = await obtenerEventos();
+    const { derivacionId } = req.params;
+    const { estudianteId } = req.query; // Obtener estudianteId de query params
+    
+    if (!estudianteId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Falta el ID del estudiante'
+      });
+    }
+    
+    const eventos = await obtenerEventos(estudianteId, derivacionId);
     
     res.json({
       success: true,
@@ -62,11 +95,11 @@ export const obtenerEventosController = async (req, res) => {
   }
 };
 
-// Obtener evento por ID
+// Obtener evento por ID de una derivación específica
 export const obtenerEventoPorIdController = async (req, res) => {
   try {
-    const { id } = req.params;
-    const evento = await obtenerEventoPorId(id);
+    const { id, derivacionId } = req.params;
+    const evento = await obtenerEventoPorId(id, derivacionId);
     
     res.json({
       success: true,
@@ -82,13 +115,13 @@ export const obtenerEventoPorIdController = async (req, res) => {
   }
 };
 
-// Actualizar evento
+// Actualizar evento en una derivación específica
 export const actualizarEventoController = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id, derivacionId } = req.params;
     const datosEvento = req.body;
     
-    const evento = await actualizarEvento(id, datosEvento);
+    const evento = await actualizarEvento(id, datosEvento, derivacionId);
     
     res.json({
       success: true,
@@ -105,11 +138,11 @@ export const actualizarEventoController = async (req, res) => {
   }
 };
 
-// Eliminar evento
+// Eliminar evento de una derivación específica
 export const eliminarEventoController = async (req, res) => {
   try {
-    const { id } = req.params;
-    await eliminarEvento(id);
+    const { id, derivacionId } = req.params;
+    await eliminarEvento(id, derivacionId);
     
     res.json({
       success: true,
@@ -125,11 +158,11 @@ export const eliminarEventoController = async (req, res) => {
   }
 };
 
-// Obtener eventos por estudiante
+// Obtener eventos por estudiante (ahora necesita derivacionId)
 export const obtenerEventosPorEstudianteController = async (req, res) => {
   try {
-    const { estudianteId } = req.params;
-    const eventos = await obtenerEventosPorEstudiante(estudianteId);
+    const { estudianteId, derivacionId } = req.params;
+    const eventos = await obtenerEventosPorEstudiante(estudianteId, derivacionId);
     
     res.json({
       success: true,
@@ -145,7 +178,7 @@ export const obtenerEventosPorEstudianteController = async (req, res) => {
   }
 };
 
-// Obtener eventos por derivación
+// Obtener eventos por derivación (ya tiene derivacionId)
 export const obtenerEventosPorDerivacionController = async (req, res) => {
   try {
     const { estudianteId, derivacionId } = req.params;
@@ -165,10 +198,11 @@ export const obtenerEventosPorDerivacionController = async (req, res) => {
   }
 };
 
-// Obtener eventos próximos
+// Obtener eventos próximos (ahora necesita derivacionId)
 export const obtenerEventosProximosController = async (req, res) => {
   try {
-    const eventos = await obtenerEventosProximos();
+    const { derivacionId } = req.params;
+    const eventos = await obtenerEventosProximos(derivacionId);
     
     res.json({
       success: true,
@@ -184,11 +218,11 @@ export const obtenerEventosProximosController = async (req, res) => {
   }
 };
 
-// Obtener eventos por tipo
+// Obtener eventos por tipo (ahora necesita derivacionId)
 export const obtenerEventosPorTipoController = async (req, res) => {
   try {
-    const { tipo } = req.params;
-    const eventos = await obtenerEventosPorTipo(tipo);
+    const { tipo, derivacionId } = req.params;
+    const eventos = await obtenerEventosPorTipo(tipo, derivacionId);
     
     res.json({
       success: true,
@@ -204,11 +238,11 @@ export const obtenerEventosPorTipoController = async (req, res) => {
   }
 };
 
-// Obtener eventos por prioridad
+// Obtener eventos por prioridad (ahora necesita derivacionId)
 export const obtenerEventosPorPrioridadController = async (req, res) => {
   try {
-    const { prioridad } = req.params;
-    const eventos = await obtenerEventosPorPrioridad(prioridad);
+    const { prioridad, derivacionId } = req.params;
+    const eventos = await obtenerEventosPorPrioridad(prioridad, derivacionId);
     
     res.json({
       success: true,
@@ -224,7 +258,7 @@ export const obtenerEventosPorPrioridadController = async (req, res) => {
   }
 };
 
-// Crear evento desde alerta
+// Crear evento desde alerta (ya tiene derivacionId en la alerta)
 export const crearEventoDesdeAlertaController = async (req, res) => {
   try {
     const { alerta, datosEvento } = req.body;
@@ -253,10 +287,11 @@ export const crearEventoDesdeAlertaController = async (req, res) => {
   }
 };
 
-// Obtener estadísticas de eventos
+// Obtener estadísticas de eventos (ahora necesita derivacionId)
 export const obtenerEstadisticasEventosController = async (req, res) => {
   try {
-    const estadisticas = await obtenerEstadisticasEventos();
+    const { derivacionId } = req.params;
+    const estadisticas = await obtenerEstadisticasEventos(derivacionId);
     
     res.json({
       success: true,
@@ -267,6 +302,63 @@ export const obtenerEstadisticasEventosController = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener estadísticas de eventos',
+      error: error.message
+    });
+  }
+}; 
+
+// Obtener eventos de todas las derivaciones (para la vista de Agenda)
+export const obtenerEventosTodasDerivacionesController = async (req, res) => {
+  try {
+    const eventos = await obtenerEventosTodasDerivaciones();
+    
+    res.json({
+      success: true,
+      eventos
+    });
+  } catch (error) {
+    console.error('Error al obtener eventos de todas las derivaciones:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener eventos de todas las derivaciones',
+      error: error.message
+    });
+  }
+};
+
+// Obtener eventos próximos de todas las derivaciones (para la vista de Agenda)
+export const obtenerEventosProximosTodasDerivacionesController = async (req, res) => {
+  try {
+    const eventos = await obtenerEventosProximosTodasDerivaciones();
+    
+    res.json({
+      success: true,
+      eventos
+    });
+  } catch (error) {
+    console.error('Error al obtener eventos próximos de todas las derivaciones:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener eventos próximos de todas las derivaciones',
+      error: error.message
+    });
+  }
+};
+
+// Obtener estadísticas de eventos de todas las derivaciones (para la vista de Agenda)
+export const obtenerEstadisticasEventosTodasDerivacionesController = async (req, res) => {
+  try {
+    const estadisticas = await obtenerEstadisticasEventosTodasDerivaciones();
+    
+    res.json({
+      success: true,
+      estadisticas
+    });
+  } catch (error) {
+    console.error('Error al obtener estadísticas de eventos de todas las derivaciones:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas de eventos de todas las derivaciones',
       error: error.message
     });
   }
