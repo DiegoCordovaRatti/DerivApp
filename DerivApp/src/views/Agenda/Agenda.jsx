@@ -55,7 +55,6 @@ const Agenda = () => {
   const [form] = Form.useForm();
   const [estudiantes, setEstudiantes] = useState([]);
   const [derivaciones, setDerivaciones] = useState([]);
-  const [derivacionesFiltradas, setDerivacionesFiltradas] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [estadisticas, setEstadisticas] = useState({});
   const [estudiantesLoading, setEstudiantesLoading] = useState(false);
@@ -68,10 +67,11 @@ const Agenda = () => {
       setLoading(true);
       setEstudiantesLoading(true);
       
-      const [eventosData, eventosProximosData, estadisticasData, derivacionesData] = await Promise.all([
+      const [eventosData, eventosProximosData, estadisticasData, estudiantesData, derivacionesData] = await Promise.all([
         obtenerEventosTodasDerivaciones(),
         obtenerEventosProximosTodasDerivaciones(),
         obtenerEstadisticasEventosTodasDerivaciones(),
+        obtenerEstudiantes(),
         obtenerTodasDerivaciones()
       ]);
 
@@ -89,31 +89,13 @@ const Agenda = () => {
       }
       
       setEstadisticas(estadisticasData);
+      setEstudiantes(Array.isArray(estudiantesData) ? estudiantesData : []);
       setDerivaciones(derivacionesData?.derivaciones || []);
-      
-      // Extraer estudiantes únicos de las derivaciones
-      if (derivacionesData?.derivaciones && Array.isArray(derivacionesData.derivaciones)) {
-        const estudiantesUnicos = [];
-        const estudiantesRuts = new Set(); // Usar RUT como identificador único
-        
-        derivacionesData.derivaciones.forEach(derivacion => {
-          if (derivacion.estudiante && derivacion.estudiante.rut && !estudiantesRuts.has(derivacion.estudiante.rut)) {
-            estudiantesRuts.add(derivacion.estudiante.rut);
-            estudiantesUnicos.push(derivacion.estudiante);
-          }
-        });
-        
-        setEstudiantes(estudiantesUnicos);
-        setDerivaciones(derivacionesData.derivaciones); // Guardar todas las derivaciones con sus IDs
-      } else {
-        setEstudiantes([]);
-      }
     } catch (error) {
       console.error('Error al cargar datos:', error);
       message.error('Error al cargar los datos de la agenda');
       // En caso de error, establecer arrays vacíos
       setUpcomingEvents([]);
-      setEstudiantes([]);
     } finally {
       setLoading(false);
       setEstudiantesLoading(false);
@@ -123,13 +105,6 @@ const Agenda = () => {
   useEffect(() => {
     cargarDatos();
   }, []);
-
-  // Limpiar derivaciones filtradas cuando se abre el modal
-  useEffect(() => {
-    if (isModalVisible) {
-      setDerivacionesFiltradas([]);
-    }
-  }, [isModalVisible]);
 
   // Colores por tipo de evento
   const getEventColor = (type) => {
@@ -155,20 +130,9 @@ const Agenda = () => {
   // Función para renderizar eventos en el calendario
   const dateCellRender = (value) => {
     const dayEvents = events.filter(event => {
-      let eventDate;
-      if (event.fecha?.toDate) {
-        // Si es un objeto Firestore Timestamp
-        eventDate = event.fecha.toDate();
-      } else if (event.fecha) {
-        // Si es un string de fecha
-        eventDate = new Date(event.fecha);
-      } else {
-        return false;
-      }
+      const eventDate = event.fecha?.toDate?.() || new Date(event.fecha);
       return dayjs(eventDate).isSame(value, 'day');
     });
-
-
 
     return (
       <div className="calendar-events">
@@ -183,17 +147,10 @@ const Agenda = () => {
             onClick={() => handleEventClick(event)}
           >
             <div className="event-time">
-              {(() => {
-                let eventDate;
-                if (event.fecha?.toDate) {
-                  eventDate = event.fecha.toDate();
-                } else if (event.fecha) {
-                  eventDate = new Date(event.fecha);
-                } else {
-                  return '--:--';
-                }
-                return dayjs(eventDate).format('HH:mm');
-              })()}
+              {dayjs(event.fecha?.toDate?.() || new Date(event.fecha)).format('HH:mm')}
+            </div>
+            <div className="event-title">
+              {event.titulo}
             </div>
             {event.estudiante && (
               <div className="event-student">
@@ -232,13 +189,6 @@ const Agenda = () => {
         return;
       }
 
-      // Obtener información del estudiante de la derivación seleccionada
-      const derivacionSeleccionada = derivacionesFiltradas.find(d => d.id === values.derivacionId);
-      if (!derivacionSeleccionada || !derivacionSeleccionada.estudiante) {
-        message.error('No se pudo obtener la información del estudiante de la derivación');
-        return;
-      }
-
       const eventoData = {
         titulo: values.title,
         descripcion: values.description,
@@ -246,37 +196,24 @@ const Agenda = () => {
         hora: values.time.format('HH:mm'),
         tipo: values.type,
         prioridad: values.priority,
-        estudianteId: derivacionSeleccionada.estudianteId, // Usar el ID del estudiante de la derivación
+        estudianteId: values.student || null,
         status: 'pendiente'
       };
 
-      // Usar el estudiante de la derivación seleccionada
-      eventoData.estudiante = {
-        nombre: derivacionSeleccionada.estudiante.nombre,
-        curso: derivacionSeleccionada.estudiante.curso
-      };
+      if (values.student) {
+        const estudianteSeleccionado = estudiantes.find(e => e.id === values.student);
+        if (estudianteSeleccionado) {
+          eventoData.estudiante = {
+            nombre: estudianteSeleccionado.nombre,
+            curso: estudianteSeleccionado.curso
+          };
+        }
+      }
 
       const nuevoEvento = await crearEvento(eventoData, values.derivacionId);
-      
-      // Agregar información completa del estudiante y derivación al evento
-      const eventoCompleto = {
-        ...nuevoEvento,
-        estudiante: {
-          nombre: derivacionSeleccionada.estudiante.nombre,
-          curso: derivacionSeleccionada.estudiante.curso,
-          rut: derivacionSeleccionada.estudiante.rut
-        },
-        derivacion: {
-          motivo: derivacionSeleccionada.motivo,
-          descripcion: derivacionSeleccionada.descripcion,
-          estado: derivacionSeleccionada.estado
-        }
-      };
-      
-      setEvents([...events, eventoCompleto]);
+      setEvents([...events, nuevoEvento]);
       setIsModalVisible(false);
       form.resetFields();
-      setDerivacionesFiltradas([]);
       message.success('Evento creado exitosamente');
       
       // Recargar datos para actualizar estadísticas
@@ -300,35 +237,6 @@ const Agenda = () => {
       message.error('Error al crear evento desde alerta');
       throw error;
     }
-  };
-
-  // Manejar cambio en la selección de estudiante
-  const handleEstudianteChange = (estudianteRut) => {
-    if (estudianteRut) {
-      // Filtrar derivaciones activas del estudiante seleccionado
-      const derivacionesDelEstudiante = derivaciones.filter(derivacion => 
-        derivacion.estudiante.rut === estudianteRut && 
-        derivacion.estado === 'abierta'
-      );
-      setDerivacionesFiltradas(derivacionesDelEstudiante);
-      
-      // Limpiar la derivación seleccionada cuando cambia el estudiante
-      form.setFieldsValue({
-        derivacionId: undefined
-      });
-    } else {
-      // Si no hay estudiante seleccionado, no mostrar derivaciones
-      setDerivacionesFiltradas([]);
-      form.setFieldsValue({
-        derivacionId: undefined
-      });
-    }
-  };
-
-  // Manejar cambio en la selección de derivación
-  const handleDerivacionChange = (derivacionId) => {
-    // Esta función ya no necesita auto-seleccionar el estudiante
-    // ya que ahora el flujo es: estudiante -> derivación
   };
 
   if (loading) {
@@ -472,7 +380,6 @@ const Agenda = () => {
         onCancel={() => {
           setIsModalVisible(false);
           form.resetFields();
-          setDerivacionesFiltradas([]);
         }}
         footer={null}
         width={600}
@@ -560,17 +467,16 @@ const Agenda = () => {
                   allowClear
                   loading={estudiantesLoading}
                   disabled={estudiantesLoading}
-                  onChange={handleEstudianteChange}
                 >
                   {Array.isArray(estudiantes) && estudiantes.length > 0 ? (
                     estudiantes.map(estudiante => (
-                      <Option key={estudiante.rut} value={estudiante.rut}>
+                      <Option key={estudiante.id} value={estudiante.id}>
                         {estudiante.nombre} ({estudiante.curso})
                       </Option>
                     ))
                   ) : (
                     <Option value="" disabled>
-                      {estudiantesLoading ? "Cargando..." : "No hay estudiantes derivados disponibles"}
+                      {estudiantesLoading ? "Cargando..." : "No hay estudiantes disponibles"}
                     </Option>
                   )}
                 </Select>
@@ -584,25 +490,23 @@ const Agenda = () => {
             rules={[{ required: true, message: 'Por favor selecciona la derivación' }]}
           >
             <Select
-              placeholder={form.getFieldValue('student') ? "Seleccionar derivación" : "Primero selecciona un estudiante"}
+              placeholder="Seleccionar derivación"
               allowClear
               showSearch
               optionFilterProp="children"
               filterOption={(input, option) =>
                 option?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
-              onChange={handleDerivacionChange}
-              disabled={!form.getFieldValue('student')}
             >
-              {Array.isArray(derivacionesFiltradas) && derivacionesFiltradas.length > 0 ? (
-                derivacionesFiltradas.map(derivacion => (
+              {Array.isArray(derivaciones) && derivaciones.length > 0 ? (
+                derivaciones.map(derivacion => (
                   <Option key={derivacion.id} value={derivacion.id}>
-                    {derivacion.motivo}
+                    {derivacion.estudiante?.nombre} - {derivacion.motivo}
                   </Option>
                 ))
               ) : (
                 <Option value="" disabled>
-                  {form.getFieldValue('student') ? "No hay derivaciones activas para este estudiante" : "Selecciona un estudiante primero"}
+                  No hay derivaciones disponibles
                 </Option>
               )}
             </Select>
