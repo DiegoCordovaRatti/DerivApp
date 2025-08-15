@@ -1,0 +1,27 @@
+services:
+  waha:
+    image: devlikeapro/waha:latest
+    restart: always
+    ports:
+      - "3001:3000"  # Cambiamos el puerto para evitar conflictos con n8n
+    environment:
+      - WAHA_BASE_URL=${WAHA_BASE_URL}
+      - WAHA_AUTHENTICATION_DASHBOARD_USERNAME=${WAHA_AUTHENTICATION_DASHBOARD_USERNAME}
+      - WAHA_AUTHENTICATION_DASHBOARD_PASSWORD=${WAHA_AUTHENTICATION_DASHBOARD_PASSWORD}
+      - WAHA_AUTHENTICATION_SWAGGER_USERNAME=${WAHA_AUTHENTICATION_SWAGGER_USERNAME}
+      - WAHA_AUTHENTICATION_SWAGGER_PASSWORD=${WAHA_AUTHENTICATION_SWAGGER_PASSWORD}
+      - WAHA_ENGINE=${WAHA_ENGINE}
+      - WAHA_STORAGE_TYPE=${WAHA_STORAGE_TYPE}
+      - WAHA_STORAGE_FILE_PATH=${WAHA_STORAGE_FILE_PATH}
+    volumes:
+      - waha_sessions:/app/sessions
+    networks:
+      - waha_network
+
+volumes:
+  waha_sessions:
+    driver: local
+
+networks:
+  waha_network:
+    driver: bridge

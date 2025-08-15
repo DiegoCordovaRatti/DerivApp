@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      # Configuración básica
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      
+      # Configuración de webhooks
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=${N8N_PORT}
+      - N8N_PROTOCOL=http
+      
+      # Configuración de base de datos (SQLite por defecto)
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
+      
+      # Configuración de logs
+      - N8N_LOG_LEVEL=info
+      
+      # Configuración de webhooks
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      
+    volumes:
+      # Persistir datos de n8n
+      - n8n_data:/home/node/.n8n
+      
+      # Para desarrollo: montar workflows locales (opcional)
+      # - ./workflows:/home/node/.n8n/workflows
+      
+    networks:
+      - n8n-network
+  
+volumes:
+  n8n_data:
+    driver: local
+  
+networks:
+  n8n-network:
+    driver: bridge
+  
