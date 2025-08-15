@@ -15,6 +15,78 @@ import {
   obtenerEventosProximosTodasDerivaciones,
   obtenerEstadisticasEventosTodasDerivaciones
 } from '../models/Evento.js';
+import { obtenerEstudiantePorId } from '../models/Estudiante.js';
+
+// Función para enviar webhook a n8n
+const enviarWebhookEvento = async (eventoData, estudianteId) => {
+  try {
+    const webhookUrl = process.env.N8N_WEBHOOK_URL;
+    
+    if (!webhookUrl) {
+      console.log('N8N_WEBHOOK_URL no configurada, omitiendo webhook');
+      return;
+    }
+
+    // Obtener datos completos del estudiante incluyendo información del apoderado
+    let datosEstudiante = eventoData.estudiante || {};
+    
+    if (estudianteId) {
+      try {
+        const estudianteCompleto = await obtenerEstudiantePorId(estudianteId);
+        datosEstudiante = {
+          id: estudianteCompleto.id,
+          nombre: estudianteCompleto.nombre,
+          rut: estudianteCompleto.rut,
+          curso: estudianteCompleto.curso,
+          apoderado: estudianteCompleto.apoderado || '',
+          telefono_contacto: estudianteCompleto.telefono_contacto || '',
+          email_contacto: estudianteCompleto.email_contacto || '',
+          estado: estudianteCompleto.estado
+        };
+      } catch (error) {
+        console.error('Error al obtener datos completos del estudiante:', error);
+        // Usar los datos básicos si no se pueden obtener los completos
+      }
+    }
+
+    const payload = {
+      evento: {
+        id: eventoData.id,
+        titulo: eventoData.titulo,
+        fecha: eventoData.fecha,
+        hora: eventoData.hora,
+        tipo: eventoData.tipo,
+        prioridad: eventoData.prioridad,
+        descripcion: eventoData.descripcion,
+        estudiante: datosEstudiante,
+        derivacion: eventoData.derivacion
+      },
+      timestamp: new Date().toISOString(),
+      action: 'evento_creado'
+    };
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log('Webhook enviado exitosamente a n8n');
+    console.log('📞 Datos del apoderado incluidos en webhook:');
+    console.log('   - Nombre:', datosEstudiante.apoderado);
+    console.log('   - Teléfono:', datosEstudiante.telefono_contacto);
+    console.log('   - Email:', datosEstudiante.email_contacto);
+  } catch (error) {
+    console.error('Error enviando webhook a n8n:', error);
+    // No fallar la creación del evento por error en webhook
+  }
+};
 
 console.log('=== EVENTO CONTROLLER LOADED ===');
 
@@ -49,6 +121,11 @@ export const crearEventoController = async (req, res) => {
     }
 
     const evento = await crearEvento(datosEvento, datosEvento.estudianteId, derivacionId);
+    
+    // Enviar webhook a n8n de forma asíncrona (no bloquear la respuesta)
+    enviarWebhookEvento(evento, datosEvento.estudianteId).catch(error => {
+      console.error('Error en webhook (no crítico):', error);
+    });
     
     res.status(201).json({
       success: true,
