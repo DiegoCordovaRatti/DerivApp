@@ -18,7 +18,6 @@ import {
   cambiarEstadoDerivacion,
   obtenerDerivacionesPorEstado,
   obtenerDerivacionesRecientes,
-  obtenerEstudiantesConDerivaciones,
   // Métodos de seguimientos
   crearSeguimiento,
   obtenerSeguimientosDerivacion,
