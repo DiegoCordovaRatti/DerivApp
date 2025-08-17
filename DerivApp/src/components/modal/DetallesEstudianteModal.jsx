@@ -50,10 +50,10 @@ const DetallesEstudianteModal = ({
 }) => {
   // Función local para convertir fechas de Firestore usando dayjs
   const convertirFecha = (fecha) => {
-    console.log('Convirtiendo fecha:', fecha, 'tipo:', typeof fecha);
+
     
     if (!fecha) {
-      console.log('Fecha es null o undefined');
+
       return '';
     }
     
@@ -62,22 +62,22 @@ const DetallesEstudianteModal = ({
       
       // Si es un objeto Timestamp de Firestore
       if (fecha && typeof fecha === 'object' && fecha.seconds) {
-        console.log('Es Timestamp con seconds:', fecha.seconds);
+
         date = dayjs(fecha.seconds * 1000);
       }
       // Si es un objeto Timestamp de Firestore con toDate
       else if (fecha && typeof fecha === 'object' && fecha.toDate) {
-        console.log('Es Timestamp con toDate');
+
         date = dayjs(fecha.toDate());
       }
       // Si es una fecha normal
       else if (fecha instanceof Date) {
-        console.log('Es Date object');
+
         date = dayjs(fecha);
       }
       // Si es un string
       else if (typeof fecha === 'string') {
-        console.log('Es string:', fecha);
+
         // Intentar diferentes formatos de fecha
         if (fecha.includes('T')) {
           // Formato ISO
@@ -107,16 +107,16 @@ const DetallesEstudianteModal = ({
       }
       // Si es un número (timestamp)
       else if (typeof fecha === 'number') {
-        console.log('Es número:', fecha);
+
         date = dayjs(fecha);
       }
       // Si es un objeto dayjs
       else if (fecha && fecha.$d) {
-        console.log('Es objeto dayjs');
+
         date = fecha;
       }
       else {
-        console.log('No se pudo convertir la fecha:', fecha);
+
         return '';
       }
       
@@ -124,7 +124,7 @@ const DetallesEstudianteModal = ({
       if (date && date.isValid()) {
         return date.format('DD/MM/YYYY');
       } else {
-        console.log('Fecha inválida después de conversión');
+
         return '';
       }
     } catch (error) {
@@ -308,14 +308,14 @@ const DetallesEstudianteModal = ({
                                          {derivacion.seguimientos && derivacion.seguimientos.length > 0 && (
                        <div style={{ marginTop: '16px' }}>
                          <Divider orientation="left">Seguimientos</Divider>
-                         {console.log('Seguimientos de la derivación:', derivacion.seguimientos)}
+
                          <Collapse 
                            ghost 
                            defaultActiveKey={[]}
                            style={{ marginTop: '8px' }}
                          >
                            {derivacion.seguimientos.map((seguimiento, seguimientoIndex) => {
-                             console.log('Seguimiento individual:', seguimiento);
+
                              return (
                                <Collapse.Panel
                                key={seguimiento.id}

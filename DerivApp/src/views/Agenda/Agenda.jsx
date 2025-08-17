@@ -28,7 +28,9 @@ import {
   UserOutlined,
   TeamOutlined,
   BookOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  CheckCircleOutlined,
+  ClockCircleFilled
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { 
@@ -40,7 +42,7 @@ import {
 } from '../../services/eventoService';
 import { obtenerEstudiantes } from '../../services/estudianteService';
 import { obtenerTodasDerivaciones } from '../../services/expedienteService';
-import { DetallesEventoModal } from '../../components/modal';
+import { DetallesEventoModal, EditarEventoModal } from '../../components/modal';
 import './Agenda.scss';
 
 const { Title, Text } = Typography;
@@ -55,11 +57,16 @@ const Agenda = () => {
   const [form] = Form.useForm();
   const [estudiantes, setEstudiantes] = useState([]);
   const [derivaciones, setDerivaciones] = useState([]);
+  const [derivacionesFiltradas, setDerivacionesFiltradas] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [estadisticas, setEstadisticas] = useState({});
   const [estudiantesLoading, setEstudiantesLoading] = useState(false);
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
   const [modalEventoVisible, setModalEventoVisible] = useState(false);
+  
+  // Estados del modal de edición del evento
+  const [editarEventoVisible, setEditarEventoVisible] = useState(false);
+  const [eventoAEditar, setEventoAEditar] = useState(null);
 
   // Cargar datos iniciales
   const cargarDatos = async () => {
@@ -67,7 +74,10 @@ const Agenda = () => {
       setLoading(true);
       setEstudiantesLoading(true);
       
-      const [eventosData, eventosProximosData, estadisticasData, estudiantesData, derivacionesData] = await Promise.all([
+
+      
+      // Cargar datos de forma paralela con mejor manejo de errores
+      const [eventosData, eventosProximosData, estadisticasData, estudiantesData, derivacionesData] = await Promise.allSettled([
         obtenerEventosTodasDerivaciones(),
         obtenerEventosProximosTodasDerivaciones(),
         obtenerEstadisticasEventosTodasDerivaciones(),
@@ -75,30 +85,93 @@ const Agenda = () => {
         obtenerTodasDerivaciones()
       ]);
 
-      setEvents(eventosData);
-      
-      // Manejar diferentes formatos de respuesta para eventos próximos
-      if (eventosProximosData && eventosProximosData.success && eventosProximosData.eventos) {
-        setUpcomingEvents(eventosProximosData.eventos);
-      } else if (eventosProximosData && eventosProximosData.eventos) {
-        setUpcomingEvents(eventosProximosData.eventos);
-      } else if (eventosProximosData && Array.isArray(eventosProximosData)) {
-        setUpcomingEvents(eventosProximosData);
+      // Procesar eventos
+      if (eventosData.status === 'fulfilled') {
+
+        setEvents(eventosData.value || []);
       } else {
+        console.error('❌ Error al cargar eventos:', eventosData.reason);
+        setEvents([]);
+      }
+      
+      // Procesar eventos próximos
+      if (eventosProximosData.status === 'fulfilled') {
+        const proximosData = eventosProximosData.value;
+        if (proximosData && proximosData.success && proximosData.eventos) {
+          setUpcomingEvents(proximosData.eventos);
+        } else if (proximosData && proximosData.eventos) {
+          setUpcomingEvents(proximosData.eventos);
+        } else if (proximosData && Array.isArray(proximosData)) {
+          setUpcomingEvents(proximosData);
+        } else {
+          setUpcomingEvents([]);
+        }
+
+      } else {
+        console.error('❌ Error al cargar eventos próximos:', eventosProximosData.reason);
         setUpcomingEvents([]);
       }
       
-      setEstadisticas(estadisticasData);
-      setEstudiantes(Array.isArray(estudiantesData) ? estudiantesData : []);
-      setDerivaciones(derivacionesData?.derivaciones || []);
+      // Procesar estadísticas
+      if (estadisticasData.status === 'fulfilled') {
+
+        setEstadisticas(estadisticasData.value || {});
+      } else {
+        console.error('❌ Error al cargar estadísticas:', estadisticasData.reason);
+        setEstadisticas({});
+      }
+      
+      // Procesar estudiantes
+      if (estudiantesData.status === 'fulfilled') {
+        const estudiantes = estudiantesData.value;
+
+        // Manejar diferentes formatos de respuesta
+        if (estudiantes && estudiantes.estudiantes) {
+          setEstudiantes(Array.isArray(estudiantes.estudiantes) ? estudiantes.estudiantes : []);
+        } else if (Array.isArray(estudiantes)) {
+          setEstudiantes(estudiantes);
+        } else {
+          console.warn('⚠️ Formato inesperado de estudiantes:', estudiantes);
+          setEstudiantes([]);
+        }
+      } else {
+        console.error('❌ Error al cargar estudiantes:', estudiantesData.reason);
+        setEstudiantes([]);
+        message.error('Error al cargar estudiantes');
+      }
+      
+      // Procesar derivaciones
+      if (derivacionesData.status === 'fulfilled') {
+        const derivaciones = derivacionesData.value;
+
+        // Manejar diferentes formatos de respuesta
+        if (derivaciones && derivaciones.derivaciones) {
+          setDerivaciones(Array.isArray(derivaciones.derivaciones) ? derivaciones.derivaciones : []);
+        } else if (Array.isArray(derivaciones)) {
+          setDerivaciones(derivaciones);
+        } else {
+          console.warn('⚠️ Formato inesperado de derivaciones:', derivaciones);
+          setDerivaciones([]);
+        }
+      } else {
+        console.error('❌ Error al cargar derivaciones:', derivacionesData.reason);
+        setDerivaciones([]);
+        message.error('Error al cargar derivaciones');
+      }
+      
     } catch (error) {
-      console.error('Error al cargar datos:', error);
+      console.error('💥 Error general al cargar datos:', error);
       message.error('Error al cargar los datos de la agenda');
       // En caso de error, establecer arrays vacíos
+      setEvents([]);
       setUpcomingEvents([]);
+      setEstadisticas({});
+      setEstudiantes([]);
+      setDerivaciones([]);
     } finally {
       setLoading(false);
       setEstudiantesLoading(false);
+
     }
   };
 
@@ -142,15 +215,21 @@ const Agenda = () => {
             className="calendar-event"
             style={{ 
               backgroundColor: getEventColor(event.tipo),
-              borderLeft: `3px solid ${getPriorityColor(event.prioridad)}`
+              borderLeft: `3px solid ${getPriorityColor(event.prioridad)}`,
+              position: 'relative'
             }}
             onClick={() => handleEventClick(event)}
           >
             <div className="event-time">
               {dayjs(event.fecha?.toDate?.() || new Date(event.fecha)).format('HH:mm')}
             </div>
-            <div className="event-title">
-              {event.titulo}
+            <div className="event-title" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>{event.titulo}</span>
+              {event.agendado ? (
+                <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '12px' }} title="Asistencia confirmada" />
+              ) : (
+                <ClockCircleFilled style={{ color: '#faad14', fontSize: '12px' }} title="Pendiente de confirmación" />
+              )}
             </div>
             {event.estudiante && (
               <div className="event-student">
@@ -175,6 +254,40 @@ const Agenda = () => {
     setEventoSeleccionado(null);
   };
 
+  // Manejar actualización de evento
+  const handleEventoActualizado = (eventoActualizado) => {
+    // Actualizar el evento en la lista
+    setEvents(prevEvents => 
+      prevEvents.map(event => 
+        event.id === eventoActualizado.id ? eventoActualizado : event
+      )
+    );
+    
+    // Actualizar eventos próximos si es necesario
+    setUpcomingEvents(prevEvents => 
+      prevEvents.map(event => 
+        event.id === eventoActualizado.id ? eventoActualizado : event
+      )
+    );
+  };
+
+  // Manejar cambio de estudiante seleccionado
+  const handleStudentChange = (estudianteId) => {
+    if (estudianteId) {
+      // Filtrar derivaciones por el estudiante seleccionado
+      const derivacionesDelEstudiante = derivaciones.filter(
+        derivacion => derivacion.estudianteId === estudianteId
+      );
+      setDerivacionesFiltradas(derivacionesDelEstudiante);
+    } else {
+      // Si no hay estudiante seleccionado, mostrar todas
+      setDerivacionesFiltradas([]);
+    }
+    
+    // Limpiar la derivación seleccionada cuando cambia el estudiante
+    form.setFieldsValue({ derivacionId: null });
+  };
+
   // Manejar selección de fecha
   const onSelect = (value) => {
     setSelectedDate(value);
@@ -197,7 +310,8 @@ const Agenda = () => {
         tipo: values.type,
         prioridad: values.priority,
         estudianteId: values.student || null,
-        status: 'pendiente'
+        status: 'pendiente',
+        agendado: false // Nuevo evento siempre inicia como no agendado
       };
 
       if (values.student) {
@@ -238,6 +352,24 @@ const Agenda = () => {
       throw error;
     }
   };
+
+
+
+  // Manejar edición de evento
+  const handleEditarEvento = (evento) => {
+    setEventoAEditar(evento);
+    setEditarEventoVisible(true);
+    setModalEventoVisible(false); // Cerrar el modal de detalles
+  };
+
+  // Manejar eliminación de evento
+  const handleEliminarEvento = (eventoId) => {
+    setEvents(prevEvents => prevEvents.filter(event => event.id !== eventoId));
+    setUpcomingEvents(prevEvents => prevEvents.filter(event => event.id !== eventoId));
+    message.success('Evento eliminado exitosamente');
+  };
+
+
 
   if (loading) {
     return (
@@ -305,11 +437,27 @@ const Agenda = () => {
                           />
                         }
                         title={
-                          <div className="event-list-title">
-                            <span>{event.titulo}</span>
-                            <Tag color={getPriorityColor(event.prioridad)} size="small">
-                              {event.prioridad}
-                            </Tag>
+                          <div className="event-list-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>{event.titulo}</span>
+                              {event.agendado ? (
+                                <CheckCircleOutlined style={{ color: '#52c41a' }} title="Asistencia confirmada" />
+                              ) : (
+                                <ClockCircleFilled style={{ color: '#faad14' }} title="Pendiente de confirmación" />
+                              )}
+                            </div>
+                            <div>
+                              <Tag color={getPriorityColor(event.prioridad)} size="small">
+                                {event.prioridad}
+                              </Tag>
+                              <Tag 
+                                color={event.agendado ? 'green' : 'orange'} 
+                                size="small"
+                                style={{ marginLeft: '4px' }}
+                              >
+                                {event.agendado ? 'Confirmado' : 'Pendiente'}
+                              </Tag>
+                            </div>
                           </div>
                         }
                         description={
@@ -467,6 +615,7 @@ const Agenda = () => {
                   allowClear
                   loading={estudiantesLoading}
                   disabled={estudiantesLoading}
+                  onChange={handleStudentChange}
                 >
                   {Array.isArray(estudiantes) && estudiantes.length > 0 ? (
                     estudiantes.map(estudiante => (
@@ -498,15 +647,15 @@ const Agenda = () => {
                 option?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
             >
-              {Array.isArray(derivaciones) && derivaciones.length > 0 ? (
-                derivaciones.map(derivacion => (
+              {Array.isArray(derivacionesFiltradas) && derivacionesFiltradas.length > 0 ? (
+                derivacionesFiltradas.map(derivacion => (
                   <Option key={derivacion.id} value={derivacion.id}>
-                    {derivacion.estudiante?.nombre} - {derivacion.motivo}
+                    {derivacion.motivo} - {derivacion.descripcion}
                   </Option>
                 ))
               ) : (
                 <Option value="" disabled>
-                  No hay derivaciones disponibles
+                  {form.getFieldValue('student') ? 'No hay derivaciones para este estudiante' : 'Selecciona un estudiante primero'}
                 </Option>
               )}
             </Select>
@@ -541,6 +690,17 @@ const Agenda = () => {
         evento={eventoSeleccionado}
         visible={modalEventoVisible}
         onClose={handleCloseModalEvento}
+        onEventoActualizado={handleEventoActualizado}
+        onEditarEvento={handleEditarEvento}
+        onEliminarEvento={handleEliminarEvento}
+      />
+
+      {/* Modal de Edición de Evento */}
+      <EditarEventoModal
+        evento={eventoAEditar}
+        visible={editarEventoVisible}
+        onClose={() => setEditarEventoVisible(false)}
+        onEventoActualizado={handleEventoActualizado}
       />
     </div>
   );

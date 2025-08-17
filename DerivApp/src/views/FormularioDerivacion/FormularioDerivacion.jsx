@@ -93,7 +93,7 @@ const FormularioDerivacion = () => {
 
   // Log cuando cambia el estado del formulario
   useEffect(() => {
-    console.log('Estado formularioCompleto cambió a:', formularioCompleto);
+
   }, [formularioCompleto]);
 
   // Función para cargar todos los estudiantes
@@ -408,7 +408,7 @@ const FormularioDerivacion = () => {
       const esPlantillaRecomendada = opcionesDescripciones.some(opcion => opcion.value === value);
       if (!esPlantillaRecomendada) {
         // El usuario está escribiendo texto personalizado
-        console.log('Usuario escribiendo descripción personalizada');
+
       }
     }
     
@@ -493,23 +493,11 @@ const FormularioDerivacion = () => {
     const esCompleto = estudianteCompleto && derivacionCompleta;
     
     // Debug logs
-    console.log('=== Validación del Formulario ===');
-    console.log('Estudiante seleccionado:', estudianteSeleccionado);
-    console.log('Estudiante completo:', estudianteCompleto);
-    console.log('Valores del formulario:', valores);
-    console.log('Tipo caso completo:', tipoCasoCompleto);
-    console.log('Motivo completo:', motivoCompleto);
-    console.log('Descripción completa:', descripcionCompleta);
-    console.log('Prioridad completa:', prioridadCompleta);
-    console.log('Estado completo:', estadoCompleto);
-    console.log('Derivación completa:', derivacionCompleta);
-    console.log('Formulario completo:', esCompleto);
-    console.log('Estado formularioCompleto actual:', formularioCompleto);
-    console.log('================================');
+
     
     // Actualizar estado inmediatamente si es diferente
     if (esCompleto !== formularioCompleto) {
-      console.log('Actualizando formularioCompleto de', formularioCompleto, 'a', esCompleto);
+
       setFormularioCompleto(esCompleto);
     }
     
@@ -556,11 +544,10 @@ const FormularioDerivacion = () => {
       };
 
       // Crear la derivación en la base de datos
-      console.log('Datos de derivación a enviar:', datosDerivacion);
-      console.log('ID del estudiante:', estudianteSeleccionado.id);
+
       
       const response = await crearDerivacion(estudianteSeleccionado.id, datosDerivacion);
-      console.log('Respuesta de crearDerivacion:', response);
+
       
       // Mostrar modal independientemente de la respuesta del servidor
       // (asumiendo que si llegamos aquí, la derivación se creó)
@@ -577,7 +564,7 @@ const FormularioDerivacion = () => {
       mostrarResumenDerivacion(datosDerivacion);
       
       if (response && response.success) {
-        console.log('Respuesta exitosa del servidor');
+
       } else {
         console.error('Error en la respuesta:', response);
         message.error(response?.message || 'Error al enviar la derivación');
@@ -1058,7 +1045,7 @@ const FormularioDerivacion = () => {
               >
                 {loading ? 'Enviando...' : 'Enviar Derivación'}
               </Button>
-              {console.log('Botón disabled:', !formularioCompleto, 'formularioCompleto:', formularioCompleto)}
+
               {!formularioCompleto && (
                 <div style={{ textAlign: 'center', marginTop: '8px' }}>
                   <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -1069,7 +1056,7 @@ const FormularioDerivacion = () => {
                     size="small" 
                     type="link" 
                     onClick={() => {
-                      console.log('Estado actual:', {
+
                         formularioCompleto,
                         estudianteSeleccionado,
                         valores: form.getFieldsValue()

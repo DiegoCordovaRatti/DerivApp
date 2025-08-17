@@ -5,6 +5,8 @@ import {
   obtenerEstudiantePorRut,
   actualizarEstudiante,
   cambiarEstadoEstudiante,
+  actualizarTelegramId,
+  obtenerEstudiantePorTelegramId,
   obtenerEstudiantesPorEstado,
   obtenerEstudiantesActivos,
   obtenerEstudiantesPorEstablecimiento,
@@ -23,7 +25,9 @@ import {
   obtenerSeguimientosDerivacion,
   obtenerSeguimientoPorId,
   actualizarSeguimiento,
-  eliminarSeguimiento
+  eliminarSeguimiento,
+  // Estudiantes con derivaciones
+  obtenerEstudiantesConDerivaciones
 } from '../models/Estudiante.js';
 
 // ===== CONTROLADORES DE ESTUDIANTES =====
@@ -261,6 +265,69 @@ export const eliminarEstudianteCtrl = async (req, res) => {
   }
 };
 
+// Actualizar Telegram ID de estudiante
+export const actualizarTelegramIdCtrl = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { telegram_id } = req.body;
+    
+    if (!telegram_id) {
+      return res.status(400).json({
+        error: 'Telegram ID es requerido'
+      });
+    }
+    
+    const resultado = await actualizarTelegramId(id, telegram_id);
+    
+    res.json({
+      message: resultado.message,
+      telegram_id
+    });
+  } catch (error) {
+    console.error('Error al actualizar Telegram ID:', error);
+    if (error.message.includes('no encontrado')) {
+      return res.status(404).json({
+        error: 'Estudiante no encontrado'
+      });
+    }
+    res.status(500).json({
+      error: 'Error al actualizar Telegram ID',
+      details: error.message
+    });
+  }
+};
+
+// Buscar estudiante por Telegram ID
+export const obtenerEstudiantePorTelegramIdCtrl = async (req, res) => {
+  try {
+    const { telegram_id } = req.params;
+    
+    if (!telegram_id) {
+      return res.status(400).json({
+        error: 'Telegram ID es requerido'
+      });
+    }
+    
+    const estudiante = await obtenerEstudiantePorTelegramId(telegram_id);
+    
+    if (!estudiante) {
+      return res.status(404).json({
+        error: 'Estudiante no encontrado con ese Telegram ID'
+      });
+    }
+    
+    res.json({
+      estudiante
+    });
+  } catch (error) {
+    console.error('Error al buscar estudiante por Telegram ID:', error);
+    res.status(500).json({
+      error: 'Error al buscar estudiante',
+      details: error.message
+    });
+  }
+};
+
 // Buscar estudiantes (búsqueda por nombre o RUT)
 export const buscarEstudiantesCtrl = async (req, res) => {
   try {
@@ -466,12 +533,15 @@ export const obtenerDerivacionesRecientesCtrl = async (req, res) => {
 // Obtener todas las derivaciones para selección de eventos
 export const obtenerTodasDerivacionesCtrl = async (req, res) => {
   try {
+    console.log('🔍 Obteniendo todas las derivaciones...');
     const derivaciones = await obtenerEstudiantesConDerivaciones();
+    console.log('👥 Estudiantes con derivaciones:', derivaciones.length);
     
     // Extraer solo las derivaciones con información básica del estudiante
     const derivacionesSimplificadas = [];
     derivaciones.forEach(estudiante => {
       if (estudiante.derivaciones && estudiante.derivaciones.length > 0) {
+        console.log(`📋 Estudiante ${estudiante.nombre} tiene ${estudiante.derivaciones.length} derivaciones`);
         estudiante.derivaciones.forEach(derivacion => {
           derivacionesSimplificadas.push({
             id: derivacion.id,
@@ -488,8 +558,12 @@ export const obtenerTodasDerivacionesCtrl = async (req, res) => {
             fecha_creacion: derivacion.fecha_creacion
           });
         });
+      } else {
+        console.log(`⚠️ Estudiante ${estudiante.nombre} no tiene derivaciones`);
       }
     });
+    
+    console.log('🎯 Total derivaciones simplificadas:', derivacionesSimplificadas.length);
     
     res.json({
       derivaciones: derivacionesSimplificadas,
@@ -652,6 +726,8 @@ export default {
   obtenerEstudiantePorRutCtrl,
   actualizarEstudianteCtrl,
   cambiarEstadoEstudianteCtrl,
+  actualizarTelegramIdCtrl,
+  obtenerEstudiantePorTelegramIdCtrl,
   obtenerEstudiantesPorEstadoCtrl,
   obtenerEstudiantesPorEstablecimientoCtrl,
   obtenerEstudiantesActivosCtrl,

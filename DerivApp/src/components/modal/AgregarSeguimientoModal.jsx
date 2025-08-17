@@ -39,7 +39,7 @@ const AgregarSeguimientoModal = ({
         fecha_creacion: new Date()
       };
 
-      console.log('Datos del seguimiento a enviar:', datosSeguimiento);
+
       await onFinish(datosSeguimiento);
       form.resetFields();
       message.success('Seguimiento agregado correctamente');

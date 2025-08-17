@@ -166,4 +166,39 @@ export const obtenerEstadisticasEventosTodasDerivaciones = async () => {
     console.error('Error al obtener estadísticas de eventos de todas las derivaciones:', error);
     return {};
   }
+};
+
+// Marcar evento como agendado/confirmado por el apoderado
+export const marcarEventoAgendado = async (eventoId, agendado, derivacionId) => {
+  try {
+    const response = await apiRequest('PATCH', `/derivaciones/${derivacionId}/eventos/${eventoId}/agendado`, {
+      agendado
+    });
+    return response.evento;
+  } catch (error) {
+    console.error('Error al marcar evento como agendado:', error);
+    throw error;
+  }
+};
+
+// Obtener eventos con asistencia confirmada
+export const obtenerEventosAgendados = async (estudianteId, derivacionId) => {
+  try {
+    const response = await apiRequest('GET', `/derivaciones/${derivacionId}/eventos/agendados/${estudianteId}/${derivacionId}`);
+    return response.eventos || [];
+  } catch (error) {
+    console.error('Error al obtener eventos agendados:', error);
+    return [];
+  }
+};
+
+// Obtener eventos pendientes de confirmación
+export const obtenerEventosNoAgendados = async (estudianteId, derivacionId) => {
+  try {
+    const response = await apiRequest('GET', `/derivaciones/${derivacionId}/eventos/no-agendados/${estudianteId}/${derivacionId}`);
+    return response.eventos || [];
+  } catch (error) {
+    console.error('Error al obtener eventos no agendados:', error);
+    return [];
+  }
 }; 

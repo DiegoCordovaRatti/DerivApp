@@ -7,6 +7,8 @@ import {
   obtenerEstudiantePorRutCtrl,
   actualizarEstudianteCtrl,
   cambiarEstadoEstudianteCtrl,
+  actualizarTelegramIdCtrl,
+  obtenerEstudiantePorTelegramIdCtrl,
   obtenerEstudiantesPorEstadoCtrl,
   obtenerEstudiantesPorEstablecimientoCtrl,
   obtenerEstudiantesActivosCtrl,
@@ -41,9 +43,11 @@ router.get('/activos', obtenerEstudiantesActivosCtrl);
 router.get('/estado/:estado', obtenerEstudiantesPorEstadoCtrl);
 router.get('/establecimiento/:establecimientoId', obtenerEstudiantesPorEstablecimientoCtrl);
 router.get('/rut/:rut', obtenerEstudiantePorRutCtrl);
+router.get('/telegram/:telegram_id', obtenerEstudiantePorTelegramIdCtrl); // Buscar por Telegram ID
 router.get('/:id', obtenerEstudiantePorIdCtrl);
 router.put('/:id', actualizarEstudianteCtrl);
 router.patch('/:id/estado', cambiarEstadoEstudianteCtrl);
+router.patch('/:id/telegram', actualizarTelegramIdCtrl); // Actualizar Telegram ID
 router.delete('/:id', eliminarEstudianteCtrl);
 
 // ===== RUTAS DE DERIVACIONES =====

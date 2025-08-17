@@ -75,9 +75,10 @@ export const obtenerEventoPorId = async (eventoId, derivacionId) => {
 };
 
 // Actualizar evento en una derivación específica
-export const actualizarEvento = async (eventoId, datosEvento, derivacionId) => {
+export const actualizarEvento = async (eventoId, datosEvento, estudianteId, derivacionId) => {
   try {
-    const eventoRef = doc(db, "derivaciones", derivacionId, "eventos", eventoId);
+    // Usar la estructura correcta de Firestore
+    const eventoRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "eventos", eventoId);
     const datosActualizados = {
       ...datosEvento,
       fecha_actualizacion: new Date()
@@ -91,9 +92,10 @@ export const actualizarEvento = async (eventoId, datosEvento, derivacionId) => {
 };
 
 // Eliminar evento de una derivación específica
-export const eliminarEvento = async (eventoId, derivacionId) => {
+export const eliminarEvento = async (eventoId, estudianteId, derivacionId) => {
   try {
-    await deleteDoc(doc(db, "derivaciones", derivacionId, "eventos", eventoId));
+    const eventoRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "eventos", eventoId);
+    await deleteDoc(eventoRef);
     return { success: true, message: 'Evento eliminado correctamente' };
   } catch (error) {
     throw new Error(`Error al eliminar evento: ${error.message}`);
@@ -279,17 +281,21 @@ export const obtenerEstadisticasEventos = async (derivacionId) => {
 // Obtener eventos de todas las derivaciones (para la vista de Agenda)
 export const obtenerEventosTodasDerivaciones = async () => {
   try {
+    console.log('🔍 Obteniendo eventos de todas las derivaciones...');
     // Primero obtener todos los estudiantes
     const estudiantesSnapshot = await getDocs(collection(db, "estudiantes"));
+    console.log('👥 Estudiantes encontrados:', estudiantesSnapshot.docs.length);
     const todosEventos = [];
     
     // Para cada estudiante, obtener sus derivaciones y eventos
     for (const estudianteDoc of estudiantesSnapshot.docs) {
       const estudianteId = estudianteDoc.id;
       const estudianteData = estudianteDoc.data();
+      console.log('👤 Procesando estudiante:', estudianteData.nombre);
       
       // Obtener derivaciones del estudiante
       const derivacionesSnapshot = await getDocs(collection(db, "estudiantes", estudianteId, "derivaciones"));
+      console.log(`📋 Derivaciones para ${estudianteData.nombre}:`, derivacionesSnapshot.docs.length);
       
       // Para cada derivación, obtener sus eventos
       for (const derivacionDoc of derivacionesSnapshot.docs) {
@@ -298,6 +304,7 @@ export const obtenerEventosTodasDerivaciones = async () => {
         
         // Obtener eventos de la derivación
         const eventosSnapshot = await getDocs(collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "eventos"));
+        console.log(`📅 Eventos para derivación ${derivacionId}:`, eventosSnapshot.docs.length);
         
         eventosSnapshot.forEach((eventoDoc) => {
           todosEventos.push({
@@ -320,12 +327,17 @@ export const obtenerEventosTodasDerivaciones = async () => {
       }
     }
 
+    console.log('🎯 Total eventos encontrados:', todosEventos.length);
+    
     // Ordenar por fecha
-    return todosEventos.sort((a, b) => {
+    const eventosOrdenados = todosEventos.sort((a, b) => {
       const fechaA = a.fecha?.toDate?.() || new Date(a.fecha);
       const fechaB = b.fecha?.toDate?.() || new Date(b.fecha);
       return fechaA - fechaB;
     });
+    
+    console.log('✅ Eventos ordenados y listos para enviar');
+    return eventosOrdenados;
   } catch (error) {
     throw new Error(`Error al obtener eventos de todas las derivaciones: ${error.message}`);
   }
@@ -334,22 +346,96 @@ export const obtenerEventosTodasDerivaciones = async () => {
 // Obtener eventos próximos de todas las derivaciones (para la vista de Agenda)
 export const obtenerEventosProximosTodasDerivaciones = async () => {
   try {
+    console.log('🔍 Obteniendo eventos próximos...');
     const todosEventos = await obtenerEventosTodasDerivaciones();
+    console.log('📊 Total eventos encontrados:', todosEventos.length);
 
-    // Filtrar eventos próximos
+    if (todosEventos.length === 0) {
+      console.log('⚠️ No hay eventos para filtrar');
+      return [];
+    }
+
+    // Usar un rango más amplio para asegurar que capturamos eventos
     const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    
-    const proximaSemana = new Date();
-    proximaSemana.setDate(hoy.getDate() + 7);
-    proximaSemana.setHours(23, 59, 59, 999);
+    const proximoMes = new Date();
+    proximoMes.setDate(hoy.getDate() + 30); // 30 días en lugar de 7
 
-    const eventosProximos = todosEventos.filter(evento => {
-      const eventoFecha = evento.fecha?.toDate?.() || new Date(evento.fecha);
-      return eventoFecha >= hoy && eventoFecha <= proximaSemana;
+    console.log('📅 Rango de fechas ampliado:', { 
+      desde: hoy.toISOString(), 
+      hasta: proximoMes.toISOString() 
     });
 
-    return eventosProximos.slice(0, 10); // Limitar a 10 eventos
+    const eventosProximos = [];
+    
+    for (const evento of todosEventos) {
+      try {
+        let eventoFecha;
+        
+        // Debug: mostrar información del evento
+        console.log('🔍 Procesando evento:', {
+          id: evento.id,
+          titulo: evento.titulo,
+          fechaOriginal: evento.fecha,
+          tipoFecha: typeof evento.fecha
+        });
+        
+        // Manejar diferentes formatos de fecha
+        if (evento.fecha?.toDate) {
+          // Timestamp de Firestore
+          eventoFecha = evento.fecha.toDate();
+        } else if (typeof evento.fecha === 'string') {
+          // String ISO
+          eventoFecha = new Date(evento.fecha);
+        } else if (evento.fecha instanceof Date) {
+          // Ya es un objeto Date
+          eventoFecha = evento.fecha;
+        } else {
+          console.warn('⚠️ Formato de fecha no reconocido para evento:', evento.id, evento.fecha);
+          continue;
+        }
+        
+        // Verificar que la fecha sea válida
+        if (isNaN(eventoFecha.getTime())) {
+          console.warn('⚠️ Fecha inválida para evento:', evento.id, evento.fecha);
+          continue;
+        }
+        
+        // Para debugging, mostrar todas las fechas
+        console.log('📅 Fecha procesada:', {
+          evento: evento.titulo,
+          fecha: eventoFecha.toISOString(),
+          esProximo: eventoFecha >= hoy
+        });
+        
+        // Solo verificar que la fecha sea futura (no limitar por rango máximo aún)
+        if (eventoFecha >= hoy) {
+          eventosProximos.push(evento);
+          console.log('✅ Evento próximo agregado:', {
+            id: evento.id,
+            titulo: evento.titulo,
+            fecha: eventoFecha.toISOString()
+          });
+        }
+        
+      } catch (error) {
+        console.error('❌ Error procesando fecha del evento:', evento.id, error);
+      }
+    }
+
+    // Ordenar por fecha más próxima primero
+    eventosProximos.sort((a, b) => {
+      const fechaA = a.fecha?.toDate?.() || new Date(a.fecha);
+      const fechaB = b.fecha?.toDate?.() || new Date(b.fecha);
+      return fechaA - fechaB;
+    });
+
+    console.log('🎯 Eventos próximos encontrados:', eventosProximos.length);
+    
+    // Devolver los primeros 10
+    const resultado = eventosProximos.slice(0, 10);
+    console.log('📤 Devolviendo eventos próximos:', resultado.length);
+    
+    return resultado;
   } catch (error) {
     console.error('Error al obtener eventos próximos de todas las derivaciones:', error);
     return [];
@@ -359,12 +445,25 @@ export const obtenerEventosProximosTodasDerivaciones = async () => {
 // Obtener estadísticas de eventos de todas las derivaciones (para la vista de Agenda)
 export const obtenerEstadisticasEventosTodasDerivaciones = async () => {
   try {
+    console.log('📈 Calculando estadísticas de eventos...');
     const eventos = await obtenerEventosTodasDerivaciones();
+    console.log('📊 Eventos para estadísticas:', eventos.length);
+    
+    // Debug: mostrar algunos eventos de muestra
+    if (eventos.length > 0) {
+      console.log('🔍 Muestra de eventos:', eventos.slice(0, 3).map(e => ({
+        id: e.id,
+        tipo: e.tipo,
+        prioridad: e.prioridad,
+        status: e.status,
+        agendado: e.agendado
+      })));
+    }
     
     const estadisticas = {
       total: eventos.length,
-      confirmados: eventos.filter(e => e.status === 'confirmado').length,
-      pendientes: eventos.filter(e => e.status === 'pendiente').length,
+      confirmados: eventos.filter(e => e.agendado === true).length, // Cambiado de status a agendado
+      pendientes: eventos.filter(e => e.agendado === false || e.agendado === undefined).length,
       altaPrioridad: eventos.filter(e => e.prioridad === 'alta').length,
       seguimientos: eventos.filter(e => e.tipo === 'seguimiento').length,
       evaluaciones: eventos.filter(e => e.tipo === 'evaluacion').length,
@@ -372,6 +471,7 @@ export const obtenerEstadisticasEventosTodasDerivaciones = async () => {
       reuniones: eventos.filter(e => e.tipo === 'reunion').length
     };
 
+    console.log('📊 Estadísticas calculadas:', estadisticas);
     return estadisticas;
   } catch (error) {
     throw new Error(`Error al obtener estadísticas de eventos de todas las derivaciones: ${error.message}`);
