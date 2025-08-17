@@ -19,6 +19,7 @@ export const crearEvento = async (datosEvento, estudianteId, derivacionId) => {
   try {
     const eventoData = {
       ...datosEvento,
+      agendado: datosEvento.agendado || false, // Campo booleano para confirmar asistencia del apoderado vía Telegram
       fecha_creacion: new Date(),
       fecha_actualizacion: new Date()
     };
@@ -240,6 +241,7 @@ export const crearEventoDesdeAlerta = async (alerta, datosEvento) => {
       },
       nivelAlerta: alerta.nivelAlerta,
       scoreNormalizado: alerta.scoreNormalizado,
+      agendado: datosEvento.agendado || false, // Campo booleano para confirmar asistencia del apoderado vía Telegram
       fecha_creacion: new Date(),
       fecha_actualizacion: new Date()
     };
@@ -376,6 +378,69 @@ export const obtenerEstadisticasEventosTodasDerivaciones = async () => {
   }
 };
 
+// Obtener eventos agendados de una derivación
+export const obtenerEventosAgendados = async (estudianteId, derivacionId) => {
+  try {
+    const eventosQuery = query(
+      collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "eventos"),
+      where("agendado", "==", true),
+      orderBy("fecha", "asc")
+    );
+    
+    const eventosSnapshot = await getDocs(eventosQuery);
+    const eventos = [];
+    
+    eventosSnapshot.forEach((doc) => {
+      eventos.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    return eventos;
+  } catch (error) {
+    throw new Error(`Error al obtener eventos agendados: ${error.message}`);
+  }
+};
+
+// Obtener eventos no agendados de una derivación
+export const obtenerEventosNoAgendados = async (estudianteId, derivacionId) => {
+  try {
+    // Como Firestore no permite queries OR, hacemos dos consultas
+    const eventosQueryFalse = query(
+      collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "eventos"),
+      where("agendado", "==", false),
+      orderBy("fecha", "asc")
+    );
+    
+    // Para campos undefined, obtenemos todos y filtramos localmente
+    const todosEventos = await obtenerEventos(estudianteId, derivacionId);
+    const eventosNoAgendados = todosEventos.filter(evento => 
+      evento.agendado === false || evento.agendado === undefined
+    );
+
+    return eventosNoAgendados;
+  } catch (error) {
+    throw new Error(`Error al obtener eventos no agendados: ${error.message}`);
+  }
+};
+
+// Marcar evento como agendado/no agendado
+export const marcarEventoAgendado = async (eventoId, agendado, estudianteId, derivacionId) => {
+  try {
+    const eventoRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "eventos", eventoId);
+    const datosActualizados = {
+      agendado: agendado,
+      fecha_actualizacion: new Date()
+    };
+
+    await updateDoc(eventoRef, datosActualizados);
+    return { id: eventoId, ...datosActualizados };
+  } catch (error) {
+    throw new Error(`Error al marcar evento como agendado: ${error.message}`);
+  }
+};
+
 export default {
   crearEvento,
   obtenerEventos,
@@ -391,5 +456,8 @@ export default {
   obtenerEstadisticasEventos,
   obtenerEventosTodasDerivaciones,
   obtenerEventosProximosTodasDerivaciones,
-  obtenerEstadisticasEventosTodasDerivaciones
+  obtenerEstadisticasEventosTodasDerivaciones,
+  obtenerEventosAgendados,
+  obtenerEventosNoAgendados,
+  marcarEventoAgendado
 }; 

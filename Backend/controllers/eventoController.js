@@ -13,7 +13,10 @@ import {
   obtenerEstadisticasEventos,
   obtenerEventosTodasDerivaciones,
   obtenerEventosProximosTodasDerivaciones,
-  obtenerEstadisticasEventosTodasDerivaciones
+  obtenerEstadisticasEventosTodasDerivaciones,
+  obtenerEventosAgendados,
+  obtenerEventosNoAgendados,
+  marcarEventoAgendado
 } from '../models/Evento.js';
 import { obtenerEstudiantePorId } from '../models/Estudiante.js';
 
@@ -57,6 +60,7 @@ const enviarWebhookEvento = async (eventoData, estudianteId) => {
         hora: eventoData.hora,
         tipo: eventoData.tipo,
         prioridad: eventoData.prioridad,
+        agendado: eventoData.agendado,
         descripcion: eventoData.descripcion,
         estudiante: datosEstudiante,
         derivacion: eventoData.derivacion
@@ -436,6 +440,82 @@ export const obtenerEstadisticasEventosTodasDerivacionesController = async (req,
     res.status(500).json({
       success: false,
       message: 'Error al obtener estadísticas de eventos de todas las derivaciones',
+      error: error.message
+    });
+  }
+};
+
+// Confirmar asistencia del apoderado (vía Telegram)
+export const marcarEventoAgendadoController = async (req, res) => {
+  try {
+    const { id, derivacionId } = req.params;
+    const { agendado } = req.body;
+
+    // Validar que agendado sea un booleano
+    if (typeof agendado !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'El campo agendado debe ser un valor booleano (true/false)'
+      });
+    }
+
+    const datosActualizacion = {
+      agendado: agendado,
+      fecha_actualizacion: new Date()
+    };
+
+    const evento = await actualizarEvento(id, datosActualizacion, derivacionId);
+    
+    res.json({
+      success: true,
+      message: `Asistencia del apoderado ${agendado ? 'confirmada' : 'pendiente'} exitosamente`,
+      evento
+    });
+  } catch (error) {
+    console.error('Error al actualizar confirmación de asistencia:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar confirmación de asistencia',
+      error: error.message
+    });
+  }
+};
+
+// Obtener eventos con asistencia confirmada por el apoderado
+export const obtenerEventosAgendadosController = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId } = req.params;
+    const eventos = await obtenerEventosAgendados(estudianteId, derivacionId);
+    
+    res.json({
+      success: true,
+      eventos
+    });
+  } catch (error) {
+    console.error('Error al obtener eventos con asistencia confirmada:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener eventos con asistencia confirmada',
+      error: error.message
+    });
+  }
+};
+
+// Obtener eventos pendientes de confirmación de asistencia
+export const obtenerEventosNoAgendadosController = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId } = req.params;
+    const eventos = await obtenerEventosNoAgendados(estudianteId, derivacionId);
+    
+    res.json({
+      success: true,
+      eventos
+    });
+  } catch (error) {
+    console.error('Error al obtener eventos pendientes de confirmación:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener eventos pendientes de confirmación',
       error: error.message
     });
   }

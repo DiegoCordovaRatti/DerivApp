@@ -11,7 +11,10 @@ import {
   obtenerEventosPorTipoController,
   obtenerEventosPorPrioridadController,
   crearEventoDesdeAlertaController,
-  obtenerEstadisticasEventosController
+  obtenerEstadisticasEventosController,
+  marcarEventoAgendadoController,
+  obtenerEventosAgendadosController,
+  obtenerEventosNoAgendadosController
 } from '../controllers/eventoController.js';
 
 const router = express.Router();
@@ -44,5 +47,10 @@ router.get('/derivacion/:estudianteId/:derivacionId', obtenerEventosPorDerivacio
 
 // Ruta especial para crear evento desde alerta
 router.post('/desde-alerta', crearEventoDesdeAlertaController);
+
+// Rutas para manejo del campo agendado
+router.patch('/:id/agendado', marcarEventoAgendadoController);
+router.get('/agendados/:estudianteId/:derivacionId', obtenerEventosAgendadosController);
+router.get('/no-agendados/:estudianteId/:derivacionId', obtenerEventosNoAgendadosController);
 
 export default router; 
