@@ -42,7 +42,7 @@ import {
 } from '../../services/eventoService';
 import { obtenerEstudiantes } from '../../services/estudianteService';
 import { obtenerTodasDerivaciones } from '../../services/expedienteService';
-import { DetallesEventoModal } from '../../components/modal';
+import { DetallesEventoModal, EditarEventoModal } from '../../components/modal';
 import './Agenda.scss';
 
 const { Title, Text } = Typography;
@@ -63,6 +63,10 @@ const Agenda = () => {
   const [estudiantesLoading, setEstudiantesLoading] = useState(false);
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
   const [modalEventoVisible, setModalEventoVisible] = useState(false);
+  
+  // Estados del modal de edición del evento
+  const [editarEventoVisible, setEditarEventoVisible] = useState(false);
+  const [eventoAEditar, setEventoAEditar] = useState(null);
 
   // Cargar datos iniciales
   const cargarDatos = async () => {
@@ -70,7 +74,7 @@ const Agenda = () => {
       setLoading(true);
       setEstudiantesLoading(true);
       
-      console.log('🔄 Iniciando carga de datos...');
+
       
       // Cargar datos de forma paralela con mejor manejo de errores
       const [eventosData, eventosProximosData, estadisticasData, estudiantesData, derivacionesData] = await Promise.allSettled([
@@ -83,7 +87,7 @@ const Agenda = () => {
 
       // Procesar eventos
       if (eventosData.status === 'fulfilled') {
-        console.log('✅ Eventos cargados:', eventosData.value);
+
         setEvents(eventosData.value || []);
       } else {
         console.error('❌ Error al cargar eventos:', eventosData.reason);
@@ -102,7 +106,7 @@ const Agenda = () => {
         } else {
           setUpcomingEvents([]);
         }
-        console.log('✅ Eventos próximos cargados:', proximosData);
+
       } else {
         console.error('❌ Error al cargar eventos próximos:', eventosProximosData.reason);
         setUpcomingEvents([]);
@@ -110,7 +114,7 @@ const Agenda = () => {
       
       // Procesar estadísticas
       if (estadisticasData.status === 'fulfilled') {
-        console.log('✅ Estadísticas cargadas:', estadisticasData.value);
+
         setEstadisticas(estadisticasData.value || {});
       } else {
         console.error('❌ Error al cargar estadísticas:', estadisticasData.reason);
@@ -120,7 +124,7 @@ const Agenda = () => {
       // Procesar estudiantes
       if (estudiantesData.status === 'fulfilled') {
         const estudiantes = estudiantesData.value;
-        console.log('✅ Estudiantes cargados:', estudiantes);
+
         // Manejar diferentes formatos de respuesta
         if (estudiantes && estudiantes.estudiantes) {
           setEstudiantes(Array.isArray(estudiantes.estudiantes) ? estudiantes.estudiantes : []);
@@ -139,7 +143,7 @@ const Agenda = () => {
       // Procesar derivaciones
       if (derivacionesData.status === 'fulfilled') {
         const derivaciones = derivacionesData.value;
-        console.log('✅ Derivaciones cargadas:', derivaciones);
+
         // Manejar diferentes formatos de respuesta
         if (derivaciones && derivaciones.derivaciones) {
           setDerivaciones(Array.isArray(derivaciones.derivaciones) ? derivaciones.derivaciones : []);
@@ -167,7 +171,7 @@ const Agenda = () => {
     } finally {
       setLoading(false);
       setEstudiantesLoading(false);
-      console.log('✅ Carga de datos finalizada');
+
     }
   };
 
@@ -348,6 +352,24 @@ const Agenda = () => {
       throw error;
     }
   };
+
+
+
+  // Manejar edición de evento
+  const handleEditarEvento = (evento) => {
+    setEventoAEditar(evento);
+    setEditarEventoVisible(true);
+    setModalEventoVisible(false); // Cerrar el modal de detalles
+  };
+
+  // Manejar eliminación de evento
+  const handleEliminarEvento = (eventoId) => {
+    setEvents(prevEvents => prevEvents.filter(event => event.id !== eventoId));
+    setUpcomingEvents(prevEvents => prevEvents.filter(event => event.id !== eventoId));
+    message.success('Evento eliminado exitosamente');
+  };
+
+
 
   if (loading) {
     return (
@@ -668,6 +690,16 @@ const Agenda = () => {
         evento={eventoSeleccionado}
         visible={modalEventoVisible}
         onClose={handleCloseModalEvento}
+        onEventoActualizado={handleEventoActualizado}
+        onEditarEvento={handleEditarEvento}
+        onEliminarEvento={handleEliminarEvento}
+      />
+
+      {/* Modal de Edición de Evento */}
+      <EditarEventoModal
+        evento={eventoAEditar}
+        visible={editarEventoVisible}
+        onClose={() => setEditarEventoVisible(false)}
         onEventoActualizado={handleEventoActualizado}
       />
     </div>

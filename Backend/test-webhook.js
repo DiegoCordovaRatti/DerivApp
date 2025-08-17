@@ -3,16 +3,24 @@ import dotenv from 'dotenv';
 // Configurar variables de entorno
 dotenv.config();
 
-// Función para enviar webhook a n8n (copiada del controlador)
+// Función para enviar webhook a n8n (testing)
 const enviarWebhookEvento = async (eventoData) => {
   try {
-    const webhookUrl = process.env.N8N_WEBHOOK_URL;
+    const webhookUrl = process.env.N8N_WEBHOOK_TEST_URL;
     
     if (!webhookUrl) {
-      console.log('❌ N8N_WEBHOOK_URL no configurada');
-      console.log('💡 Agrega N8N_WEBHOOK_URL=https://tu-n8n-instance.com/webhook/evento-creado a tu archivo .env');
+      console.log('❌ N8N_WEBHOOK_TEST_URL no configurada');
+      console.log('💡 Verifica que el archivo .env contenga: N8N_WEBHOOK_TEST_URL=https://429530537538.ngrok-free.app/webhook/test');
       return;
     }
+    
+         console.log('🧪 Enviando webhook de testing a n8n:', webhookUrl);
+
+    // Asegurar que telegram_id sea null si no existe
+    const estudianteConTelegram = {
+      ...eventoData.estudiante,
+      telegram_id: eventoData.estudiante.telegram_id || null
+    };
 
     const payload = {
       evento: {
@@ -23,14 +31,28 @@ const enviarWebhookEvento = async (eventoData) => {
         tipo: eventoData.tipo,
         prioridad: eventoData.prioridad,
         agendado: eventoData.agendado,
+        status: eventoData.status || 'pendiente',
         descripcion: eventoData.descripcion,
         estudianteId: eventoData.estudianteId,
         derivacionId: eventoData.derivacionId,
-        estudiante: eventoData.estudiante,
-        derivacion: eventoData.derivacion
+        estudiante: estudianteConTelegram,
+        derivacion: eventoData.derivacion,
+        fecha_creacion: eventoData.fecha_creacion,
+        fecha_actualizacion: eventoData.fecha_actualizacion
       },
-      timestamp: new Date().toISOString(),  
-      action: 'evento_creado'
+      metadata: {
+        timestamp: new Date().toISOString(),
+        action: 'evento_creado_test',
+        source: 'DerivApp',
+        webhook_version: '1.0',
+        environment: 'testing'
+      },
+      notificacion: {
+        tipo: 'nueva_citacion',
+        prioridad: eventoData.prioridad,
+        requiere_confirmacion: !eventoData.agendado,
+        canales: ['telegram']
+      }
     };
 
     console.log('📤 Enviando webhook a:', webhookUrl);
@@ -78,7 +100,7 @@ const eventoPrueba = {
     apoderado: 'María González',
     telefono_contacto: '+56912345678',
     email_contacto: 'maria.gonzalez@email.com',
-    telegram_id: '8240797657',
+    telegram_id: '8240797657', // Campo agregado para notificaciones automáticas vía Telegram
     estado: 'activo'
   },
   derivacion: {

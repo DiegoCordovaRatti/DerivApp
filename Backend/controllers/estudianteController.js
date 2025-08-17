@@ -5,6 +5,8 @@ import {
   obtenerEstudiantePorRut,
   actualizarEstudiante,
   cambiarEstadoEstudiante,
+  actualizarTelegramId,
+  obtenerEstudiantePorTelegramId,
   obtenerEstudiantesPorEstado,
   obtenerEstudiantesActivos,
   obtenerEstudiantesPorEstablecimiento,
@@ -258,6 +260,69 @@ export const eliminarEstudianteCtrl = async (req, res) => {
     }
     res.status(500).json({
       error: 'Error al eliminar estudiante',
+      details: error.message
+    });
+  }
+};
+
+// Actualizar Telegram ID de estudiante
+export const actualizarTelegramIdCtrl = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { telegram_id } = req.body;
+    
+    if (!telegram_id) {
+      return res.status(400).json({
+        error: 'Telegram ID es requerido'
+      });
+    }
+    
+    const resultado = await actualizarTelegramId(id, telegram_id);
+    
+    res.json({
+      message: resultado.message,
+      telegram_id
+    });
+  } catch (error) {
+    console.error('Error al actualizar Telegram ID:', error);
+    if (error.message.includes('no encontrado')) {
+      return res.status(404).json({
+        error: 'Estudiante no encontrado'
+      });
+    }
+    res.status(500).json({
+      error: 'Error al actualizar Telegram ID',
+      details: error.message
+    });
+  }
+};
+
+// Buscar estudiante por Telegram ID
+export const obtenerEstudiantePorTelegramIdCtrl = async (req, res) => {
+  try {
+    const { telegram_id } = req.params;
+    
+    if (!telegram_id) {
+      return res.status(400).json({
+        error: 'Telegram ID es requerido'
+      });
+    }
+    
+    const estudiante = await obtenerEstudiantePorTelegramId(telegram_id);
+    
+    if (!estudiante) {
+      return res.status(404).json({
+        error: 'Estudiante no encontrado con ese Telegram ID'
+      });
+    }
+    
+    res.json({
+      estudiante
+    });
+  } catch (error) {
+    console.error('Error al buscar estudiante por Telegram ID:', error);
+    res.status(500).json({
+      error: 'Error al buscar estudiante',
       details: error.message
     });
   }
@@ -661,6 +726,8 @@ export default {
   obtenerEstudiantePorRutCtrl,
   actualizarEstudianteCtrl,
   cambiarEstadoEstudianteCtrl,
+  actualizarTelegramIdCtrl,
+  obtenerEstudiantePorTelegramIdCtrl,
   obtenerEstudiantesPorEstadoCtrl,
   obtenerEstudiantesPorEstablecimientoCtrl,
   obtenerEstudiantesActivosCtrl,

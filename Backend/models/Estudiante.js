@@ -55,6 +55,7 @@ export const crearEstudiante = async (datosEstudiante) => {
     const estudianteData = {
       ...datosEstudiante,
       estado: datosEstudiante.estado || 'activo',
+      telegram_id: datosEstudiante.telegram_id || null, // ID de Telegram para notificaciones automáticas
       fecha_creacion: new Date(),
       fecha_actualizacion: new Date()
     };
@@ -181,6 +182,37 @@ export const cambiarEstadoEstudiante = async (id, nuevoEstado) => {
     return { message: `Estudiante ${nuevoEstado} correctamente` };
   } catch (error) {
     throw new Error(`Error al cambiar estado: ${error.message}`);
+  }
+};
+
+// Actualizar Telegram ID de estudiante
+export const actualizarTelegramId = async (id, telegramId) => {
+  try {
+    const docRef = doc(db, "estudiantes", id);
+    await updateDoc(docRef, {
+      telegram_id: telegramId,
+      fecha_actualizacion: new Date()
+    });
+    return { message: "Telegram ID actualizado correctamente" };
+  } catch (error) {
+    throw new Error(`Error al actualizar Telegram ID: ${error.message}`);
+  }
+};
+
+// Buscar estudiante por Telegram ID
+export const obtenerEstudiantePorTelegramId = async (telegramId) => {
+  try {
+    const q = query(collection(db, "estudiantes"), where("telegram_id", "==", telegramId));
+    const querySnapshot = await getDocs(q);
+    
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    } else {
+      return null;
+    }
+  } catch (error) {
+    throw new Error(`Error al buscar estudiante por Telegram ID: ${error.message}`);
   }
 };
 
@@ -752,6 +784,8 @@ export default {
   obtenerEstudiantesActivos,
   actualizarEstudiante,
   cambiarEstadoEstudiante,
+  actualizarTelegramId,
+  obtenerEstudiantePorTelegramId,
   eliminarEstudiante,
   crearDerivacion,
   obtenerDerivacionesEstudiante,

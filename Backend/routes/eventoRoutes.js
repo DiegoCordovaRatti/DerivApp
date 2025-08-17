@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   crearEventoController,
+  crearEventoTestController,
   obtenerEventosController,
   obtenerEventoPorIdController,
   actualizarEventoController,
@@ -30,6 +31,7 @@ router.use((req, res, next) => {
 
 // Rutas básicas CRUD - ahora como subcolección de derivaciones
 router.post('/', crearEventoController);
+router.post('/test', crearEventoTestController); // Ruta para testing con webhook de testing
 router.get('/', obtenerEventosController);
 router.get('/estadisticas', obtenerEstadisticasEventosController);
 router.get('/proximos', obtenerEventosProximosController);

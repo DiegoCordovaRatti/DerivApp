@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Descriptions, Tag, Typography, Space, Avatar, Divider, Switch, Button, message } from 'antd';
+import { Modal, Descriptions, Tag, Typography, Space, Avatar, Divider, Switch, Button, message, Popconfirm } from 'antd';
 import { 
   CalendarOutlined, 
   ClockCircleOutlined, 
@@ -8,16 +8,19 @@ import {
   BookOutlined,
   ExclamationCircleOutlined,
   CheckCircleOutlined,
-  ClockCircleFilled
+  ClockCircleFilled,
+  EditOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { marcarEventoAgendado } from '../../services/eventoService';
+import { marcarEventoAgendado, eliminarEvento } from '../../services/eventoService';
 
 const { Title, Text } = Typography;
 
-const DetallesEventoModal = ({ evento, visible, onClose, onEventoActualizado }) => {
+const DetallesEventoModal = ({ evento, visible, onClose, onEventoActualizado, onEditarEvento, onEliminarEvento }) => {
   const [agendadoState, setAgendadoState] = useState(evento?.agendado || false);
   const [loading, setLoading] = useState(false);
+  const [loadingDelete, setLoadingDelete] = useState(false);
 
   // Actualizar estado cuando cambie el evento
   React.useEffect(() => {
@@ -109,6 +112,38 @@ const DetallesEventoModal = ({ evento, visible, onClose, onEventoActualizado }) 
     }
   };
 
+  // Manejar eliminación de evento
+  const handleEliminarEvento = async () => {
+    if (!evento.derivacionId) {
+      message.error('No se puede eliminar: falta información de derivación');
+      return;
+    }
+
+    setLoadingDelete(true);
+    try {
+      await eliminarEvento(evento.id, evento.derivacionId);
+      message.success('Evento eliminado exitosamente');
+      
+      // Notificar al componente padre y cerrar modal
+      if (onEliminarEvento) {
+        onEliminarEvento(evento.id);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error al eliminar evento:', error);
+      message.error('Error al eliminar el evento');
+    } finally {
+      setLoadingDelete(false);
+    }
+  };
+
+  // Manejar edición de evento
+  const handleEditarEvento = () => {
+    if (onEditarEvento) {
+      onEditarEvento(evento);
+    }
+  };
+
   return (
     <Modal
       title={
@@ -122,7 +157,36 @@ const DetallesEventoModal = ({ evento, visible, onClose, onEventoActualizado }) 
       }
       open={visible}
       onCancel={onClose}
-      footer={null}
+      footer={
+        <Space>
+          <Button onClick={onClose}>
+            Cerrar
+          </Button>
+          <Button 
+            type="primary" 
+            icon={<EditOutlined />}
+            onClick={handleEditarEvento}
+          >
+            Editar
+          </Button>
+          <Popconfirm
+            title="¿Estás seguro de eliminar este evento?"
+            description="Esta acción no se puede deshacer."
+            onConfirm={handleEliminarEvento}
+            okText="Sí, eliminar"
+            cancelText="Cancelar"
+            okType="danger"
+          >
+            <Button 
+              danger 
+              icon={<DeleteOutlined />}
+              loading={loadingDelete}
+            >
+              Eliminar
+            </Button>
+          </Popconfirm>
+        </Space>
+      }
       width={600}
       centered
     >

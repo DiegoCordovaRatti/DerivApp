@@ -92,9 +92,10 @@ export const actualizarEvento = async (eventoId, datosEvento, estudianteId, deri
 };
 
 // Eliminar evento de una derivación específica
-export const eliminarEvento = async (eventoId, derivacionId) => {
+export const eliminarEvento = async (eventoId, estudianteId, derivacionId) => {
   try {
-    await deleteDoc(doc(db, "derivaciones", derivacionId, "eventos", eventoId));
+    const eventoRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "eventos", eventoId);
+    await deleteDoc(eventoRef);
     return { success: true, message: 'Evento eliminado correctamente' };
   } catch (error) {
     throw new Error(`Error al eliminar evento: ${error.message}`);

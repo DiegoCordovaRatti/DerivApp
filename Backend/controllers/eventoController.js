@@ -26,9 +26,11 @@ const enviarWebhookEvento = async (eventoData, estudianteId) => {
     const webhookUrl = process.env.N8N_WEBHOOK_URL;
     
     if (!webhookUrl) {
-      console.log('N8N_WEBHOOK_URL no configurada, omitiendo webhook');
+      console.log('⚠️ N8N_WEBHOOK_URL no configurada, omitiendo webhook');
       return;
     }
+    
+    console.log('🚀 Enviando webhook de evento creado a n8n:', webhookUrl);
 
     // Obtener datos completos del estudiante incluyendo información del apoderado
     let datosEstudiante = eventoData.estudiante || {};
@@ -44,6 +46,7 @@ const enviarWebhookEvento = async (eventoData, estudianteId) => {
           apoderado: estudianteCompleto.apoderado || '',
           telefono_contacto: estudianteCompleto.telefono_contacto || '',
           email_contacto: estudianteCompleto.email_contacto || '',
+          telegram_id: estudianteCompleto.telegram_id || null,
           estado: estudianteCompleto.estado
         };
       } catch (error) {
@@ -60,13 +63,31 @@ const enviarWebhookEvento = async (eventoData, estudianteId) => {
         hora: eventoData.hora,
         tipo: eventoData.tipo,
         prioridad: eventoData.prioridad,
-        agendado: eventoData.agendado,
+        agendado: eventoData.agendado || false,
+        status: eventoData.status || 'pendiente',
         descripcion: eventoData.descripcion,
+        estudianteId: estudianteId,
+        derivacionId: eventoData.derivacionId,
         estudiante: datosEstudiante,
-        derivacion: eventoData.derivacion
+        derivacion: eventoData.derivacion,
+        // Información adicional para n8n
+        fecha_creacion: eventoData.fecha_creacion,
+        fecha_actualizacion: eventoData.fecha_actualizacion
       },
-      timestamp: new Date().toISOString(),
-      action: 'evento_creado'
+      // Metadatos para n8n
+      metadata: {
+        timestamp: new Date().toISOString(),
+        action: 'evento_creado',
+        source: 'DerivApp',
+        webhook_version: '1.0'
+      },
+      // Datos específicos para notificación
+      notificacion: {
+        tipo: 'nueva_citacion',
+        prioridad: eventoData.prioridad,
+        requiere_confirmacion: !eventoData.agendado,
+        canales: ['telegram'] // n8n puede expandir a email, whatsapp, etc.
+      }
     };
 
     const response = await fetch(webhookUrl, {
@@ -81,14 +102,227 @@ const enviarWebhookEvento = async (eventoData, estudianteId) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    console.log('Webhook enviado exitosamente a n8n');
+    console.log('✅ Webhook enviado exitosamente a n8n');
+    console.log('📊 Status de respuesta:', response.status);
+    console.log('🎯 Evento creado:', {
+      id: eventoData.id,
+      titulo: eventoData.titulo,
+      estudiante: datosEstudiante.nombre,
+      fecha: eventoData.fecha,
+      hora: eventoData.hora
+    });
     console.log('📞 Datos del apoderado incluidos en webhook:');
     console.log('   - Nombre:', datosEstudiante.apoderado);
     console.log('   - Teléfono:', datosEstudiante.telefono_contacto);
     console.log('   - Email:', datosEstudiante.email_contacto);
+    console.log('   - Telegram ID:', datosEstudiante.telegram_id || 'No configurado');
   } catch (error) {
     console.error('Error enviando webhook a n8n:', error);
     // No fallar la creación del evento por error en webhook
+  }
+};
+// Función para enviar webhook a n8n (testing)
+const enviarWebhookEventoTest = async (eventoData, estudianteId) => {
+  try {
+    const webhookUrl = process.env.N8N_WEBHOOK_TEST_URL;
+    
+    if (!webhookUrl) {
+      console.log('⚠️ N8N_WEBHOOK_TEST_URL no configurada, omitiendo webhook de testing');
+      return;
+    }
+    
+    console.log('🧪 Enviando webhook de testing a n8n:', webhookUrl);
+
+    // Obtener datos completos del estudiante incluyendo información del apoderado
+    let datosEstudiante = eventoData.estudiante || {};
+    
+    if (estudianteId) {
+      try {
+        const estudianteCompleto = await obtenerEstudiantePorId(estudianteId);
+        datosEstudiante = {
+          id: estudianteCompleto.id,
+          nombre: estudianteCompleto.nombre,
+          rut: estudianteCompleto.rut,
+          curso: estudianteCompleto.curso,
+          apoderado: estudianteCompleto.apoderado || '',
+          telefono_contacto: estudianteCompleto.telefono_contacto || '',
+          email_contacto: estudianteCompleto.email_contacto || '',
+          telegram_id: estudianteCompleto.telegram_id || null,
+          estado: estudianteCompleto.estado
+        };
+      } catch (error) {
+        console.error('Error al obtener datos completos del estudiante:', error);
+        // Usar los datos básicos si no se pueden obtener los completos
+      }
+    }
+
+    const payload = {
+      evento: {
+        id: eventoData.id,
+        titulo: eventoData.titulo,
+        fecha: eventoData.fecha,
+        hora: eventoData.hora,
+        tipo: eventoData.tipo,
+        prioridad: eventoData.prioridad,
+        agendado: eventoData.agendado || false,
+        status: eventoData.status || 'pendiente',
+        descripcion: eventoData.descripcion,
+        estudianteId: estudianteId,
+        derivacionId: eventoData.derivacionId,
+        estudiante: datosEstudiante,
+        derivacion: eventoData.derivacion,
+        // Información adicional para n8n
+        fecha_creacion: eventoData.fecha_creacion,
+        fecha_actualizacion: eventoData.fecha_actualizacion
+      },
+      // Metadatos para n8n
+      metadata: {
+        timestamp: new Date().toISOString(),
+        action: 'evento_creado_test',
+        source: 'DerivApp',
+        webhook_version: '1.0',
+        environment: 'testing'
+      },
+      // Datos específicos para notificación
+      notificacion: {
+        tipo: 'nueva_citacion',
+        prioridad: eventoData.prioridad,
+        requiere_confirmacion: !eventoData.agendado,
+        canales: ['telegram'] // n8n puede expandir a email, whatsapp, etc.
+      }
+    };
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log('✅ Webhook de testing enviado exitosamente a n8n');
+    console.log('📊 Status de respuesta:', response.status);
+    console.log('🎯 Evento de testing:', {
+      id: eventoData.id,
+      titulo: eventoData.titulo,
+      estudiante: datosEstudiante.nombre,
+      fecha: eventoData.fecha,
+      hora: eventoData.hora
+    });
+    console.log('📞 Datos del apoderado incluidos en webhook:');
+    console.log('   - Nombre:', datosEstudiante.apoderado);
+    console.log('   - Teléfono:', datosEstudiante.telefono_contacto);
+    console.log('   - Email:', datosEstudiante.email_contacto);
+    console.log('   - Telegram ID:', datosEstudiante.telegram_id || null);
+  } catch (error) {
+    console.error('Error enviando webhook de testing a n8n:', error);
+    // No fallar la creación del evento por error en webhook
+  }
+};
+
+// Función para enviar webhook cuando se modifica un evento
+const enviarWebhookEventoModificado = async (eventoData, estudianteId) => {
+  try {
+    const webhookUrl = process.env.N8N_WEBHOOK_URL;
+    
+    if (!webhookUrl) {
+      console.log('⚠️ N8N_WEBHOOK_URL no configurada, omitiendo webhook');
+      return;
+    }
+    
+    console.log('🔄 Enviando webhook de evento modificado a n8n:', webhookUrl);
+
+    // Obtener datos completos del estudiante incluyendo información del apoderado
+    let datosEstudiante = eventoData.estudiante || {};
+    
+    if (estudianteId) {
+      try {
+        const estudianteCompleto = await obtenerEstudiantePorId(estudianteId);
+        datosEstudiante = {
+          id: estudianteCompleto.id,
+          nombre: estudianteCompleto.nombre,
+          rut: estudianteCompleto.rut,
+          curso: estudianteCompleto.curso,
+          apoderado: estudianteCompleto.apoderado || '',
+          telefono_contacto: estudianteCompleto.telefono_contacto || '',
+          email_contacto: estudianteCompleto.email_contacto || '',
+          telegram_id: estudianteCompleto.telegram_id || null,
+          estado: estudianteCompleto.estado
+        };
+      } catch (error) {
+        console.error('Error al obtener datos completos del estudiante:', error);
+        // Usar los datos básicos si no se pueden obtener los completos
+      }
+    }
+
+    const payload = {
+      evento: {
+        id: eventoData.id,
+        titulo: eventoData.titulo,
+        fecha: eventoData.fecha,
+        hora: eventoData.hora,
+        tipo: eventoData.tipo,
+        prioridad: eventoData.prioridad,
+        agendado: eventoData.agendado || false,
+        status: eventoData.status || 'pendiente',
+        descripcion: eventoData.descripcion,
+        estudianteId: estudianteId,
+        derivacionId: eventoData.derivacionId,
+        estudiante: datosEstudiante,
+        derivacion: eventoData.derivacion,
+        // Información adicional para n8n
+        fecha_creacion: eventoData.fecha_creacion,
+        fecha_actualizacion: eventoData.fecha_actualizacion
+      },
+      // Metadatos para n8n
+      metadata: {
+        timestamp: new Date().toISOString(),
+        action: 'evento_modificado',
+        source: 'DerivApp',
+        webhook_version: '1.0'
+      },
+      // Datos específicos para notificación
+      notificacion: {
+        tipo: 'citacion_modificada',
+        prioridad: eventoData.prioridad,
+        requiere_confirmacion: !eventoData.agendado,
+        canales: ['telegram'] // n8n puede expandir a email, whatsapp, etc.
+      }
+    };
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log('✅ Webhook de modificación enviado exitosamente a n8n');
+    console.log('📊 Status de respuesta:', response.status);
+    console.log('🔄 Evento modificado:', {
+      id: eventoData.id,
+      titulo: eventoData.titulo,
+      estudiante: datosEstudiante.nombre,
+      fecha: eventoData.fecha,
+      hora: eventoData.hora
+    });
+    console.log('📞 Datos del apoderado incluidos en webhook:');
+    console.log('   - Nombre:', datosEstudiante.apoderado);
+    console.log('   - Teléfono:', datosEstudiante.telefono_contacto);
+    console.log('   - Email:', datosEstudiante.email_contacto);
+    console.log('   - Telegram ID:', datosEstudiante.telegram_id || null);
+  } catch (error) {
+    console.error('Error enviando webhook de modificación a n8n:', error);
+    // No fallar la modificación del evento por error en webhook
   }
 };
 
@@ -147,6 +381,59 @@ export const crearEventoController = async (req, res) => {
   }
 };
 
+// Crear un nuevo evento con webhook de testing
+export const crearEventoTestController = async (req, res) => {
+  try {
+    const derivacionId = req.derivacionId || req.params.derivacionId;
+    const datosEvento = req.body;
+    
+    // Validar que derivacionId esté presente
+    if (!derivacionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de derivación no encontrado en la URL'
+      });
+    }
+    
+    // Validar campos requeridos
+    if (!datosEvento.titulo || !datosEvento.fecha || !datosEvento.tipo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Faltan campos requeridos: título, fecha y tipo son obligatorios'
+      });
+    }
+
+    // Necesitamos el estudianteId para acceder a la subcolección correcta
+    if (!datosEvento.estudianteId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Falta el ID del estudiante'
+      });
+    }
+
+    const evento = await crearEvento(datosEvento, datosEvento.estudianteId, derivacionId);
+    
+    // Enviar webhook de testing a n8n de forma asíncrona (no bloquear la respuesta)
+    enviarWebhookEventoTest(evento, datosEvento.estudianteId).catch(error => {
+      console.error('Error en webhook de testing (no crítico):', error);
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Evento creado exitosamente con webhook de testing',
+      evento
+    });
+    
+  } catch (error) {
+    console.error('Error al crear evento con testing:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear evento con testing',
+      error: error.message
+    });
+  }
+};
+
 // Obtener todos los eventos de una derivación
 export const obtenerEventosController = async (req, res) => {
   try {
@@ -199,10 +486,40 @@ export const obtenerEventoPorIdController = async (req, res) => {
 // Actualizar evento en una derivación específica
 export const actualizarEventoController = async (req, res) => {
   try {
-    const { id, derivacionId } = req.params;
+    const { id } = req.params;
+    const derivacionId = req.derivacionId || req.params.derivacionId;
     const datosEvento = req.body;
     
-    const evento = await actualizarEvento(id, datosEvento, derivacionId);
+    // Validar que derivacionId esté presente
+    if (!derivacionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de derivación no encontrado en la URL'
+      });
+    }
+
+    // Necesitamos el estudianteId para la actualización
+    if (!datosEvento.estudianteId) {
+      // Buscar el evento existente para obtener el estudianteId
+      const todosEventos = await obtenerEventosTodasDerivaciones();
+      const eventoExistente = todosEventos.find(e => e.id === id);
+      
+      if (!eventoExistente) {
+        return res.status(404).json({
+          success: false,
+          message: 'Evento no encontrado'
+        });
+      }
+      
+      datosEvento.estudianteId = eventoExistente.estudianteId;
+    }
+    
+    const evento = await actualizarEvento(id, datosEvento, datosEvento.estudianteId, derivacionId);
+    
+    // Enviar webhook cuando se modifica un evento (de forma asíncrona)
+    enviarWebhookEventoModificado(evento, datosEvento.estudianteId).catch(error => {
+      console.error('Error en webhook de modificación (no crítico):', error);
+    });
     
     res.json({
       success: true,
@@ -222,8 +539,29 @@ export const actualizarEventoController = async (req, res) => {
 // Eliminar evento de una derivación específica
 export const eliminarEventoController = async (req, res) => {
   try {
-    const { id, derivacionId } = req.params;
-    await eliminarEvento(id, derivacionId);
+    const { id } = req.params;
+    const derivacionId = req.derivacionId; // Viene del middleware
+
+    // Validar que derivacionId esté presente
+    if (!derivacionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de derivación no encontrado en la ruta'
+      });
+    }
+
+    // Necesitamos el estudianteId para eliminar correctamente
+    const todosEventos = await obtenerEventosTodasDerivaciones();
+    const eventoExistente = todosEventos.find(e => e.id === id);
+    
+    if (!eventoExistente) {
+      return res.status(404).json({
+        success: false,
+        message: 'Evento no encontrado'
+      });
+    }
+
+    await eliminarEvento(id, eventoExistente.estudianteId, derivacionId);
     
     res.json({
       success: true,
