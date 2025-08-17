@@ -50,7 +50,7 @@ router.post('/desde-alerta', crearEventoDesdeAlertaController);
 
 // Rutas para manejo del campo agendado
 router.patch('/:id/agendado', marcarEventoAgendadoController);
-router.get('/agendados/:estudianteId/:derivacionId', obtenerEventosAgendadosController);
-router.get('/no-agendados/:estudianteId/:derivacionId', obtenerEventosNoAgendadosController);
+router.get('/agendados/:estudianteId', obtenerEventosAgendadosController);
+router.get('/no-agendados/:estudianteId', obtenerEventosNoAgendadosController);
 
 export default router; 

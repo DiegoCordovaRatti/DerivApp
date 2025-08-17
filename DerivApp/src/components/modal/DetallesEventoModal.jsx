@@ -1,18 +1,30 @@
-import React from 'react';
-import { Modal, Descriptions, Tag, Typography, Space, Avatar, Divider } from 'antd';
+import React, { useState } from 'react';
+import { Modal, Descriptions, Tag, Typography, Space, Avatar, Divider, Switch, Button, message } from 'antd';
 import { 
   CalendarOutlined, 
   ClockCircleOutlined, 
   UserOutlined, 
   TeamOutlined,
   BookOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  CheckCircleOutlined,
+  ClockCircleFilled
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { marcarEventoAgendado } from '../../services/eventoService';
 
 const { Title, Text } = Typography;
 
-const DetallesEventoModal = ({ evento, visible, onClose }) => {
+const DetallesEventoModal = ({ evento, visible, onClose, onEventoActualizado }) => {
+  const [agendadoState, setAgendadoState] = useState(evento?.agendado || false);
+  const [loading, setLoading] = useState(false);
+
+  // Actualizar estado cuando cambie el evento
+  React.useEffect(() => {
+    setAgendadoState(evento?.agendado || false);
+  }, [evento]);
+
+  // Early return después de todos los hooks
   if (!evento) return null;
 
   // Colores por tipo de evento
@@ -65,6 +77,38 @@ const DetallesEventoModal = ({ evento, visible, onClose }) => {
     }
   };
 
+  // Manejar cambio de estado de agendado
+  const handleAgendadoChange = async (checked) => {
+    if (!evento.derivacionId) {
+      message.error('No se puede actualizar: falta información de derivación');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await marcarEventoAgendado(evento.id, checked, evento.derivacionId);
+      setAgendadoState(checked);
+      message.success(
+        checked 
+          ? 'Asistencia confirmada por el apoderado' 
+          : 'Evento marcado como pendiente de confirmación'
+      );
+      
+      // Notificar al componente padre que el evento fue actualizado
+      if (onEventoActualizado) {
+        onEventoActualizado({
+          ...evento,
+          agendado: checked
+        });
+      }
+    } catch (error) {
+      console.error('Error al actualizar estado:', error);
+      message.error('Error al actualizar el estado de confirmación');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Modal
       title={
@@ -99,6 +143,47 @@ const DetallesEventoModal = ({ evento, visible, onClose }) => {
             <Tag color={getStatusColor(evento.status)} size="large">
               {statusMapping[evento.status] || evento.status}
             </Tag>
+            <Tag 
+              color={agendadoState ? 'green' : 'orange'} 
+              icon={agendadoState ? <CheckCircleOutlined /> : <ClockCircleFilled />}
+              size="large"
+            >
+              {agendadoState ? 'CONFIRMADO' : 'PENDIENTE'}
+            </Tag>
+          </Space>
+        </div>
+
+        {/* Confirmación de Asistencia */}
+        <div style={{ 
+          marginBottom: '24px', 
+          padding: '16px', 
+          background: agendadoState ? '#f6ffed' : '#fff7e6',
+          border: `1px solid ${agendadoState ? '#b7eb8f' : '#ffd591'}`,
+          borderRadius: '6px'
+        }}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Title level={5} style={{ margin: 0 }}>
+              {agendadoState ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : <ClockCircleFilled style={{ color: '#faad14' }} />}
+              {' '}Confirmación de Asistencia
+            </Title>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {agendadoState 
+                ? 'El apoderado ha confirmado su asistencia a esta cita' 
+                : 'Pendiente de confirmación por parte del apoderado vía Telegram'
+              }
+            </Text>
+            <Space>
+              <Switch
+                checked={agendadoState}
+                onChange={handleAgendadoChange}
+                loading={loading}
+                checkedChildren="Confirmado"
+                unCheckedChildren="Pendiente"
+              />
+              <Text style={{ fontSize: '12px', color: '#666' }}>
+                {agendadoState ? 'Asistencia confirmada' : 'Marcar como confirmado'}
+              </Text>
+            </Space>
           </Space>
         </div>
 

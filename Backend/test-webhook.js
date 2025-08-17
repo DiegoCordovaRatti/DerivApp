@@ -59,8 +59,8 @@ const enviarWebhookEvento = async (eventoData) => {
 const eventoPrueba = {
   id: 'IcjVpg5mTDx8VH6T51sC',
   titulo: 'Citación de prueba',
-  fecha: '2025-08-09T23:26:05.705Z',
-  hora: '01:02',
+  fecha: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Mañana
+  hora: '14:30',
   tipo: 'seguimiento',
   prioridad: 'media',
   status: 'pendiente',

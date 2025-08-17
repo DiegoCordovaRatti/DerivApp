@@ -23,7 +23,9 @@ import {
   obtenerSeguimientosDerivacion,
   obtenerSeguimientoPorId,
   actualizarSeguimiento,
-  eliminarSeguimiento
+  eliminarSeguimiento,
+  // Estudiantes con derivaciones
+  obtenerEstudiantesConDerivaciones
 } from '../models/Estudiante.js';
 
 // ===== CONTROLADORES DE ESTUDIANTES =====
@@ -466,12 +468,15 @@ export const obtenerDerivacionesRecientesCtrl = async (req, res) => {
 // Obtener todas las derivaciones para selección de eventos
 export const obtenerTodasDerivacionesCtrl = async (req, res) => {
   try {
+    console.log('🔍 Obteniendo todas las derivaciones...');
     const derivaciones = await obtenerEstudiantesConDerivaciones();
+    console.log('👥 Estudiantes con derivaciones:', derivaciones.length);
     
     // Extraer solo las derivaciones con información básica del estudiante
     const derivacionesSimplificadas = [];
     derivaciones.forEach(estudiante => {
       if (estudiante.derivaciones && estudiante.derivaciones.length > 0) {
+        console.log(`📋 Estudiante ${estudiante.nombre} tiene ${estudiante.derivaciones.length} derivaciones`);
         estudiante.derivaciones.forEach(derivacion => {
           derivacionesSimplificadas.push({
             id: derivacion.id,
@@ -488,8 +493,12 @@ export const obtenerTodasDerivacionesCtrl = async (req, res) => {
             fecha_creacion: derivacion.fecha_creacion
           });
         });
+      } else {
+        console.log(`⚠️ Estudiante ${estudiante.nombre} no tiene derivaciones`);
       }
     });
+    
+    console.log('🎯 Total derivaciones simplificadas:', derivacionesSimplificadas.length);
     
     res.json({
       derivaciones: derivacionesSimplificadas,

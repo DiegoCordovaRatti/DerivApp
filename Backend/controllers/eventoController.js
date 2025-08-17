@@ -448,8 +448,19 @@ export const obtenerEstadisticasEventosTodasDerivacionesController = async (req,
 // Confirmar asistencia del apoderado (vía Telegram)
 export const marcarEventoAgendadoController = async (req, res) => {
   try {
-    const { id, derivacionId } = req.params;
+    const { id } = req.params;
+    const derivacionId = req.derivacionId; // Viene del middleware
     const { agendado } = req.body;
+
+    console.log('🎯 Marcando evento como agendado:', { id, derivacionId, agendado });
+
+    // Validar que derivacionId esté presente
+    if (!derivacionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de derivación no encontrado en la ruta'
+      });
+    }
 
     // Validar que agendado sea un booleano
     if (typeof agendado !== 'boolean') {
@@ -460,11 +471,22 @@ export const marcarEventoAgendadoController = async (req, res) => {
     }
 
     const datosActualizacion = {
-      agendado: agendado,
-      fecha_actualizacion: new Date()
+      agendado: agendado
     };
 
-    const evento = await actualizarEvento(id, datosActualizacion, derivacionId);
+    // Para ahora, usaremos una actualización simplificada
+    // Necesitamos encontrar el estudianteId desde los eventos de todas las derivaciones
+    const todosEventos = await obtenerEventosTodasDerivaciones();
+    const eventoEncontrado = todosEventos.find(e => e.id === id);
+    
+    if (!eventoEncontrado) {
+      return res.status(404).json({
+        success: false,
+        message: 'Evento no encontrado'
+      });
+    }
+
+    const evento = await actualizarEvento(id, datosActualizacion, eventoEncontrado.estudianteId, derivacionId);
     
     res.json({
       success: true,
@@ -484,7 +506,8 @@ export const marcarEventoAgendadoController = async (req, res) => {
 // Obtener eventos con asistencia confirmada por el apoderado
 export const obtenerEventosAgendadosController = async (req, res) => {
   try {
-    const { estudianteId, derivacionId } = req.params;
+    const { estudianteId } = req.params;
+    const derivacionId = req.derivacionId;
     const eventos = await obtenerEventosAgendados(estudianteId, derivacionId);
     
     res.json({
@@ -504,7 +527,8 @@ export const obtenerEventosAgendadosController = async (req, res) => {
 // Obtener eventos pendientes de confirmación de asistencia
 export const obtenerEventosNoAgendadosController = async (req, res) => {
   try {
-    const { estudianteId, derivacionId } = req.params;
+    const { estudianteId } = req.params;
+    const derivacionId = req.derivacionId;
     const eventos = await obtenerEventosNoAgendados(estudianteId, derivacionId);
     
     res.json({
