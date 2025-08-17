@@ -7,8 +7,15 @@ import {
   cambiarPassword,
   verificarUsuario,
   obtenerUsuariosPorEstablecimientoCtrl,
-  obtenerUsuariosPorRolCtrl
+  obtenerUsuariosPorRolCtrl,
+  // Nuevas funciones Firebase
+  crearUsuarioFirebase,
+  obtenerPerfilAutenticado,
+  verificarTokenFirebase,
+  obtenerRolesPermisos,
+  desactivarUsuario
 } from '../controllers/authController.js';
+import { verificarToken, verificarPermisos, verificarRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -22,10 +29,41 @@ router.put('/perfil', actualizarPerfil);
 router.put('/cambiar-password', cambiarPassword);
 router.post('/verificar', verificarUsuario);
 
+// ===== RUTAS FIREBASE AUTHENTICATION =====
+
+// Rutas públicas (sin autenticación)
+router.post('/firebase/verificar-token', verificarTokenFirebase);
+router.get('/roles-permisos', obtenerRolesPermisos);
+
+// Rutas protegidas (requieren autenticación)
+router.get('/perfil-autenticado', verificarToken, obtenerPerfilAutenticado);
+
+// Rutas administrativas (solo admin)
+router.post('/firebase/crear-usuario', 
+  verificarToken, 
+  verificarRoles('administrador'), 
+  crearUsuarioFirebase
+);
+
+router.patch('/desactivar/:usuarioId', 
+  verificarToken, 
+  verificarRoles('administrador'), 
+  desactivarUsuario
+);
+
 // ===== RUTAS DE USUARIOS =====
 
 // Rutas de consulta de usuarios
-router.get('/establecimiento/:establecimientoId', obtenerUsuariosPorEstablecimientoCtrl);
-router.get('/rol/:rol', obtenerUsuariosPorRolCtrl);
+router.get('/establecimiento/:establecimientoId', 
+  verificarToken,
+  verificarPermisos('usuarios', 'ver'),
+  obtenerUsuariosPorEstablecimientoCtrl
+);
+
+router.get('/rol/:rol', 
+  verificarToken,
+  verificarPermisos('usuarios', 'ver'),
+  obtenerUsuariosPorRolCtrl
+);
 
 export default router;

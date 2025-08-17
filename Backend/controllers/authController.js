@@ -4,8 +4,15 @@ import {
   obtenerUsuarioPorId, 
   actualizarUsuario,
   obtenerUsuariosPorEstablecimiento,
-  obtenerUsuariosPorRol
+  obtenerUsuariosPorRol,
+  // Nuevas funciones para Firebase Auth
+  crearPerfilUsuario,
+  obtenerPerfilUsuario,
+  actualizarUltimoAcceso,
+  ROLES,
+  PERMISOS
 } from '../models/Usuario.js';
+import { firebaseAdmin } from '../config/firebaseAdmin.js';
 
 // Registro de usuario
 export const registrarUsuario = async (req, res) => {
@@ -334,7 +341,233 @@ export const obtenerUsuariosPorRolCtrl = async (req, res) => {
   }
 };
 
+// ========== NUEVAS FUNCIONES FIREBASE AUTH ==========
+
+// Crear usuario con Firebase Auth
+export const crearUsuarioFirebase = async (req, res) => {
+  try {
+    const { email, password, nombre, apellido, rol, establecimientoId } = req.body;
+
+    // Validar campos requeridos
+    if (!email || !password || !nombre || !rol || !establecimientoId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, password, nombre, rol y establecimientoId son requeridos'
+      });
+    }
+
+    // Validar rol
+    if (!Object.values(ROLES).includes(rol)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rol inválido',
+        roles_disponibles: Object.values(ROLES)
+      });
+    }
+
+    // Crear usuario en Firebase Auth
+    const firebaseUser = await firebaseAdmin.auth().createUser({
+      email,
+      password,
+      displayName: `${nombre} ${apellido || ''}`.trim(),
+      emailVerified: false
+    });
+
+    // Crear perfil en Firestore
+    const perfilUsuario = await crearPerfilUsuario(firebaseUser.uid, {
+      email,
+      nombre,
+      apellido,
+      rol,
+      establecimientoId
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Usuario creado exitosamente',
+      usuario: {
+        uid: firebaseUser.uid,
+        ...perfilUsuario
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al crear usuario Firebase:', error);
+    
+    // Manejo de errores específicos de Firebase
+    if (error.code === 'auth/email-already-exists') {
+      return res.status(400).json({
+        success: false,
+        message: 'El email ya está registrado'
+      });
+    }
+    
+    if (error.code === 'auth/invalid-email') {
+      return res.status(400).json({
+        success: false,
+        message: 'Email inválido'
+      });
+    }
+    
+    if (error.code === 'auth/weak-password') {
+      return res.status(400).json({
+        success: false,
+        message: 'La contraseña debe tener al menos 6 caracteres'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear usuario',
+      error: error.message
+    });
+  }
+};
+
+// Obtener perfil del usuario autenticado
+export const obtenerPerfilAutenticado = async (req, res) => {
+  try {
+    // El usuario ya viene del middleware de autenticación
+    const usuario = req.usuario;
+    
+    res.json({
+      success: true,
+      usuario: {
+        id: usuario.id,
+        uid: usuario.uid,
+        email: usuario.email,
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        rol: usuario.rol,
+        establecimientoId: usuario.establecimientoId,
+        activo: usuario.activo,
+        permisos: usuario.permisos,
+        ultimo_acceso: usuario.ultimo_acceso,
+        fecha_creacion: usuario.fecha_creacion
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener perfil autenticado:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener perfil',
+      error: error.message
+    });
+  }
+};
+
+// Verificar token
+export const verificarTokenFirebase = async (req, res) => {
+  try {
+    const { token } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token requerido'
+      });
+    }
+    
+    // Verificar token con Firebase
+    const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
+    
+    // Obtener perfil del usuario
+    const perfil = await obtenerPerfilUsuario(decodedToken.uid);
+    
+    if (!perfil) {
+      return res.status(404).json({
+        success: false,
+        message: 'Perfil de usuario no encontrado'
+      });
+    }
+    
+    if (!perfil.activo) {
+      return res.status(403).json({
+        success: false,
+        message: 'Usuario inactivo'
+      });
+    }
+    
+    res.json({
+      success: true,
+      usuario: perfil,
+      firebase_uid: decodedToken.uid
+    });
+    
+  } catch (error) {
+    console.error('Error al verificar token:', error);
+    
+    if (error.code === 'auth/id-token-expired') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expirado'
+      });
+    }
+    
+    res.status(401).json({
+      success: false,
+      message: 'Token inválido'
+    });
+  }
+};
+
+// Obtener roles y permisos disponibles
+export const obtenerRolesPermisos = async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      roles: ROLES,
+      permisos: PERMISOS
+    });
+  } catch (error) {
+    console.error('Error al obtener roles y permisos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener roles y permisos'
+    });
+  }
+};
+
+// Desactivar usuario
+export const desactivarUsuario = async (req, res) => {
+  try {
+    const { usuarioId } = req.params;
+    
+    // Obtener perfil actual
+    const perfil = await obtenerUsuarioPorId(usuarioId);
+    if (!perfil) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+    
+    // Desactivar en Firestore
+    await actualizarUsuario(usuarioId, { activo: false });
+    
+    // Desactivar en Firebase Auth si tiene UID
+    if (perfil.uid) {
+      await firebaseAdmin.auth().updateUser(perfil.uid, { disabled: true });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Usuario desactivado exitosamente'
+    });
+    
+  } catch (error) {
+    console.error('Error al desactivar usuario:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al desactivar usuario',
+      error: error.message
+    });
+  }
+};
+
 export default {
+  // Funciones originales
   registrarUsuario,
   loginUsuario,
   obtenerPerfil,
@@ -342,5 +575,11 @@ export default {
   cambiarPassword,
   verificarUsuario,
   obtenerUsuariosPorEstablecimientoCtrl,
-  obtenerUsuariosPorRolCtrl
+  obtenerUsuariosPorRolCtrl,
+  // Nuevas funciones Firebase
+  crearUsuarioFirebase,
+  obtenerPerfilAutenticado,
+  verificarTokenFirebase,
+  obtenerRolesPermisos,
+  desactivarUsuario
 };
