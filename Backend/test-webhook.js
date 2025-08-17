@@ -22,11 +22,14 @@ const enviarWebhookEvento = async (eventoData) => {
         hora: eventoData.hora,
         tipo: eventoData.tipo,
         prioridad: eventoData.prioridad,
+        agendado: eventoData.agendado,
         descripcion: eventoData.descripcion,
+        estudianteId: eventoData.estudianteId,
+        derivacionId: eventoData.derivacionId,
         estudiante: eventoData.estudiante,
         derivacion: eventoData.derivacion
       },
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString(),  
       action: 'evento_creado'
     };
 
@@ -52,38 +55,39 @@ const enviarWebhookEvento = async (eventoData) => {
   }
 };
 
-// Datos de prueba con información del apoderado
+// Datos de prueba basados en evento real del módulo de agendamiento
 const eventoPrueba = {
-  id: 'evento_test_123',
-  titulo: 'Seguimiento conductual - PRUEBA',
-  fecha: '2024-12-15',
-  hora: '19:26',
-  tipo: 'intervencion',
-  prioridad: 'alta',
-  descripcion: 'Seguimiento del comportamiento del estudiante - PRUEBA WEBHOOK',
+  id: 'IcjVpg5mTDx8VH6T51sC',
+  titulo: 'Citación de prueba',
+  fecha: '2025-08-09T23:26:05.705Z',
+  hora: '01:02',
+  tipo: 'seguimiento',
+  prioridad: 'media',
+  status: 'pendiente',
+  agendado: false, // Campo booleano para confirmar asistencia del apoderado vía Telegram (false = pendiente)
+  descripcion: 'Prueba de webhook para citación de prueba',
+  estudianteId: '6Wi6gYZG1YPYEoR9XyA7',
+  derivacionId: '8rV0v3yrztZRn8t1bY21',
+  fecha_creacion: new Date('2025-08-09T23:39:36.000Z'),
+  fecha_actualizacion: new Date('2025-08-09T23:39:36.000Z'),
   estudiante: {
+    id: '6Wi6gYZG1YPYEoR9XyA7',
     nombre: 'Alejandro C',
     curso: '2°A',
     rut: '12345678-9',
     apoderado: 'María González',
     telefono_contacto: '+56912345678',
-    email_contacto: 'maria.gonzalez@email.com'
+    email_contacto: 'maria.gonzalez@email.com',
+    telegram_id: '8240797657',
+    estado: 'activo'
   },
   derivacion: {
-    motivo: 'Problemas de conducta',
-    descripcion: 'Comportamiento disruptivo en clase',
+    motivo: 'Seguimiento académico',
+    descripcion: 'Seguimiento del progreso académico del estudiante',
     estado: 'abierta'
   }
 };
 
-// Ejecutar prueba
-console.log('🧪 Iniciando prueba de webhook...');
-console.log('🔧 Configuración actual:');
-console.log('   - N8N_WEBHOOK_URL:', process.env.N8N_WEBHOOK_URL || 'NO CONFIGURADA');
-console.log('📞 Datos del apoderado incluidos:');
-console.log('   - Nombre:', eventoPrueba.estudiante.apoderado);
-console.log('   - Teléfono:', eventoPrueba.estudiante.telefono_contacto);
-console.log('   - Email:', eventoPrueba.estudiante.email_contacto);
 
 enviarWebhookEvento(eventoPrueba);
 
