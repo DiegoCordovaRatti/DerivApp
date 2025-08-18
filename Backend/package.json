@@ -9,7 +9,8 @@
     "dev": "nodemon index.js",
     "test-webhook": "node test-webhook.js",
     "test-waha": "node test-waha.js",
-    "test-firebase": "node test-firebase-auth.js"
+    "test-firebase": "node test-firebase-auth.js",
+    "create-admin": "node scripts/createAdminUser.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

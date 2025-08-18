@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Layout, 
   Menu, 
@@ -11,7 +11,9 @@ import {
   Drawer,
   List,
   Tag,
-  Divider
+  Divider,
+  Dropdown,
+  message
 } from 'antd';
 import { 
   BellOutlined, 
@@ -23,8 +25,12 @@ import {
   CloseOutlined,
   ExclamationCircleFilled,
   InfoCircleFilled,
-  CheckCircleFilled
+  CheckCircleFilled,
+  LogoutOutlined,
+  SettingOutlined,
+  CrownOutlined
 } from '@ant-design/icons';
+import { useAuth } from '../../contexts/AuthContext';
 import logoNavbar from '../../assets/images/logo.png';
 import './Navbar.scss';
 
@@ -33,8 +39,10 @@ const { Text, Title } = Typography;
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(location.pathname);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { userProfile, logout, hasPermission } = useAuth();
 
   // Datos mock de notificaciones
   const notifications = [
@@ -80,34 +88,88 @@ const Navbar = () => {
     }
   ];
 
-  // Configuración de los elementos del menú
+  // Configuración de los elementos del menú con verificación de permisos
   const menuItems = [
-    {
+    hasPermission('dashboard') && {
       key: '/',
       icon: <DashboardOutlined />,
       label: 'Panel de control',
     },
-    {
+    hasPermission('expedientes', 'ver') && {
       key: '/expedientes',
       icon: <FileTextOutlined />,
       label: 'Expedientes',
     },
-    {
+    hasPermission('alertas', 'ver') && {
       key: '/alertas',
       icon: <ExclamationCircleOutlined />,
       label: 'Alertas Tempranas',
     },
-    {
+    hasPermission('agenda', 'ver') && {
       key: '/agenda',
       icon: <CalendarOutlined />,
       label: 'Agendamiento',
     },
-    {
+    hasPermission('derivaciones', 'crear') && {
       key: '/formulario-derivacion',
       icon: <FileTextOutlined />,
       label: 'Nueva Derivación',
     },
-  ];
+  ].filter(Boolean); // Filtrar elementos falsy
+  
+  // Función para manejar logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      message.error('Error al cerrar sesión');
+    }
+  };
+
+  // Función para obtener rol badge
+  const getRoleBadge = (rol) => {
+    const roleConfig = {
+      'administrador': { color: 'purple', icon: <CrownOutlined /> },
+      'psicologo': { color: 'blue', icon: null },
+      'trabajador_social': { color: 'green', icon: null },
+      'jefe_convivencia': { color: 'orange', icon: null },
+      'docente': { color: 'default', icon: null }
+    };
+    
+    const config = roleConfig[rol] || roleConfig['docente'];
+    return (
+      <Tag color={config.color} icon={config.icon}>
+        {rol.replace('_', ' ').toUpperCase()}
+      </Tag>
+    );
+  };
+
+  // Menú del dropdown del usuario
+  const userMenuItems = [
+    {
+      key: 'perfil',
+      icon: <UserOutlined />,
+      label: 'Mi Perfil',
+      onClick: () => navigate('/perfil')
+    },
+    hasPermission('configuracion') && {
+      key: 'configuracion',
+      icon: <SettingOutlined />,
+      label: 'Configuración',
+      onClick: () => navigate('/configuracion')
+    },
+    {
+      type: 'divider'
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Cerrar Sesión',
+      onClick: handleLogout,
+      danger: true
+    }
+  ].filter(Boolean);
 
   const handleMenuClick = (e) => {
     setCurrent(e.key);
@@ -184,16 +246,29 @@ const Navbar = () => {
             </Badge>
 
             {/* Perfil de usuario */}
-            <Link to="/perfil" className="user-profile-link">
-              <div className="user-profile">
-                <Avatar 
-                  icon={<UserOutlined />} 
-                  className="user-avatar"
-                  size="small"
-                />
-                <Text className="user-name">María González</Text>
+            <Dropdown
+              menu={{ items: userMenuItems }}
+              placement="bottomRight"
+              trigger={['click']}
+            >
+              <div className="user-profile" style={{ cursor: 'pointer' }}>
+                <Space>
+                  <div className="user-info">
+                    <Text className="user-name" strong>
+                      {userProfile?.nombre} {userProfile?.apellido}
+                    </Text>
+                    <div className="user-role">
+                      {getRoleBadge(userProfile?.rol)}
+                    </div>
+                  </div>
+                  <Avatar 
+                    icon={<UserOutlined />} 
+                    className="user-avatar"
+                    size="default"
+                  />
+                </Space>
               </div>
-            </Link>
+            </Dropdown>
           </Space>
         </div>
       </div>

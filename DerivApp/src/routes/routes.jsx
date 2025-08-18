@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import Layout from "../layout/Layout";
+import ProtectedRoute from "../components/ProtectedRoute";
 import Dashboard from "../views/Dashboard/Dashboard";
 import Login from "../views/Login/Login";
 import Perfil from "../views/Perfil/Perfil";
@@ -11,35 +12,67 @@ import Error from "../views/Error/Error";
 
 export const routes = createBrowserRouter([
     {
+        path: '/login',
+        element: <Login />
+    },
+    {
         element: <Layout />,
         children: [
             {
                 path: '/',
-                element: <Dashboard />
+                element: (
+                    <ProtectedRoute requiredPermissions={{ seccion: 'dashboard' }}>
+                        <Dashboard />
+                    </ProtectedRoute>
+                )
             },
             {
-                path: '/login',
-                element: <Login />
+                path: '/dashboard',
+                element: (
+                    <ProtectedRoute requiredPermissions={{ seccion: 'dashboard' }}>
+                        <Dashboard />
+                    </ProtectedRoute>
+                )
             },
             {
                 path: '/perfil',
-                element: <Perfil />
+                element: (
+                    <ProtectedRoute>
+                        <Perfil />
+                    </ProtectedRoute>
+                )
             },
             {
                 path: '/expedientes',
-                element: <Expedientes />
+                element: (
+                    <ProtectedRoute requiredPermissions={{ seccion: 'expedientes', accion: 'ver' }}>
+                        <Expedientes />
+                    </ProtectedRoute>
+                )
             },
             {
                 path: '/formulario-derivacion',
-                element: <FormularioDerivacion />
+                element: (
+                    <ProtectedRoute requiredPermissions={{ seccion: 'derivaciones', accion: 'crear' }}>
+                        <FormularioDerivacion />
+                    </ProtectedRoute>
+                )
             },
             {
                 path: '/agenda',
-                element: <Agenda />
+                element: (
+                    <ProtectedRoute requiredPermissions={{ seccion: 'agenda', accion: 'ver' }}>
+                        <Agenda />
+                    </ProtectedRoute>
+                )
             },
             {
                 path: '/alertas',
-                element: <Alertas />
+                element: (
+                    <ProtectedRoute requiredPermissions={{ seccion: 'alertas', accion: 'ver' }}>
+                        <Alertas />
+                    </ProtectedRoute>
+                )
             },
             {
                 path: '*',
