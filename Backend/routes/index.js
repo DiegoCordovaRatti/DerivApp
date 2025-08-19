@@ -47,6 +47,13 @@ router.get('/eventos/estadisticas-todas-derivaciones', (req, res) => {
   });
 });
 
+// Ruta para obtener todos los eventos agendados (para notificaciones)
+router.get('/eventos/agendados', (req, res) => {
+  import('../controllers/eventoController.js').then(({ obtenerEventosAgendadosController }) => {
+    obtenerEventosAgendadosController(req, res);
+  });
+});
+
 // Ruta de prueba
 router.get('/', (req, res) => {
   res.json({

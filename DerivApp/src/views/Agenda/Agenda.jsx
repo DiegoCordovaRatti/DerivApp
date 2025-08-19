@@ -401,7 +401,7 @@ const Agenda = () => {
         <Col xs={24} lg={16}>
           <Card title="Calendario" className="calendar-card">
             <Calendar
-              dateCellRender={dateCellRender}
+              cellRender={dateCellRender}
               onSelect={onSelect}
               fullscreen={true}
             />

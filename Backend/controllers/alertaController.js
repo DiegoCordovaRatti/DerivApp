@@ -72,4 +72,46 @@ export const obtenerTodasLasAlertas = async (req, res) => {
       error: error.message
     });
   }
+};
+
+// Marcar alerta como leída (función placeholder)
+export const marcarAlertaComoLeida = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // TODO: Implementar lógica para marcar alerta como leída en la base de datos
+    // Por ahora retornamos éxito para que no haya errores en el frontend
+    
+    res.json({
+      success: true,
+      message: 'Alerta marcada como leída'
+    });
+  } catch (error) {
+    console.error('Error al marcar alerta como leída:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al marcar alerta como leída',
+      error: error.message
+    });
+  }
+};
+
+// Marcar todas las alertas como leídas (función placeholder)
+export const marcarTodasAlertasComoLeidas = async (req, res) => {
+  try {
+    // TODO: Implementar lógica para marcar todas las alertas como leídas
+    // Por ahora retornamos éxito para que no haya errores en el frontend
+    
+    res.json({
+      success: true,
+      message: 'Todas las alertas marcadas como leídas'
+    });
+  } catch (error) {
+    console.error('Error al marcar todas las alertas como leídas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al marcar todas las alertas como leídas',
+      error: error.message
+    });
+  }
 }; 

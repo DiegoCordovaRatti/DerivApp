@@ -1056,7 +1056,7 @@ const FormularioDerivacion = () => {
                     size="small" 
                     type="link" 
                     onClick={() => {
-
+                      console.log('Debug Validación:', {
                         formularioCompleto,
                         estudianteSeleccionado,
                         valores: form.getFieldsValue()

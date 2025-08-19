@@ -8,13 +8,16 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test-webhook": "node test-webhook.js",
-    "test-waha": "node test-waha.js"
+    "test-waha": "node test-waha.js",
+    "test-firebase": "node test-firebase-auth.js",
+    "create-admin": "node scripts/createAdminUser.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.18.2",
-    "firebase": "^11.10.0"
+    "firebase": "^11.10.0",
+    "firebase-admin": "^13.4.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
