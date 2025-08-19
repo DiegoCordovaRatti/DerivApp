@@ -170,38 +170,6 @@ const Perfil = () => {
                     {getRoleLabel(userProfile.rol)}
                   </Tag>
                 </Descriptions.Item>
-
-                                <Descriptions.Item 
-                  label={
-                    <Space>
-                      <CalendarOutlined />
-                      <span>Fecha de Registro</span>
-                    </Space>
-                  }
-                >
-                  {userProfile.fecha_creacion ? 
-                    (userProfile.fecha_creacion.toDate ? 
-                      dayjs(userProfile.fecha_creacion.toDate()).format('DD/MM/YYYY HH:mm') :
-                      dayjs(userProfile.fecha_creacion).format('DD/MM/YYYY HH:mm')
-                    ) : 'No disponible'
-                  }
-                </Descriptions.Item>
-
-                <Descriptions.Item 
-                  label={
-                    <Space>
-                      <CalendarOutlined />
-                      <span>Último Acceso</span>
-                    </Space>
-                  }
-                >
-                  {userProfile.ultimo_acceso ? 
-                    (userProfile.ultimo_acceso.toDate ? 
-                      dayjs(userProfile.ultimo_acceso.toDate()).format('DD/MM/YYYY HH:mm') :
-                      dayjs(userProfile.ultimo_acceso).format('DD/MM/YYYY HH:mm')
-                    ) : 'Primer acceso'
-                  }
-                </Descriptions.Item>
               </Descriptions>
             </div>
           </Card>
