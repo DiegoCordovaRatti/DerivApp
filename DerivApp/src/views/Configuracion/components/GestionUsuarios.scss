@@ -1,0 +1,143 @@
+.gestion-usuarios {
+  .usuarios-header {
+    margin-bottom: 24px;
+
+    h4 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: #1f2937;
+
+      .anticon {
+        color: #1890ff;
+      }
+    }
+  }
+
+  // Responsive adjustments for table
+  .ant-table-wrapper {
+    .ant-table {
+      .ant-table-tbody {
+        .ant-table-row {
+          .ant-table-cell {
+            // Ensure proper spacing on mobile
+            @media (max-width: 768px) {
+              padding: 8px 4px;
+              font-size: 12px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // User avatar and info styling
+  .ant-space {
+    .ant-avatar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  // Role tags styling
+  .ant-tag {
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 11px;
+    padding: 4px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    .anticon {
+      font-size: 10px;
+    }
+  }
+
+  // Action buttons styling
+  .ant-btn {
+    &.ant-btn-text {
+      border-radius: 6px;
+      font-weight: 500;
+
+      &:hover {
+        background: rgba(24, 144, 255, 0.1);
+      }
+
+      &.ant-btn-dangerous:hover {
+        background: rgba(255, 77, 79, 0.1);
+      }
+    }
+  }
+
+  // Modal form styling
+  .ant-modal {
+    .ant-form {
+      .ant-form-item {
+        margin-bottom: 16px;
+
+        .ant-form-item-label {
+          font-weight: 600;
+          color: #374151;
+        }
+      }
+    }
+  }
+
+  // Filters section styling
+  .ant-row {
+    .ant-col {
+      .ant-input-search,
+      .ant-select,
+      .ant-btn {
+        height: 36px;
+        border-radius: 8px;
+      }
+    }
+  }
+}
+
+// Mobile specific adjustments
+@media (max-width: 768px) {
+  .gestion-usuarios {
+    .usuarios-header {
+      text-align: center;
+      margin-bottom: 16px;
+
+      h4 {
+        font-size: 18px;
+        justify-content: center;
+      }
+    }
+
+    .ant-row {
+      .ant-col {
+        margin-bottom: 8px;
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .gestion-usuarios {
+    .ant-table-wrapper {
+      .ant-table {
+        font-size: 11px;
+
+        .ant-table-thead {
+          .ant-table-cell {
+            padding: 8px 4px;
+            font-size: 10px;
+          }
+        }
+      }
+    }
+
+    .ant-space {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+}

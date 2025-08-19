@@ -35,7 +35,13 @@ const Login = () => {
   // Redirigir si ya está autenticado
   useEffect(() => {
     if (isAuthenticated && userProfile) {
-      const redirectTo = location.state?.from?.pathname || '/dashboard';
+      // Determinar la página de inicio según el rol
+      let defaultRedirect = '/dashboard';
+      if (userProfile.rol === 'docente') {
+        defaultRedirect = '/'; // Página raíz para docentes
+      }
+      
+      const redirectTo = location.state?.from?.pathname || defaultRedirect;
       navigate(redirectTo, { replace: true });
     }
   }, [isAuthenticated, userProfile, navigate, location]);

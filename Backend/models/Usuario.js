@@ -75,8 +75,9 @@ const validarUsuario = (usuario) => {
     errores.push("El rol debe ser uno de: " + Object.values(ROLES).join(', '));
   }
   
-  if (!usuario.establecimientoId || usuario.establecimientoId.trim().length === 0) {
-    errores.push("El ID del establecimiento es obligatorio");
+  // El establecimientoId es opcional, pero si se proporciona debe ser válido
+  if (usuario.establecimientoId && usuario.establecimientoId.trim().length === 0) {
+    errores.push("El ID del establecimiento no puede estar vacío si se proporciona");
   }
   
   return {
@@ -99,7 +100,7 @@ export const crearPerfilUsuario = async (uid, datosUsuario) => {
       nombre: datosUsuario.nombre,
       apellido: datosUsuario.apellido || '',
       rol: datosUsuario.rol,
-      establecimientoId: datosUsuario.establecimientoId,
+      establecimientoId: datosUsuario.establecimientoId || null,
       activo: true,
       permisos: PERMISOS[datosUsuario.rol] || PERMISOS[ROLES.DOCENTE],
       fecha_creacion: new Date(),

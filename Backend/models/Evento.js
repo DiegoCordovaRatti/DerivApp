@@ -503,6 +503,75 @@ export const obtenerEventosAgendados = async (estudianteId, derivacionId) => {
   }
 };
 
+// Obtener todos los eventos agendados del sistema (para notificaciones)
+export const obtenerTodosLosEventosAgendados = async () => {
+  try {
+    const estudiantesSnapshot = await getDocs(collection(db, "estudiantes"));
+    const todosLosEventos = [];
+    
+    for (const estudianteDoc of estudiantesSnapshot.docs) {
+      const estudianteId = estudianteDoc.id;
+      const estudianteData = estudianteDoc.data();
+      
+      const derivacionesSnapshot = await getDocs(collection(db, "estudiantes", estudianteId, "derivaciones"));
+      
+      for (const derivacionDoc of derivacionesSnapshot.docs) {
+        const derivacionId = derivacionDoc.id;
+        const derivacionData = derivacionDoc.data();
+        
+        // Simplificar la consulta - solo filtrar por agendado sin ordenar
+        const eventosQuery = query(
+          collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "eventos"),
+          where("agendado", "==", true)
+        );
+        
+        const eventosSnapshot = await getDocs(eventosQuery);
+        
+        eventosSnapshot.forEach((eventoDoc) => {
+          const eventoData = eventoDoc.data();
+          todosLosEventos.push({
+            id: eventoDoc.id,
+            ...eventoData,
+            estudianteId,
+            derivacionId,
+            estudiante: {
+              id: estudianteId,
+              nombre: estudianteData.nombre,
+              apellido: estudianteData.apellido,
+              rut: estudianteData.rut,
+              curso: estudianteData.curso
+            },
+            derivacion: {
+              id: derivacionId,
+              motivo: derivacionData.motivo,
+              tipo: derivacionData.tipo
+            }
+          });
+        });
+      }
+    }
+    
+    // Ordenar en memoria después de obtener todos los datos
+    todosLosEventos.sort((a, b) => {
+      const fechaA = a.fecha_confirmacion || a.fecha_actualizacion || a.fecha;
+      const fechaB = b.fecha_confirmacion || b.fecha_actualizacion || b.fecha;
+      
+      try {
+        const timeA = fechaA?.toDate ? fechaA.toDate() : new Date(fechaA);
+        const timeB = fechaB?.toDate ? fechaB.toDate() : new Date(fechaB);
+        return timeB - timeA; // Más recientes primero
+      } catch (error) {
+        return 0; // Si hay error en fechas, mantener orden actual
+      }
+    });
+    
+    return todosLosEventos.slice(0, 20); // Solo los 20 más recientes
+  } catch (error) {
+    console.error('Error detallado en obtenerTodosLosEventosAgendados:', error);
+    throw new Error(`Error al obtener todos los eventos agendados: ${error.message}`);
+  }
+};
+
 // Obtener eventos no agendados de una derivación
 export const obtenerEventosNoAgendados = async (estudianteId, derivacionId) => {
   try {
@@ -558,6 +627,7 @@ export default {
   obtenerEventosProximosTodasDerivaciones,
   obtenerEstadisticasEventosTodasDerivaciones,
   obtenerEventosAgendados,
+  obtenerTodosLosEventosAgendados,
   obtenerEventosNoAgendados,
   marcarEventoAgendado
 }; 

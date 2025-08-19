@@ -349,10 +349,10 @@ export const crearUsuarioFirebase = async (req, res) => {
     const { email, password, nombre, apellido, rol, establecimientoId } = req.body;
 
     // Validar campos requeridos
-    if (!email || !password || !nombre || !rol || !establecimientoId) {
+    if (!email || !password || !nombre || !rol) {
       return res.status(400).json({
         success: false,
-        message: 'Email, password, nombre, rol y establecimientoId son requeridos'
+        message: 'Email, password, nombre y rol son requeridos'
       });
     }
 

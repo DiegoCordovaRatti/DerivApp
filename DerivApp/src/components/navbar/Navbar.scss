@@ -15,16 +15,31 @@
 .navbar-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   height: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 32px;
+  
+  // Layout con 3 secciones: logo (izq), menú (centro), perfil (der)
+  .navbar-brand {
+    flex: 0 0 auto;
+    margin-right: 40px;
+  }
+  
+  .navbar-navigation {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .navbar-actions {
+    flex: 0 0 auto;
+    margin-left: 40px;
+  }
 }
 
 // Logo y marca
 .navbar-brand {
-  flex-shrink: 0;
   
   .navbar-logo {
     text-decoration: none;
@@ -67,10 +82,6 @@
 
 // Navegación central
 .navbar-navigation {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   
   .navbar-menu {
     background: transparent;
@@ -80,8 +91,8 @@
     align-items: center;
     
     .ant-menu-item {
-      margin: 0 8px;
-      padding: 0 16px;
+      margin: 0 12px;
+      padding: 0 20px;
       border-radius: 8px;
       transition: all 0.3s ease;
       font-size: 14px;
@@ -272,13 +283,21 @@
 @media (max-width: 768px) {
   .navbar-container {
     padding: 0 16px;
+    
+    .navbar-brand {
+      margin-right: 20px;
+    }
+    
+    .navbar-actions {
+      margin-left: 20px;
+    }
   }
   
   .navbar-navigation {
     .navbar-menu {
       .ant-menu-item {
-        margin: 0 4px;
-        padding: 0 8px;
+        margin: 0 6px;
+        padding: 0 12px;
         
         a {
           span {

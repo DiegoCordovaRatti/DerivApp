@@ -54,5 +54,6 @@ router.post('/desde-alerta', crearEventoDesdeAlertaController);
 router.patch('/:id/agendado', marcarEventoAgendadoController);
 router.get('/agendados/:estudianteId', obtenerEventosAgendadosController);
 router.get('/no-agendados/:estudianteId', obtenerEventosNoAgendadosController);
+router.get('/agendados', obtenerEventosAgendadosController); // Para notificaciones - todos los eventos agendados
 
 export default router; 

@@ -15,6 +15,7 @@ import {
   obtenerEventosProximosTodasDerivaciones,
   obtenerEstadisticasEventosTodasDerivaciones,
   obtenerEventosAgendados,
+  obtenerTodosLosEventosAgendados,
   obtenerEventosNoAgendados,
   marcarEventoAgendado
 } from '../models/Evento.js';
@@ -846,7 +847,15 @@ export const obtenerEventosAgendadosController = async (req, res) => {
   try {
     const { estudianteId } = req.params;
     const derivacionId = req.derivacionId;
-    const eventos = await obtenerEventosAgendados(estudianteId, derivacionId);
+    
+    let eventos;
+    if (estudianteId) {
+      // Obtener eventos agendados de un estudiante específico
+      eventos = await obtenerEventosAgendados(estudianteId, derivacionId);
+    } else {
+      // Obtener todos los eventos agendados (para notificaciones)
+      eventos = await obtenerTodosLosEventosAgendados();
+    }
     
     res.json({
       success: true,

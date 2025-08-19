@@ -3,11 +3,13 @@ import Layout from "../layout/Layout";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Dashboard from "../views/Dashboard/Dashboard";
 import Login from "../views/Login/Login";
+import Bienvenida from "../views/Bienvenida/Bienvenida";
 import Perfil from "../views/Perfil/Perfil";
 import Expedientes from "../views/Expedientes/Expedientes";
 import FormularioDerivacion from "../views/FormularioDerivacion/FormularioDerivacion";
 import Agenda from "../views/Agenda/Agenda";
 import Alertas from "../views/Alertas/Alertas";
+import Configuracion from "../views/Configuracion/Configuracion";
 import Error from "../views/Error/Error";
 
 export const routes = createBrowserRouter([
@@ -21,8 +23,8 @@ export const routes = createBrowserRouter([
             {
                 path: '/',
                 element: (
-                    <ProtectedRoute requiredPermissions={{ seccion: 'dashboard' }}>
-                        <Dashboard />
+                    <ProtectedRoute>
+                        <Bienvenida />
                     </ProtectedRoute>
                 )
             },
@@ -71,6 +73,14 @@ export const routes = createBrowserRouter([
                 element: (
                     <ProtectedRoute requiredPermissions={{ seccion: 'alertas', accion: 'ver' }}>
                         <Alertas />
+                    </ProtectedRoute>
+                )
+            },
+            {
+                path: '/configuracion',
+                element: (
+                    <ProtectedRoute requiredPermissions={{ seccion: 'configuracion' }}>
+                        <Configuracion />
                     </ProtectedRoute>
                 )
             },
