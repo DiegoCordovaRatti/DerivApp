@@ -1051,21 +1051,6 @@ const FormularioDerivacion = () => {
                   <Text type="secondary" style={{ fontSize: '12px' }}>
                     Complete todos los campos requeridos para enviar la derivación
                   </Text>
-                  <br />
-                  <Button 
-                    size="small" 
-                    type="link" 
-                    onClick={() => {
-                      console.log('Debug Validación:', {
-                        formularioCompleto,
-                        estudianteSeleccionado,
-                        valores: form.getFieldsValue()
-                      });
-                      validarFormularioCompleto();
-                    }}
-                  >
-                    Debug: Verificar Validación
-                  </Button>
                 </div>
               )}
             </Col>
