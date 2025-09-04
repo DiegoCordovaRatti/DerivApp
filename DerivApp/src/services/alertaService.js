@@ -41,4 +41,36 @@ export const buscarAlertas = async (texto) => {
     alerta.motivo.toLowerCase().includes(texto.toLowerCase()) ||
     alerta.descripcion.toLowerCase().includes(texto.toLowerCase())
   );
+};
+
+// Apagar alerta (desactivar)
+export const apagarAlerta = async (estudianteId, derivacionId, alertaId) => {
+  try {
+    const response = await apiRequest('PATCH', `/alertas/${estudianteId}/${derivacionId}/${alertaId}/apagar`);
+    
+    if (response.success) {
+      return { success: true, message: response.message };
+    } else {
+      throw new Error(response.message || 'Error al apagar alerta');
+    }
+  } catch (error) {
+    console.error('Error al apagar alerta:', error);
+    throw error;
+  }
+};
+
+// Activar alerta
+export const activarAlerta = async (estudianteId, derivacionId, alertaId) => {
+  try {
+    const response = await apiRequest('PATCH', `/alertas/${estudianteId}/${derivacionId}/${alertaId}/activar`);
+    
+    if (response.success) {
+      return { success: true, message: response.message };
+    } else {
+      throw new Error(response.message || 'Error al activar alerta');
+    }
+  } catch (error) {
+    console.error('Error al activar alerta:', error);
+    throw error;
+  }
 }; 

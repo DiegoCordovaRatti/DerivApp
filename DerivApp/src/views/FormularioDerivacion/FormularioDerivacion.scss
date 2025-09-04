@@ -200,6 +200,28 @@
     }
   }
 
+  // Estilos para AutoComplete con TextArea (ocultar bordes del AutoComplete)
+  .ant-select-auto-complete .ant-select-selector {
+    border-radius: 6px;
+  }
+
+  // Estilos específicos para el campo de descripción detallada
+  .descripcion-field {
+    .ant-select-selector {
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      
+      &:hover,
+      &:focus,
+      &.ant-select-focused {
+        border: none !important;
+        box-shadow: none !important;
+      }
+    }
+  }
+
   .autocomplete-field {
     .ant-select-dropdown {
       max-height: 200px;
@@ -223,6 +245,8 @@
     .ant-select-item-option-content {
       font-weight: 500;
     }
+
+
   }
 
   // Estilos para campos deshabilitados

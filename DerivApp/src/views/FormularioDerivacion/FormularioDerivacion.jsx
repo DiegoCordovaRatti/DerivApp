@@ -72,6 +72,7 @@ const FormularioDerivacion = () => {
   // Estados para el modal de resumen
   const [modalResumenVisible, setModalResumenVisible] = useState(false);
   const [derivacionCreada, setDerivacionCreada] = useState(null);
+  const [estudianteModal, setEstudianteModal] = useState(null);
   
   // Estado para validar si el formulario está completo
   const [formularioCompleto, setFormularioCompleto] = useState(false);
@@ -238,7 +239,8 @@ const FormularioDerivacion = () => {
     
     // Llenar automáticamente los campos del estudiante
       form.setFieldsValue({
-      estudiante_id: estudianteSeleccionado.id,
+      buscar_estudiante: estudianteSeleccionado.nombre, // Mostrar el nombre en el campo visible
+      estudiante_id: estudianteSeleccionado.id, // Guardar el ID en un campo oculto
       nombre: estudianteSeleccionado.nombre,
       rut: estudianteSeleccionado.rut,
       curso: estudianteSeleccionado.curso,
@@ -260,6 +262,8 @@ const FormularioDerivacion = () => {
       // Limpiar campos si se borra la búsqueda
       setEstudianteSeleccionado(null);
       form.setFieldsValue({
+        buscar_estudiante: '',
+        estudiante_id: undefined,
         nombre: '',
         rut: '',
         curso: '',
@@ -324,7 +328,8 @@ const FormularioDerivacion = () => {
       // Seleccionar automáticamente el nuevo estudiante
       setEstudianteSeleccionado(nuevoEstudiante);
       form.setFieldsValue({
-        estudiante_id: nuevoEstudiante.id,
+        buscar_estudiante: nuevoEstudiante.nombre, // Mostrar el nombre en el campo visible
+        estudiante_id: nuevoEstudiante.id, // Guardar el ID en un campo oculto
         nombre: nuevoEstudiante.nombre,
         rut: nuevoEstudiante.rut,
         curso: nuevoEstudiante.curso,
@@ -453,8 +458,9 @@ const FormularioDerivacion = () => {
   };
 
   // Función para mostrar modal de resumen
-  const mostrarResumenDerivacion = (derivacion) => {
+  const mostrarResumenDerivacion = (derivacion, estudiante) => {
     setDerivacionCreada(derivacion);
+    setEstudianteModal(estudiante);
     setModalResumenVisible(true);
   };
 
@@ -462,12 +468,14 @@ const FormularioDerivacion = () => {
   const cerrarResumenDerivacion = () => {
     setModalResumenVisible(false);
     setDerivacionCreada(null);
+    setEstudianteModal(null);
   };
 
   // Función para ir a expedientes desde el modal
   const irAExpedientes = () => {
     setModalResumenVisible(false);
     setDerivacionCreada(null);
+    setEstudianteModal(null);
     navigate('/expedientes');
   };
 
@@ -561,7 +569,7 @@ const FormularioDerivacion = () => {
       setOpcionesDescripciones([]);
       
       // Mostrar modal de resumen
-      mostrarResumenDerivacion(datosDerivacion);
+      mostrarResumenDerivacion(datosDerivacion, estudianteSeleccionado);
       
       if (response && response.success) {
 
@@ -652,7 +660,7 @@ const FormularioDerivacion = () => {
               <Col xs={24}>
                 <Form.Item
                   label="Buscar Estudiante"
-                  name="estudiante_id"
+                  name="buscar_estudiante"
                   rules={[{ required: true, message: 'Por favor busque y seleccione un estudiante' }]}
                 >
                   <AutoComplete
@@ -683,6 +691,12 @@ const FormularioDerivacion = () => {
                   />
                 </Form.Item>
               </Col>
+              
+              {/* Campo oculto para el ID del estudiante */}
+              <Form.Item name="estudiante_id" style={{ display: 'none' }}>
+                <Input type="hidden" />
+              </Form.Item>
+              
               <Col xs={24} md={12}>
                 <Form.Item
                   label="Nombre Completo"
@@ -967,7 +981,7 @@ const FormularioDerivacion = () => {
                 />
               </Form.Item>
             </Col>
-              <Col xs={24}>
+                            <Col xs={24}>
               <Form.Item
                   label="Descripción Detallada"
                   name="descripcion"
@@ -975,7 +989,7 @@ const FormularioDerivacion = () => {
                 >
                   <AutoComplete
                     placeholder="Describa con más detalle la situación del estudiante o seleccione una plantilla recomendada"
-                  size="large"
+                    size="large"
                     options={opcionesDescripciones}
                     onSearch={handleFiltrarDescripciones}
                     onSelect={handleDescripcionSelect}
@@ -990,9 +1004,17 @@ const FormularioDerivacion = () => {
                         : "No se encontraron plantillas recomendadas"
                     }
                     disabled={false}
-                    className="autocomplete-field"
-                />
-              </Form.Item>
+                    className="autocomplete-field descripcion-field"
+                  >
+                    <TextArea
+                      rows={6}
+                      style={{ 
+                        minHeight: '120px',
+                        resize: 'vertical'
+                      }}
+                    />
+                  </AutoComplete>
+                </Form.Item>
             </Col>
             <Col xs={24} md={12}>
               <Form.Item
@@ -1071,7 +1093,7 @@ const FormularioDerivacion = () => {
         visible={modalResumenVisible}
         onClose={cerrarResumenDerivacion}
         derivacion={derivacionCreada}
-        estudiante={estudianteSeleccionado}
+        estudiante={estudianteModal}
         onIrAExpedientes={irAExpedientes}
       />
     </div>

@@ -57,7 +57,8 @@ export const obtenerTodasLasAlertas = async (req, res) => {
       motivo: alerta.derivacion?.motivo || 'Derivación psicosocial',
       descripcion: alerta.derivacion?.descripcion || 'Estudiante derivado para atención psicosocial',
       derivacionId: alerta.derivacionId,
-      estudianteId: alerta.estudianteId
+      estudianteId: alerta.estudianteId,
+      activo: alerta.activo // ✅ Agregar campo activo
     }));
 
     res.json({
@@ -111,6 +112,75 @@ export const marcarTodasAlertasComoLeidas = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al marcar todas las alertas como leídas',
+      error: error.message
+    });
+  }
+};
+
+// Apagar alerta (desactivar)
+export const apagarAlerta = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId, alertaId } = req.params;
+    
+    // Importar la función del modelo
+    const { apagarAlerta: apagarAlertaModel } = await import('../models/DerivacionSubcollections.js');
+    
+    const resultado = await apagarAlertaModel(estudianteId, derivacionId, alertaId);
+    
+    res.json({
+      success: true,
+      message: resultado.message
+    });
+  } catch (error) {
+    console.error('Error al apagar alerta:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al apagar alerta',
+      error: error.message
+    });
+  }
+};
+
+// Activar alerta
+export const activarAlerta = async (req, res) => {
+  try {
+    const { estudianteId, derivacionId, alertaId } = req.params;
+    
+    // Importar la función del modelo
+    const { activarAlerta: activarAlertaModel } = await import('../models/DerivacionSubcollections.js');
+    
+    const resultado = await activarAlertaModel(estudianteId, derivacionId, alertaId);
+    
+    res.json({
+      success: true,
+      message: resultado.message
+    });
+  } catch (error) {
+    console.error('Error al activar alerta:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al activar alerta',
+      error: error.message
+    });
+  }
+};
+
+// Migrar alertas existentes (función temporal para compatibilidad)
+export const migrarAlertas = async (req, res) => {
+  try {
+    const { migrarAlertasExistentes } = await import('../models/Estudiante.js');
+    const resultado = await migrarAlertasExistentes();
+    
+    res.json({
+      success: true,
+      message: 'Migración completada',
+      resultado
+    });
+  } catch (error) {
+    console.error('Error en migración de alertas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en migración de alertas',
       error: error.message
     });
   }

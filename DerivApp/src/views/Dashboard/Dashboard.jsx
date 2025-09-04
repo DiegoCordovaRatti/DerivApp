@@ -17,7 +17,9 @@ import {
 import './Dashboard.scss';
 import { 
   obtenerEstadisticasDashboard, 
-  obtenerAlertasRecientes
+  obtenerAlertasRecientes,
+  obtenerEstadisticasDerivacionesPorCategoria,
+  obtenerEstadisticasAlertasPorNivel
 } from '../../services/dashboardService';
 import { obtenerEventosProximosTodasDerivaciones, obtenerEstadisticasEventosTodasDerivaciones } from '../../services/eventoService';
 import { DetallesEventoModal } from '../../components/modal';
@@ -38,6 +40,8 @@ const Dashboard = () => {
   const [alertasRecientes, setAlertasRecientes] = useState([]);
   const [eventosProximos, setEventosProximos] = useState([]);
   const [estadisticasEventos, setEstadisticasEventos] = useState({});
+  const [estadisticasDerivacionesPorCategoria, setEstadisticasDerivacionesPorCategoria] = useState({});
+  const [estadisticasAlertasPorNivel, setEstadisticasAlertasPorNivel] = useState({});
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
   const [modalEventoVisible, setModalEventoVisible] = useState(false);
 
@@ -51,11 +55,13 @@ const Dashboard = () => {
       setLoading(true);
       
       // Cargar datos en paralelo para mejor rendimiento
-      const [statsResponse, alertasResponse, eventosResponse, statsEventosResponse] = await Promise.all([
+      const [statsResponse, alertasResponse, eventosResponse, statsEventosResponse, statsDerivacionesResponse, statsAlertasResponse] = await Promise.all([
         obtenerEstadisticasDashboard(),
         obtenerAlertasRecientes(),
         obtenerEventosProximosTodasDerivaciones(),
-        obtenerEstadisticasEventosTodasDerivaciones()
+        obtenerEstadisticasEventosTodasDerivaciones(),
+        obtenerEstadisticasDerivacionesPorCategoria(),
+        obtenerEstadisticasAlertasPorNivel()
       ]);
 
       // Procesar estadísticas del dashboard
@@ -82,6 +88,16 @@ const Dashboard = () => {
       // Procesar estadísticas de eventos
       if (statsEventosResponse && typeof statsEventosResponse === 'object') {
         setEstadisticasEventos(statsEventosResponse);
+      }
+
+      // Procesar estadísticas de derivaciones por categoría
+      if (statsDerivacionesResponse && statsDerivacionesResponse.success) {
+        setEstadisticasDerivacionesPorCategoria(statsDerivacionesResponse.estadisticas);
+      }
+
+      // Procesar estadísticas de alertas por nivel
+      if (statsAlertasResponse && statsAlertasResponse.success) {
+        setEstadisticasAlertasPorNivel(statsAlertasResponse.estadisticas);
       }
 
     } catch (error) {
@@ -447,6 +463,60 @@ const Dashboard = () => {
                         <div className="stat-label">Seguimientos</div>
                       </div>
                     </Col>
+                  </Row>
+                </Card>
+              </Col>
+            </Row>
+          )}
+
+          {/* Estadísticas de Derivaciones por Categoría */}
+          {Object.keys(estadisticasDerivacionesPorCategoria).length > 0 && (
+            <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
+              <Col xs={24}>
+                <Card title="Derivaciones por Categoría" className="stats-card">
+                  <Row gutter={[16, 16]}>
+                    {Object.entries(estadisticasDerivacionesPorCategoria).map(([categoria, cantidad]) => (
+                      <Col xs={12} sm={8} lg={4} key={categoria}>
+                        <div className="stat-item">
+                          <div className="stat-number">{cantidad}</div>
+                          <div className="stat-label">{categoria}</div>
+                        </div>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card>
+              </Col>
+            </Row>
+          )}
+
+          {/* Estadísticas de Alertas por Nivel */}
+          {Object.keys(estadisticasAlertasPorNivel).length > 0 && (
+            <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
+              <Col xs={24}>
+                <Card title="Resumen de Alertas por Nivel" className="stats-card">
+                  <Row gutter={[16, 16]}>
+                    {Object.entries(estadisticasAlertasPorNivel).map(([nivel, cantidad]) => {
+                      // Determinar color según el nivel de alerta
+                      let color = '#1890ff'; // Azul por defecto
+                      if (nivel.includes('crítica') || nivel.includes('critica')) {
+                        color = '#ff4d4f'; // Rojo
+                      } else if (nivel.includes('alta')) {
+                        color = '#fa8c16'; // Naranja
+                      } else if (nivel.includes('moderada')) {
+                        color = '#faad14'; // Amarillo
+                      } else if (nivel.includes('Bajo') || nivel.includes('Sin riesgo')) {
+                        color = '#52c41a'; // Verde
+                      }
+                      
+                      return (
+                        <Col xs={12} sm={6} key={nivel}>
+                          <div className="stat-item">
+                            <div className="stat-number" style={{ color: color }}>{cantidad}</div>
+                            <div className="stat-label">{nivel}</div>
+                          </div>
+                        </Col>
+                      );
+                    })}
                   </Row>
                 </Card>
               </Col>

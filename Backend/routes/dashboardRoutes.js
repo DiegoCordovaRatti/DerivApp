@@ -1,5 +1,11 @@
 import express from 'express';
-import { obtenerEstadisticasDashboard, obtenerAlertasRecientes, obtenerEventosProximos } from '../controllers/dashboardController.js';
+import { 
+  obtenerEstadisticasDashboard, 
+  obtenerAlertasRecientes, 
+  obtenerEventosProximos,
+  obtenerEstadisticasDerivacionesPorCategoria,
+  obtenerEstadisticasAlertasPorNivel
+} from '../controllers/dashboardController.js';
 
 const router = express.Router();
 
@@ -11,5 +17,11 @@ router.get('/alertas-recientes', obtenerAlertasRecientes);
 
 // Obtener eventos próximos
 router.get('/eventos-proximos', obtenerEventosProximos);
+
+// Obtener estadísticas de derivaciones por categoría
+router.get('/derivaciones-por-categoria', obtenerEstadisticasDerivacionesPorCategoria);
+
+// Obtener estadísticas de alertas por nivel
+router.get('/alertas-por-nivel', obtenerEstadisticasAlertasPorNivel);
 
 export default router; 

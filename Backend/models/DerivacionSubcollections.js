@@ -145,6 +145,7 @@ export const crearAlerta = async (estudianteId, derivacionId, datosAlerta) => {
       ...datosAlerta,
       fecha: new Date(datosAlerta.fecha || new Date()),
       estado: datosAlerta.estado || 'activa',
+      activo: true, // Campo para controlar si la alerta está activa
       fecha_creacion: new Date()
     };
     
@@ -212,11 +213,39 @@ export const cambiarEstadoAlerta = async (estudianteId, derivacionId, alertaId, 
   }
 };
 
+// Apagar alerta (desactivar)
+export const apagarAlerta = async (estudianteId, derivacionId, alertaId) => {
+  try {
+    const alertaRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas", alertaId);
+    await updateDoc(alertaRef, {
+      activo: false,
+      fecha_actualizacion: new Date()
+    });
+    return { message: "Alerta apagada correctamente" };
+  } catch (error) {
+    throw new Error(`Error al apagar alerta: ${error.message}`);
+  }
+};
+
+// Activar alerta
+export const activarAlerta = async (estudianteId, derivacionId, alertaId) => {
+  try {
+    const alertaRef = doc(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas", alertaId);
+    await updateDoc(alertaRef, {
+      activo: true,
+      fecha_actualizacion: new Date()
+    });
+    return { message: "Alerta activada correctamente" };
+  } catch (error) {
+    throw new Error(`Error al activar alerta: ${error.message}`);
+  }
+};
+
 // Obtener alertas activas
 export const obtenerAlertasActivas = async (estudianteId, derivacionId) => {
   try {
     const alertaRef = collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas");
-    const q = query(alertaRef, where("estado", "==", "activa"), orderBy("fecha", "desc"));
+    const q = query(alertaRef, where("activo", "==", true), orderBy("fecha", "desc"));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
@@ -254,6 +283,8 @@ export default {
   obtenerAlerta,
   actualizarAlerta,
   cambiarEstadoAlerta,
+  apagarAlerta,
+  activarAlerta,
   obtenerAlertasActivas,
   eliminarAlerta
 }; 

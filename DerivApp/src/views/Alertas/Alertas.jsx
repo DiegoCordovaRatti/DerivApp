@@ -35,7 +35,7 @@ import {
   ScheduleOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { obtenerAlertas } from '../../services/alertaService';
+import { obtenerAlertas, apagarAlerta } from '../../services/alertaService';
 import { crearEventoDesdeAlerta } from '../../services/eventoService';
 import dayjs from 'dayjs';
 import './Alertas.scss';
@@ -117,9 +117,19 @@ const Alertas = () => {
   };
 
   // Función para manejar el botón "Apagar alerta"
-  const handleApagarAlerta = (alertaId) => {
-    message.info('Función "Apagar alerta" será implementada próximamente');
-    // Aquí se implementará la lógica para apagar la alerta
+  const handleApagarAlerta = async (alerta) => {
+    try {
+      await apagarAlerta(alerta.estudianteId, alerta.derivacionId, alerta.id);
+      
+      message.success('Alerta apagada correctamente');
+      
+      // Recargar las alertas para reflejar el cambio
+      cargarAlertas();
+      
+    } catch (error) {
+      console.error('Error al apagar alerta:', error);
+      message.error('Error al apagar la alerta');
+    }
   };
 
   // Función para manejar el botón "Agendar"
@@ -460,7 +470,7 @@ const Alertas = () => {
                             icon={<BellOutlined />}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleApagarAlerta(alerta.id);
+                              handleApagarAlerta(alerta);
                             }}
                             style={{ flex: 1 }}
                           >

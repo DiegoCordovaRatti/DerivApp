@@ -16,8 +16,14 @@ export const notificacionService = {
       if (alertasResponse.status === 'fulfilled' && alertasResponse.value.success) {
         const alertas = alertasResponse.value.alertas || [];
         alertas.forEach(alerta => {
+          // Solo procesar alertas activas
+          if (!alerta.activo) {
+            return;
+          }
+          
           // Determinar el tipo y color basado en nivelAlerta desde la base de datos
           const nivelAlerta = alerta.nivelAlerta || alerta.nivel_alerta || 'Alerta baja';
+          
           let type, color;
           
           if (nivelAlerta.toLowerCase().includes('crítica') || nivelAlerta.toLowerCase().includes('critica')) {
@@ -126,6 +132,8 @@ export const notificacionService = {
         const timeB = new Date(b.datos?.fecha_creacion?.toDate?.() || b.datos?.fecha_creacion || b.time);
         return timeB - timeA;
       });
+
+
 
       return {
         success: true,

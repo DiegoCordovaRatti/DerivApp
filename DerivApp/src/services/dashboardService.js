@@ -53,4 +53,26 @@ export const obtenerConteoAlertas = async () => {
     console.error('Error al obtener conteo de alertas:', error);
     throw error;
   }
+};
+
+// Obtener estadísticas de derivaciones por categoría
+export const obtenerEstadisticasDerivacionesPorCategoria = async () => {
+  try {
+    const response = await apiRequest('GET', '/dashboard/derivaciones-por-categoria');
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas de derivaciones por categoría:', error);
+    throw error;
+  }
+};
+
+// Obtener estadísticas de alertas por nivel
+export const obtenerEstadisticasAlertasPorNivel = async () => {
+  try {
+    const response = await apiRequest('GET', '/dashboard/alertas-por-nivel');
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas de alertas por nivel:', error);
+    throw error;
+  }
 }; 

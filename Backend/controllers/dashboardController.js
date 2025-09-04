@@ -55,6 +55,111 @@ export const obtenerEstadisticasDashboard = async (req, res) => {
   }
 };
 
+// Obtener estadísticas de derivaciones por categoría
+export const obtenerEstadisticasDerivacionesPorCategoria = async (req, res) => {
+  try {
+    const estudiantes = await obtenerEstudiantesConDerivaciones();
+    
+    // Inicializar contadores por categoría - incluyendo todas las categorías del sistema
+    const estadisticasPorCategoria = {
+      'Violencia o Abuso': 0,
+      'Emocional': 0,
+      'Conductual / Disciplinario': 0,
+      'Académico': 0,
+      'Inasistencia / Riesgo de Deserción': 0,
+      'Familiar': 0,
+      'Socioeconómico': 0,
+      'Contexto Social / Relaciones': 0,
+      'Diversidad e Inclusión': 0,
+      'Higiene / Autocuidado': 0,
+      'Otro': 0
+    };
+    
+    // Contar derivaciones por categoría
+    estudiantes.forEach(estudiante => {
+      if (estudiante.derivaciones) {
+        estudiante.derivaciones.forEach(derivacion => {
+          const tipoCaso = derivacion.tipo_caso || derivacion.categoria || derivacion.motivo || 'Otro';
+          
+          // Mapear tipos de caso exactos de la base de datos
+          if (tipoCaso.toLowerCase() === 'violencia' || tipoCaso.toLowerCase() === 'abuso') {
+            estadisticasPorCategoria['Violencia o Abuso']++;
+          } else if (tipoCaso.toLowerCase() === 'emocional') {
+            estadisticasPorCategoria['Emocional']++;
+          } else if (tipoCaso.toLowerCase() === 'conductual' || tipoCaso.toLowerCase() === 'disciplinario') {
+            estadisticasPorCategoria['Conductual / Disciplinario']++;
+          } else if (tipoCaso.toLowerCase() === 'academico') {
+            estadisticasPorCategoria['Académico']++;
+          } else if (tipoCaso.toLowerCase() === 'inasistencia' || tipoCaso.toLowerCase() === 'desercion') {
+            estadisticasPorCategoria['Inasistencia / Riesgo de Deserción']++;
+          } else if (tipoCaso.toLowerCase() === 'familiar') {
+            estadisticasPorCategoria['Familiar']++;
+          } else if (tipoCaso.toLowerCase() === 'socioeconomico') {
+            estadisticasPorCategoria['Socioeconómico']++;
+          } else if (tipoCaso.toLowerCase() === 'social' || tipoCaso.toLowerCase() === 'relaciones') {
+            estadisticasPorCategoria['Contexto Social / Relaciones']++;
+          } else if (tipoCaso.toLowerCase() === 'diversidad' || tipoCaso.toLowerCase() === 'inclusion') {
+            estadisticasPorCategoria['Diversidad e Inclusión']++;
+          } else if (tipoCaso.toLowerCase() === 'higiene' || tipoCaso.toLowerCase() === 'autocuidado') {
+            estadisticasPorCategoria['Higiene / Autocuidado']++;
+          } else {
+            estadisticasPorCategoria['Otro']++;
+          }
+        });
+      }
+    });
+
+    res.json({
+      success: true,
+      estadisticas: estadisticasPorCategoria
+    });
+  } catch (error) {
+    console.error('Error al obtener estadísticas de derivaciones por categoría:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas de derivaciones por categoría',
+      error: error.message
+    });
+  }
+};
+
+// Obtener estadísticas de alertas por nivel
+export const obtenerEstadisticasAlertasPorNivel = async (req, res) => {
+  try {
+    const alertas = await obtenerAlertasRecientesModel();
+    
+    // Inicializar contadores por nivel
+    const estadisticasPorNivel = {
+      'Alerta crítica': 0,
+      'Alerta alta': 0,
+      'Alerta moderada': 0,
+      'Sin riesgo / Bajo': 0
+    };
+    
+    // Contar alertas por nivel
+    alertas.forEach(alerta => {
+      const nivel = alerta.nivelAlerta || 'Sin riesgo / Bajo';
+      if (estadisticasPorNivel.hasOwnProperty(nivel)) {
+        estadisticasPorNivel[nivel]++;
+      } else {
+        estadisticasPorNivel['Sin riesgo / Bajo']++;
+      }
+    });
+
+    res.json({
+      success: true,
+      estadisticas: estadisticasPorNivel
+    });
+  } catch (error) {
+    console.error('Error al obtener estadísticas de alertas por nivel:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas de alertas por nivel',
+      error: error.message
+    });
+  }
+};
+
 // Obtener alertas recientes para el dashboard
 export const obtenerAlertasRecientes = async (req, res) => {
   try {

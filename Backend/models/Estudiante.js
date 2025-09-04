@@ -393,67 +393,89 @@ export const eliminarDerivacion = async (estudianteId, derivacionId) => {
 // Función para calcular el nivel de alerta basado en seguimientos y derivación
 const calcularNivelAlerta = (seguimientos, derivacion) => {
   try {
-    // Valores de resultado de seguimientos
+    // Paso 1: Asignación de valores a los seguimientos (vᵢ)
     const valoresResultado = {
-      'positivo': 1,
-      'negativo': 3,
-      'neutro': 2,
-      'pendiente': 2
+      'positivo': -1,    // Avance positivo → valor negativo (mejora)
+      'negativo': 1,     // Retroceso/crítico → valor positivo (empeoramiento)
+      'neutro': 0,       // Neutral → valor cero
+      'pendiente': 0     // Pendiente → valor cero (neutral)
     };
 
-    // Valores de prioridad
+    // Paso 2: Definir la prioridad del caso (P)
     const valoresPrioridad = {
-      'alta': 3,
+      'baja': 1,
       'media': 2,
-      'baja': 1
+      'alta': 3
     };
 
-    // Valores de estado de derivación
+    // Paso 3: Considerar el estado del caso (E)
     const valoresEstado = {
-      'abierta': 2,
-      'cerrada': 1
+      'abierta': 1,      // Caso abierto → permite evaluación
+      'cerrada': 0,      // Caso cerrado → anula el score
+      'en_proceso': 1,   // En proceso → considerado abierto
+      'resuelto': 0      // Resuelto → considerado cerrado
     };
-
-    // Calcular score de seguimientos
-    let scoreSeguimientos = 0;
-    if (seguimientos && seguimientos.length > 0) {
-      seguimientos.forEach(seguimiento => {
-        const valor = valoresResultado[seguimiento.resultado?.toLowerCase()] || 2;
-        scoreSeguimientos += valor;
-      });
-      scoreSeguimientos = scoreSeguimientos / seguimientos.length;
-    } else {
-      scoreSeguimientos = 2; // Valor neutro si no hay seguimientos
-    }
 
     // Obtener valores de la derivación
     const prioridad = derivacion.prioridad || 'baja';
-    const estado = derivacion.estado_derivacion || 'abierta';
+    const estado = derivacion.estado_derivacion || derivacion.estado || 'abierta';
     
-    const valorPrioridad = valoresPrioridad[prioridad] || 1;
-    const valorEstado = valoresEstado[estado] || 1;
+    const P = valoresPrioridad[prioridad.toLowerCase()] || 1;
+    const E = valoresEstado[estado.toLowerCase()] || 1;
+    const n = seguimientos ? seguimientos.length : 0;
 
-    // Calcular score real
-    const scoreReal = (scoreSeguimientos * 0.5) + (valorPrioridad * 0.3) + (valorEstado * 0.2);
+    // Si el caso está cerrado, no hay alerta
+    if (E === 0) {
+      return {
+        scoreReal: 0,
+        scoreNormalizado: 0,
+        nivelAlerta: 'Sin riesgo / Bajo'
+      };
+    }
 
-    // Normalizar score (0-100)
-    const scoreNormalizado = Math.min(100, Math.max(0, (scoreReal / 3) * 100));
+    // Paso 4: Calcular el puntaje total (Sᵣ)
+    let sumaSeguimientos = 0;
+    if (seguimientos && seguimientos.length > 0) {
+      seguimientos.forEach(seguimiento => {
+        const valor = valoresResultado[seguimiento.resultado?.toLowerCase()] || 0;
+        sumaSeguimientos += valor;
+      });
+    }
 
-    // Determinar nivel de alerta
+    // Fórmula: Sᵣ = (Σᵢ₌₁ⁿ vᵢ) · P · E
+    const Sr = sumaSeguimientos * P * E;
+
+    // Paso 5: Calcular el puntaje máximo y mínimo posibles
+    // S_max = n · 1 · P · E = n · P · E
+    const S_max = n * P * E;
+    // S_min = n · (-1) · P · E = -n · P · E
+    const S_min = -n * P * E;
+
+    // Paso 6: Normalizar el puntaje (Sₙ)
+    let Sn = 0;
+    if (S_max !== S_min) {
+      // Fórmula: Sₙ = ((Sᵣ - S_min) / (S_max - S_min)) * 100
+      // Simplificada: Sₙ = ((Sᵣ + nPE) / (2nPE)) * 100
+      Sn = ((Sr - S_min) / (S_max - S_min)) * 100;
+      // Asegurar que esté en el rango 0-100
+      Sn = Math.max(0, Math.min(100, Sn));
+    }
+
+    // Paso 7: Interpretar el nivel de alerta según el puntaje (Sₙ)
     let nivelAlerta;
-    if (scoreNormalizado >= 80) {
+    if (Sn >= 80) {
       nivelAlerta = 'Alerta crítica';
-    } else if (scoreNormalizado >= 60) {
+    } else if (Sn >= 60) {
       nivelAlerta = 'Alerta alta';
-    } else if (scoreNormalizado >= 40) {
+    } else if (Sn >= 30) {
       nivelAlerta = 'Alerta moderada';
     } else {
       nivelAlerta = 'Sin riesgo / Bajo';
     }
 
     return {
-      scoreReal,
-      scoreNormalizado,
+      scoreReal: Sr,
+      scoreNormalizado: Sn,
       nivelAlerta
     };
   } catch (error) {
@@ -493,11 +515,14 @@ const actualizarAlertaDerivacion = async (estudianteId, derivacionId) => {
     };
 
     if (alertaExistente) {
-      // Actualizar alerta existente
-      await actualizarAlerta(estudianteId, derivacionId, alertaExistente.id, datosAlerta);
-      return { id: alertaExistente.id, ...datosAlerta };
+      // Actualizar alerta existente y activarla
+      await actualizarAlerta(estudianteId, derivacionId, alertaExistente.id, {
+        ...datosAlerta,
+        activo: true // Activar la alerta cuando se agrega un seguimiento
+      });
+      return { id: alertaExistente.id, ...datosAlerta, activo: true };
     } else {
-      // Crear nueva alerta
+      // Crear nueva alerta (ya se crea como activa por defecto)
       return await crearAlerta(estudianteId, derivacionId, datosAlerta);
     }
   } catch (error) {
@@ -611,6 +636,7 @@ export const crearAlerta = async (estudianteId, derivacionId, datosAlerta) => {
   try {
     const alertaData = {
       ...datosAlerta,
+      activo: true, // ✅ Agregar campo activo por defecto
       fecha_creacion: new Date(),
       fecha_actualizacion: new Date()
     };
@@ -683,6 +709,26 @@ export const eliminarAlerta = async (estudianteId, derivacionId, alertaId) => {
 // Obtener la alerta más reciente de una derivación
 export const obtenerAlertaReciente = async (estudianteId, derivacionId) => {
   try {
+    // Primero intentar obtener alertas activas
+    try {
+      const q = query(
+        collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas"),
+        where("activo", "==", true),
+        orderBy("fecha_creacion", "desc"),
+        limit(1)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        return { id: doc.id, ...doc.data() };
+      }
+    } catch (error) {
+      // Si falla el filtro por activo, obtener todas las alertas y filtrar manualmente
+      console.log(`Filtro por activo falló para ${estudianteId}/${derivacionId}, usando fallback:`, error.message);
+    }
+    
+    // Fallback: obtener todas las alertas y filtrar manualmente
     const q = query(
       collection(db, "estudiantes", estudianteId, "derivaciones", derivacionId, "alertas"),
       orderBy("fecha_creacion", "desc"),
@@ -692,10 +738,20 @@ export const obtenerAlertaReciente = async (estudianteId, derivacionId) => {
     
     if (!querySnapshot.empty) {
       const doc = querySnapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
-    } else {
-      return null;
+      const alertaData = doc.data();
+      
+      // Si la alerta no tiene campo activo, considerarla como activa (compatibilidad hacia atrás)
+      if (alertaData.activo === undefined) {
+        alertaData.activo = true;
+      }
+      
+      // Solo retornar si está activa
+      if (alertaData.activo) {
+        return { id: doc.id, ...alertaData };
+      }
     }
+    
+    return null;
   } catch (error) {
     throw new Error(`Error al obtener alerta reciente: ${error.message}`);
   }
@@ -774,6 +830,49 @@ export const obtenerAlertasRecientes = async () => {
   }
 };
 
+// Función para migrar alertas existentes y agregar campo activo
+export const migrarAlertasExistentes = async () => {
+  try {
+    console.log('Iniciando migración de alertas existentes...');
+    const estudiantes = await obtenerEstudiantesConDerivaciones();
+    let alertasMigradas = 0;
+    
+    for (const estudiante of estudiantes) {
+      if (estudiante.derivaciones && estudiante.derivaciones.length > 0) {
+        for (const derivacion of estudiante.derivaciones) {
+          try {
+            // Obtener todas las alertas de esta derivación
+            const alertasRef = collection(db, "estudiantes", estudiante.id, "derivaciones", derivacion.id, "alertas");
+            const querySnapshot = await getDocs(alertasRef);
+            
+            for (const alertaDoc of querySnapshot.docs) {
+              const alertaData = alertaDoc.data();
+              
+              // Si la alerta no tiene campo activo, agregarlo
+              if (alertaData.activo === undefined) {
+                await updateDoc(alertaDoc.ref, {
+                  activo: true,
+                  fecha_actualizacion: new Date()
+                });
+                alertasMigradas++;
+                console.log(`Alerta migrada: ${estudiante.nombre} - ${derivacion.motivo}`);
+              }
+            }
+          } catch (error) {
+            console.error(`Error migrando alertas para derivación ${derivacion.id}:`, error);
+          }
+        }
+      }
+    }
+    
+    console.log(`Migración completada. ${alertasMigradas} alertas migradas.`);
+    return { success: true, alertasMigradas };
+  } catch (error) {
+    console.error('Error en migración de alertas:', error);
+    throw error;
+  }
+};
+
 export default {
   crearEstudiante,
   obtenerEstudiantes,
@@ -807,6 +906,7 @@ export default {
   eliminarAlerta,
   obtenerAlertaReciente,
   obtenerAlertasRecientes,
+  migrarAlertasExistentes,
   obtenerEstudiantesConDerivaciones,
   validarEstudiante
 };
