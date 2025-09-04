@@ -7,6 +7,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "test-webhook": "node test-webhook.js",
     "test-waha": "node test-waha.js",
     "test-firebase": "node test-firebase-auth.js",
@@ -20,6 +23,12 @@
     "firebase-admin": "^13.4.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "jest": "^29.5.0",
+    "supertest": "^6.3.0",
+    "@jest/globals": "^29.5.0",
+    "@babel/core": "^7.22.0",
+    "@babel/preset-env": "^7.22.0",
+    "babel-jest": "^29.5.0"
   }
 }

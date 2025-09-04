@@ -50,35 +50,6 @@ const Configuracion = () => {
       ),
       children: <GestionUsuarios />
     },
-    {
-      key: 'general',
-      label: (
-        <Space>
-          <SettingOutlined />
-          <span>Configuración General</span>
-        </Space>
-      ),
-      children: <ConfiguracionGeneral />
-    },
-    {
-      key: 'seguridad',
-      label: (
-        <Space>
-          <SecurityScanOutlined />
-          <span>Seguridad</span>
-        </Space>
-      ),
-      children: (
-        <Card>
-          <Alert
-            message="Funcionalidad en Desarrollo"
-            description="Las configuraciones de seguridad estarán disponibles próximamente."
-            type="info"
-            showIcon
-          />
-        </Card>
-      )
-    }
   ];
 
   return (
