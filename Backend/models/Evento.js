@@ -19,6 +19,8 @@ export const crearEvento = async (datosEvento, estudianteId, derivacionId) => {
   try {
     const eventoData = {
       ...datosEvento,
+      estudianteId: estudianteId,
+      derivacionId: derivacionId,
       agendado: datosEvento.agendado || false, // Campo booleano para confirmar asistencia del apoderado vía Telegram
       fecha_creacion: new Date(),
       fecha_actualizacion: new Date()
