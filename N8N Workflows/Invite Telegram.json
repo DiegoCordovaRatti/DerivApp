@@ -1,0 +1,784 @@
+{
+  "name": "Invite Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        0
+      ],
+      "id": "9d673f8c-527b-4d9f-a0d3-b336822837b0",
+      "name": "Telegram Trigger",
+      "webhookId": "d7a43c83-c28e-4006-86dd-129656b19d52",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un asistente cordial y profesional del equipo de Convivencia Escolar.  \nRedacta un mensaje muy breve y claro dirigido a un apoderado para entregarle las distintas opciones del chat a partir de este prompt:\n***Este es el mensaje recibido: \"{{ $('Telegram Trigger').item.json.message.text }}\"\nSi el mensaje recibido  es \"enrolar\" (\"enrola\" o \"Enrolar\") (no hace fata que sea literalemnte la palabre, interpretalo), retorna para unicamente la palabra \"enrolar\" en el output.\n- enrolar: para hacerlo escriba \"enrolar\"\nAgradece y despídete cordialmente.\nde parte del asistente inteligente (explícitamente) de Convivencia Escolar \"DerivApp\".\n\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "58d36d4d-b353-41f3-839e-240023f3c5b0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        256
+      ],
+      "id": "7f935314-5ccb-4d06-bed8-b0d743dca182",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "AQwDEzPaQqte6eUm",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        992,
+        384
+      ],
+      "id": "90b7a893-11db-4011-991f-627c8e94aa28",
+      "name": "Send a text message",
+      "webhookId": "613038fb-8a62-49fb-8900-900105e87176",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.telegram_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "fc6fd926-cd5f-48b0-b9e9-22c879565ac8",
+      "name": "Send a chat action",
+      "webhookId": "1e5513a9-6ffe-4df1-8494-021535e711ed",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        256
+      ],
+      "id": "feb5b839-3695-4a2d-bc38-513d011c646f",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "074cfffd-065c-4088-8d08-1a1f706deb56",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "=enrolar",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        0
+      ],
+      "id": "a93f84e6-1f15-4acd-8a00-c10819d3e375",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0dc0d2c7-5600-4c72-bac5-5bc41af5bfe8",
+              "name": "telegram_id",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        0
+      ],
+      "id": "7af232d6-a457-4bb2-9a14-84b9900ded68",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "={{ $('Edit Fields').item.json.telegram_id }}",
+        "message": "Escriba en el siguiente enlace el RUT del estudiante, envielo y vuelva al chat",
+        "responseType": "freeText",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        992,
+        -80
+      ],
+      "id": "49ff676a-a185-4edb-846c-bbfdcc2a3c1e",
+      "name": "Send message and wait for response",
+      "webhookId": "4529618a-44a3-4ff2-ac78-83dd3be72daf",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Procesa los datos en el mensaje anterior {{ $json.data.text }} y únicamente retorna el número de RUT en formato de número identificador del país Chile. Solo el numero de rut con puntos y guiones.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1136,
+        -80
+      ],
+      "id": "436d5127-50e5-4b15-b668-29b4f9c63088",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1136,
+        96
+      ],
+      "id": "8f7c2421-482e-4e67-9946-e76d80168a41",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "AQwDEzPaQqte6eUm",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f10aab1e-fc6c-4cc6-b788-a08da169046b",
+              "name": "=_id",
+              "value": "={{ $json._id }}",
+              "type": "string"
+            },
+            {
+              "id": "100e683f-05d0-4e50-befb-e41e682b62d7",
+              "name": "current_telegram_id",
+              "value": "={{ $json.telegram_id }}",
+              "type": "string"
+            },
+            {
+              "id": "938036be-651e-405b-bcc1-67cb9267369a",
+              "name": "telegram_id",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1584,
+        -80
+      ],
+      "id": "472b0b4f-c60f-464a-a040-21489490f069",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5b83168e-2dea-439a-bb5d-302077165ae9",
+                    "leftValue": "={{ $json._id.isNotEmpty() && $json.current_telegram_id.isEmpty() }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Enrolar chat ID"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c0acb4ff-e621-4c42-9b44-96950a38dd95",
+                    "leftValue": "={{ $json._id.isNotEmpty() && $json.telegram_id.isNotEmpty() }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Ya enrolado"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json._id}}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    },
+                    "id": "be6ff13e-21b9-4eb4-9452-0c3124bfda45"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Registrar estudiante"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1744,
+        -96
+      ],
+      "id": "aa1a82e5-3bb6-4002-a5e6-e355958cf46a",
+      "name": "Switch",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "message": "Estimado apoderado,\nEl estudiante no se encuentra registrado en nuestra base de datos.\n¿Desea revisar el RUT ingresado o solicitar el registro del estudiante?",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "✅ Reingresar RUT",
+            "disapproveLabel": "❌ Contactar a Convivencia Escolar"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2000,
+        96
+      ],
+      "id": "84e1ada9-3618-41b2-a20d-b2405b97e23f",
+      "name": "Send message and wait for response1",
+      "webhookId": "613038fb-8a62-49fb-8900-900105e87176",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f59aea9d-96b4-4efb-8d9c-de0286ce0806",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2208,
+        96
+      ],
+      "id": "b332a4d8-7388-469d-a709-eaedad4ceaf8",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=Estudiante ya está enrolado en nuestra base de datos, espere a que lo contacten para su próxima citación.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2000,
+        -80
+      ],
+      "id": "cb6ec8f1-8dea-49c8-9ab1-7e5d29bdc701",
+      "name": "Send a text message1",
+      "webhookId": "613038fb-8a62-49fb-8900-900105e87176",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "query",
+        "projectId": "derivaapp",
+        "query": "={   \"structuredQuery\": {     \"where\": {       \"fieldFilter\": {         \"field\": { \"fieldPath\": \"rut\" },         \"op\": \"EQUAL\",         \"value\": { \"stringValue\": \"{{ $json.output }}\" }       }     },     \"from\": [       { \"collectionId\": \"estudiantes\" }     ]   } }"
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        1424,
+        -80
+      ],
+      "id": "dc5a7475-4fb4-486c-a6ac-3f366d1eada8",
+      "name": "Query a document",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleApi": {
+          "id": "r2aq0qdlo6GqI59s",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "upsert",
+        "projectId": "derivaapp",
+        "collection": "=estudiantes",
+        "updateKey": "_id",
+        "columns": "telegram_id"
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        -272
+      ],
+      "id": "e67b21cf-899c-401f-acd7-ae07375f002c",
+      "name": "Create or update a document",
+      "credentials": {
+        "googleApi": {
+          "id": "r2aq0qdlo6GqI59s",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=El estudiante ha sido enrolado exitosamente en el sistema de agendamiento y comunicación de DerivApp. Desde ahora recibirá sus citaciones por este medio.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2224,
+        -272
+      ],
+      "id": "6e1d67b5-5680-48dd-aad1-4ece9bd7c2c5",
+      "name": "Send a text message2",
+      "webhookId": "613038fb-8a62-49fb-8900-900105e87176",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "7592902328",
+        "text": "=Estudiante con rut: \"{{ $('AI Agent1').item.json.output }}\" desea ser registrado en el sistema",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2528,
+        80
+      ],
+      "id": "17d69aca-9ba7-49de-9eab-b7de1a718127",
+      "name": "Send a text message3",
+      "webhookId": "8f43ce73-0d66-4c6b-a3dd-e3c58ae1d877",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a chat action": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send a chat action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Query a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Create or update a document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send message and wait for response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query a document": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a document": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message2": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1a83047f-a75c-4520-9031-1b7f54b3bfe1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8e5a49bc101881907a9b6fc861a7ea45eeb4b73a140db25a65822279f6168a52"
+  },
+  "id": "NJu4Fq0ohjp4OYrJ",
+  "tags": []
+}

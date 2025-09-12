@@ -1,0 +1,523 @@
+{
+  "name": "Agendamiento",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agendar",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2416,
+        32
+      ],
+      "id": "cf0d22ba-b62c-4510-84dd-1a44ac90d4ac",
+      "name": "Webhook1",
+      "webhookId": "aca5cbf1-ecc1-48ab-8ffe-29ed45272428"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Eres un asistente cordial y profesional del equipo de Convivencia Escolar.  \nRedacta un mensaje muy breve y claro dirigido a un apoderado ({{ $json.body.evento.estudiante.apoderado }}) del estudiante ({{ $json.body.evento.estudiante.nombre }}), para invitarlos a una citación con el departamento de convivencia para el seguimiento del caso de derivación escolar del estudiante. Haz una lista con los detalles de la citación con emojis antes del detalle:\n- Lugar: Escuela Básica Heroes de Yungay.\n- Fecha: {{ $json.body.evento.fecha }}\n- Hora: {{ $json.body.evento.hora }}\n- Prioridad:{{ $json.body.evento.prioridad }}\n- Tipo: {{ $json.body.evento.tipo }}\n- Motivo citación: {{ $json.body.evento.titulo }}\n\nAgradece y despídete cordialmente.\nde parte del asistente inteligente (explícitamente) de Convivencia Escolar \"DerivApp\".",
+              "role": "assistant"
+            },
+            {
+              "content": "="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -2128,
+        32
+      ],
+      "id": "faf219a1-4f9d-4f8c-8144-61c969358303",
+      "name": "Message a model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "AQwDEzPaQqte6eUm",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "={{ $('Webhook1').item.json.body.evento.estudiante.telegram_id }}",
+        "message": "={{ $json.message.content }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "✅ Agendar",
+            "disapproveLabel": "❌ Reagendar"
+          }
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1840,
+        32
+      ],
+      "id": "9ee3cbc4-0770-4a98-9053-fb6ceb9dffd6",
+      "name": "Send message and wait for response",
+      "webhookId": "908ae74b-7a7d-4034-bc97-60fba071cba3",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e44703e6-daf5-4061-b743-dc6a4e7622a8",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1632,
+        32
+      ],
+      "id": "ac5f57b5-c3b5-4604-bb3f-4b12d2317a75",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Webhook1').item.json.body.evento.estudiante.telegram_id }}",
+        "text": "Agradecemos su confirmación. Los esperamos.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -688,
+        -128
+      ],
+      "id": "5f045e9e-71e2-4445-a0a2-f691e9e6e83a",
+      "name": "Send a text message",
+      "webhookId": "1b04f8fc-a9bd-46cd-a56f-1bc50aaf84ba",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "={{ $('Webhook1').item.json.body.evento.estudiante.telegram_id }}",
+        "message": "Por favor, indique en un solo mensaje su disponibilidad para que podamos enviársela al encargado del caso. De esta manera, él le hará llegar una nueva invitación ajustada a su disponibilidad.",
+        "responseType": "freeText",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1328,
+        224
+      ],
+      "id": "da7f3c95-207d-499d-a04a-f5f231b861d7",
+      "name": "Send message and wait for response1",
+      "webhookId": "1b04f8fc-a9bd-46cd-a56f-1bc50aaf84ba",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Eres un asistente cordial y profesional del equipo de Convivencia Escolar.  \nAgradece la información y entrega al usuario un resumen en una lista numerada, la disponibilidad mencionada con fechas ({{ $json.data.text }}) para enviarla al encargado del caso. Indícale que, con esa información, recibirá una nueva invitación ajustada a su horario.\nAgradece y despídete cordialmente.\nde parte de DerivApp, asistente inteligente (explícitamente) de Convivencia Escolar.",
+              "role": "assistant"
+            },
+            {
+              "content": "="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -1136,
+        224
+      ],
+      "id": "dfa53237-b1df-4476-b74d-c1fd682ac001",
+      "name": "Resumen Reagendamiento",
+      "credentials": {
+        "openAiApi": {
+          "id": "AQwDEzPaQqte6eUm",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "={{ $('Webhook1').item.json.body.evento.estudiante.telegram_id }}",
+        "message": "={{ $json.message.content }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "✅  Confirmar",
+            "disapproveLabel": "❌ Cambiar Respuesta"
+          }
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -816,
+        224
+      ],
+      "id": "f790eeda-372c-4181-89b8-0a31bf4fdca4",
+      "name": "Send message and wait for response2",
+      "webhookId": "d28af43d-be24-4d6f-848a-d0df19188f4a",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ded7de93-a8ea-4599-be7c-6efb6c9f3c47",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -624,
+        224
+      ],
+      "id": "0c2992bf-c18e-4c2d-a92f-c5fe4b31aa4a",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Webhook1').item.json.body.evento.estudiante.telegram_id }}",
+        "text": "Agradecemos su confirmación. Prontamente le volveremos a contactar para confirmar su reagendamiento. \\n DerivApp \\n Asistente inteligente de Convivencia Escolar ",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        208
+      ],
+      "id": "b78bca78-93b8-4ac3-bd0b-2ed246992fd1",
+      "name": "Send a text message1",
+      "webhookId": "1b04f8fc-a9bd-46cd-a56f-1bc50aaf84ba",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "89dc4fc2-3650-42c9-a518-f7912de048f4",
+              "name": "_id",
+              "value": "={{ $('Webhook1').item.json.body.evento.id }}",
+              "type": "string"
+            },
+            {
+              "id": "4ede5c82-5a72-4f1e-af16-8f45201434ea",
+              "name": "agendado",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1328,
+        -128
+      ],
+      "id": "30e5f8bc-29ea-4533-ae29-c57d04a85c30",
+      "name": "Datos Evento"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "upsert",
+        "projectId": "derivaapp",
+        "collection": "=estudiantes/{{ $('Webhook1').item.json.body.evento.estudiante.id }}/derivaciones/{{ $('Webhook1').item.json.body.evento.derivacionId }}/eventos",
+        "updateKey": "=_id",
+        "columns": "=agendado"
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -944,
+        -128
+      ],
+      "id": "a4107a7a-befd-4297-a846-1357f7e79f26",
+      "name": "Create or update a document",
+      "credentials": {
+        "googleApi": {
+          "id": "r2aq0qdlo6GqI59s",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "7592902328",
+        "text": "=Estimado equipo de convivencia: El apoderado de {{ $('Webhook1').item.json.body.evento.estudiante.nombre }}, {{ $('Webhook1').item.json.body.evento.estudiante.apoderado }}, solicita un cambio a la fecha de la citación. po favor revisa resumen:{{ $('Resumen Reagendamiento').item.json.message.content }}\n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        208
+      ],
+      "id": "f923a603-f512-40d5-932a-ea133d73b9db",
+      "name": "Send a text message2",
+      "webhookId": "2301babc-ec1f-482b-83fc-113115acd874",
+      "credentials": {
+        "telegramApi": {
+          "id": "jGPlVAcMoLWEnyX6",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Datos Evento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send message and wait for response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response1": {
+      "main": [
+        [
+          {
+            "node": "Resumen Reagendamiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumen Reagendamiento": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response2": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send message and wait for response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos Evento": {
+      "main": [
+        [
+          {
+            "node": "Create or update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a document": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ccbcf2ef-a4a1-4db9-a97b-7d55d53dd6b1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8e5a49bc101881907a9b6fc861a7ea45eeb4b73a140db25a65822279f6168a52"
+  },
+  "id": "gq3oW1koRZT1eUBt",
+  "tags": []
+}
